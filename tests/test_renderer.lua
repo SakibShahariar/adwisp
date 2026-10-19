@@ -168,4 +168,17 @@ renderer:render()
 assert_equal(overlay.data, "", "hiding renderer should clear visible data")
 assert_equal(overlay.update_count, 12, "hiding should update overlay once")
 
+-- Invalid playlist metadata must not leak non-finite or out-of-range values.
+state.visible = true
+state.playlist_count = math.huge
+state.playlist_pos = 0
+renderer:render()
+assert_true(overlay.data:find("inf", 1, true) == nil,
+    "infinite playlist count should not leak into ASS output")
+state.playlist_count = 5
+state.playlist_pos = 9
+renderer:render()
+assert_true(overlay.data:find("9 / 5", 1, true) == nil,
+    "out-of-range playlist position should not be displayed")
+
 print("All renderer tests passed.")
