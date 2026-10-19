@@ -32,9 +32,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          while IFS= read -r -d '' file; do
-            luac -p "$file"
-          done < <(find . -type f -name '*.lua' -not -path './.git/*' -print0)
+          find adwisp.lua core tests -type f -name '*.lua' -print0 |
+            while IFS= read -r -d '' file; do
+              luac -p "$file"
+            done
 
       - name: Run Luacheck
         run: luacheck adwisp.lua core tests --no-color
