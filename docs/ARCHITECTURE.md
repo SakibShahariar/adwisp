@@ -28,7 +28,7 @@ As the project grows, split responsibilities into small modules:
 3. Keep rendering and mpv commands separate from state defaults.
 4. Cache reusable theme data and assets once those systems exist.
 5. Keep caches bounded and release per-file resources on `end-file`.
-6. Request thumbnail work lazily through thumbfast.
+6. Request thumbnail work lazily through thumbfast and clear it when a file or UI interaction ends.
 7. Benchmark idle and active playback against stock mpv and uosc, recording mpv version, resolution, idle CPU usage and redraw frequency.
 
 ## Current limitations
