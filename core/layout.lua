@@ -3,10 +3,6 @@
 
 local Layout = {}
 
-local function clamp(value, low, high)
-    return math.max(low, math.min(high, value))
-end
-
 function Layout.compute(width, height)
     if type(width) ~= "number" or type(height) ~= "number"
         or width <= 0 or height <= 0 then
