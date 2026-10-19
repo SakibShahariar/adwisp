@@ -11,17 +11,32 @@ package.path = script_dir .. "/?.lua;" .. script_dir .. "/?/init.lua;" .. packag
 
 local opts = {
     seek_step = 5,
+    theme_file = "",
 }
 options.read_options(opts, "adwisp")
 
 local state = require "core.state"
 local Renderer = require "core.renderer"
 local Layout = require "core.layout"
+local Theme = require "core.theme"
 local renderer = Renderer.new(mp, state)
 
 local function render()
     renderer:render()
 end
+
+local function reload_theme()
+    local palette, source, err = Theme.load(opts.theme_file)
+    renderer:set_palette(palette)
+    render()
+    if source == "fallback" and err then
+        mp.msg.warn("Adwisp: couldn't load theme_file; using fallback palette: " .. tostring(err))
+    else
+        mp.msg.info("Adwisp: theme reloaded (" .. source .. ").")
+    end
+end
+
+reload_theme()
 
 local function toggle()
     state.visible = not state.visible
@@ -149,5 +164,6 @@ mp.register_script_message("adwisp-hide", function()
     state.visible = false
     render()
 end)
+mp.register_script_message("adwisp-reload-theme", reload_theme)
 
 mp.msg.info("Adwisp modular prototype loaded. Press g to toggle the OSD.")
