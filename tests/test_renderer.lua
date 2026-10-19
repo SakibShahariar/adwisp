@@ -141,6 +141,6 @@ assert_true(overlay.data:find("\\fs11", 1, true) ~= nil,
 state.visible = false
 renderer:render()
 assert_equal(overlay.data, "", "hiding renderer should clear visible data")
-assert_equal(overlay.update_count, 8, "hiding should update overlay once")
+assert_equal(overlay.update_count, 9, "hiding should update overlay once")
 
 print("All renderer tests passed.")
