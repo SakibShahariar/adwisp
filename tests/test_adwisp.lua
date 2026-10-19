@@ -50,6 +50,7 @@ package.loaded["mp.utils"] = {
 package.loaded["mp.options"] = {
     read_options = function(options)
         assert(options.seek_step == 5, "default seek step should be five seconds")
+        package.loaded["mp.options"].last_options = options
     end,
 }
 
@@ -125,6 +126,13 @@ observers["playlist-count"].callback("playlist-count", 5)
 observers["playlist-pos"].callback("playlist-pos", 1)
 assert_true(overlays[1].data:find("2 / 5", 1, true) ~= nil,
     "playlist row should show the current item position and total")
+
+local option_fixture = package.loaded["mp.options"].last_options
+option_fixture.seek_step = math.huge
+key_bindings["adwisp-seek-back"].callback()
+assert_equal(commands[#commands][2], -5,
+    "infinite seek step should fall back to the safe default")
+option_fixture.seek_step = 5
 
 key_bindings["adwisp-seek-back"].callback()
 assert_equal(commands[#commands][1], "seek", "left seek should issue seek command")
