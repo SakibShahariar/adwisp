@@ -128,6 +128,16 @@ assert_equal(overlay.update_count, 7, "hover state should redraw the overlay")
 assert_true(overlay.data:find("\\1c&H060504&", 1, true) ~= nil,
     "hover highlight should use the palette surface color")
 
+-- Compact layouts reduce text sizes so labels fit short video windows.
+height = 180
+renderer:render()
+assert_true(overlay.data:find("\\fs18", 1, true) ~= nil,
+    "compact title should use the smaller font size")
+assert_true(overlay.data:find("\\fs22", 1, true) == nil,
+    "compact layout should not retain the standard title font size")
+assert_true(overlay.data:find("\\fs11", 1, true) ~= nil,
+    "compact progress labels should use the smallest font size")
+
 state.visible = false
 renderer:render()
 assert_equal(overlay.data, "", "hiding renderer should clear visible data")
