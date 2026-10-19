@@ -68,6 +68,8 @@ local function change_volume(delta)
     local current = tonumber(state.volume) or 100
     local step = math.max(1, tonumber(opts.volume_step) or 5)
     local volume = math.max(0, math.min(100, current + delta * step))
+    state.volume = volume
+    state.mute = false
     mp.commandv("set", "volume", volume)
     mp.commandv("set", "mute", "no")
 end
