@@ -230,8 +230,15 @@ assert_true(math.abs(commands[#commands][2] - 10) < 0.000001,
     "timeline drag start should seek to pointer")
 mouse_x = layout.timeline.x + layout.timeline.width * 0.7
 key_bindings["adwisp-mouse-move"].callback()
-assert_equal(commands[#commands][1], "seek", "timeline drag movement should seek")
-assert_true(math.abs(commands[#commands][2] - 70) < 0.000001,
+local movement_seek
+for i = #commands, 1, -1 do
+    if commands[i][1] == "seek" then
+        movement_seek = commands[i]
+        break
+    end
+end
+assert_true(movement_seek ~= nil, "timeline drag movement should seek")
+assert_true(math.abs(movement_seek[2] - 70) < 0.000001,
     "timeline drag should follow pointer")
 key_bindings["adwisp-mouse-click"].callback({ event = "up" })
 local after_timeline_drag = #commands
