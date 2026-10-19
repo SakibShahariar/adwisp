@@ -3,6 +3,7 @@
 -- MIT License. See LICENSE.
 
 local Layout = require "core.layout"
+local Theme = require "core.theme"
 
 local Renderer = {}
 Renderer.__index = Renderer
@@ -34,6 +35,11 @@ function Renderer.new(mp, state)
     self.last_size = nil
     self.last_data = nil
     return self
+end
+
+function Renderer:set_palette(palette)
+    self.state.palette = palette
+    self.last_data = nil
 end
 
 function Renderer:clear()
@@ -96,6 +102,13 @@ function Renderer:render()
         time_label.x, time_label.y, now .. " / " .. total,
         playlist.x, playlist.y, "‹    Previous       Next    ›"
     )
+
+    local colors = Theme.to_ass(state.palette)
+    ass = ass:gsub("&H30251E&", colors.background)
+        :gsub("&HFAF7F3&", colors.text)
+        :gsub("&HDBD2C8&", colors.muted)
+        :gsub("&H6D6259&", colors.muted)
+        :gsub("&H9B7653&", colors.accent)
 
     if state.hover_target == "playback" or state.hover_target == "volume" then
         local target = state.hover_target == "playback" and playback or volume
