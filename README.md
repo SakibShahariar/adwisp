@@ -62,6 +62,7 @@ Typical mpv configuration directories:
 | `Ctrl` + `Left` / `Ctrl` + `Right` | Previous / next playlist item |
 | `Ctrl` + `Up` / `Ctrl` + `Down` | Increase / decrease volume by `volume_step` |
 | `q` | Dismiss the interface |
+| `Escape` | Dismiss the interface |
 | Mouse click on timeline | Seek to the clicked position |
 | Mouse click on playback control | Toggle pause |
 | Mouse click on volume bar | Set volume and unmute |
