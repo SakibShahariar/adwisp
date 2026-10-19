@@ -76,7 +76,7 @@ function Renderer:render()
 {\\an7\\pos(%d,%d)\\fnSans\\fs22\\b1\\1c&HFAF7F3&}%s
 {\\an7\\pos(%d,%d)\\fnSans\\fs14\\1c&HDBD2C8&}%s
 {\\an7\\pos(%d,%d)\\fnSans\\fs14\\1c&HDBD2C8&}%s
-{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c&H6D6259&\\p1}m 0 0 l %d 0 0 6{\\p0}
+{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c&H6D6259&\\p1}m 0 0 l %d 0 %d 6 0 6{\\p0}
 {\\an7\\pos(%d,%d)\\bord0\\shad0\\1c&H9B7653&\\p1}m 0 0 l %d 0 0 6{\\p0}
 {\\an7\\pos(%d,%d)\\fnSans\\fs13\\1c&HDBD2C8&}%s
 {\\an7\\pos(%d,%d)\\fnSans\\fs15\\b1\\1c&HFAF7F3&}%s
