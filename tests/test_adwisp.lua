@@ -103,7 +103,7 @@ assert_equal(observed_state.playlist_count, 0, "non-finite playlist count should
 assert_equal(observed_state.playlist_pos, -1, "non-finite playlist position should fall back to no selection")
 observers["time-pos"].callback("time-pos", 12)
 observers.duration.callback("duration", 60)
-observers.volume.callback("volume", 50)
+observers.volume.callback("volume", 100)
 observers["playlist-count"].callback("playlist-count", 0)
 observers["playlist-pos"].callback("playlist-pos", -1)
 assert_equal(overlays[1].update_count, 1,
