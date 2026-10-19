@@ -11,8 +11,6 @@ package.path = script_dir .. "/?.lua;" .. script_dir .. "/?/init.lua;" .. packag
 
 local opts = {
     seek_step = 5,
-    auto_hide_seconds = 0,
-    palette_file = "~/.config/mpv/adwisp-palette.conf",
 }
 options.read_options(opts, "adwisp")
 
