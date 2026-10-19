@@ -127,12 +127,16 @@ key_bindings["adwisp-mouse-click"].callback()
 assert_equal(commands[#commands][1], "cycle", "playback click should issue cycle")
 assert_equal(commands[#commands][2], "pause", "playback click should target pause")
 
--- Clicking the volume control should toggle mute.
-mouse_x = layout.volume.x + 5
+-- Clicking the volume control should set volume proportionally and unmute.
+mouse_x = layout.volume.x + layout.volume.width * 0.75
 mouse_y = layout.volume.y + 5
 key_bindings["adwisp-mouse-click"].callback()
-assert_equal(commands[#commands][1], "cycle", "volume click should issue cycle")
-assert_equal(commands[#commands][2], "mute", "volume click should toggle mute")
+assert_equal(commands[#commands - 1][1], "set", "volume click should set volume")
+assert_equal(commands[#commands - 1][2], "volume", "volume click should target volume")
+assert_equal(commands[#commands - 1][3], 75, "volume click should map to percentage")
+assert_equal(commands[#commands][1], "set", "volume click should ensure audio is unmuted")
+assert_equal(commands[#commands][2], "mute", "volume click should target mute state")
+assert_equal(commands[#commands][3], "no", "volume click should unmute playback")
 
 -- Clicks outside controls should not issue commands.
 local command_count = #commands
