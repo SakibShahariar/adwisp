@@ -2,7 +2,13 @@
 
 ## Current prototype
 
-`adwisp.lua` is the entry point loaded by mpv. It observes playback properties with `mp.observe_property`, stores the latest values in a small state table, and redraws an ASS OSD overlay when an observed value changes. There is no periodic polling loop.
+`adwisp.lua` is the mpv entry point. It reads script options, observes playback properties, updates shared state, and routes render requests to the renderer. Project-local modules are loaded relative to the script directory.
+
+- `core/state.lua`: defaults for the shared playback state.
+- `core/renderer.lua`: ASS OSD overlay creation, time formatting, drawing, and duplicate-frame suppression.
+- `adwisp.lua`: mpv property observers, events, keyboard bindings, and script messages.
+
+The state module intentionally contains defaults only for now. Property observation remains in the entry point so the mpv integration lifecycle is explicit.
 
 ## Intended modules
 
@@ -15,16 +21,16 @@ As the project grows, split responsibilities into small modules:
 - **Preferences:** settings UI and persisted options.
 - **Thumbnail adapter:** optional communication with thumbfast; no duplicate thumbnail extraction pipeline.
 
-## Performance rules
+## Rendering and performance rules
 
 1. No idle polling or unconditional frame timers.
-2. Observe properties and invalidate only the affected UI where practical.
-3. Cache parsed theme data and reusable assets.
-4. Keep caches bounded and release per-file resources on `end-file`.
-5. Request thumbnail work lazily and asynchronously through thumbfast.
-6. Benchmark idle and active playback, including high-resolution video and long playlists.
-7. Compare like-for-like against stock mpv and uosc, recording mpv version, resolution, idle CPU usage and redraw frequency.
+2. Observe mpv properties and render only when relevant state changes.
+3. Keep rendering and mpv commands separate from state defaults.
+4. Cache reusable theme data and assets once those systems exist.
+5. Keep caches bounded and release per-file resources on `end-file`.
+6. Request thumbnail work lazily through thumbfast.
+7. Benchmark idle and active playback against stock mpv and uosc, recording mpv version, resolution, idle CPU usage and redraw frequency.
 
 ## Current limitations
 
-The prototype is not yet a full player interface. The visible controls are illustrative OSD text and are not mouse-hit-tested widgets. The preferences UI, Matugen file parsing/reload, and thumbfast integration remain planned work.
+The prototype is an early OSD experiment, not a complete player UI. The displayed labels are not yet mouse-hit-tested controls. The preferences UI, Matugen parsing/live reload, thumbnail previews, and performance benchmarks remain planned. The renderer has not yet been validated across mpv versions and operating systems; report issues with mpv version and logs.
