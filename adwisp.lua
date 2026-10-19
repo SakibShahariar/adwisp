@@ -63,6 +63,14 @@ local function seek(delta)
     mp.commandv("seek", delta, "relative", "keyframes")
 end
 
+local function change_volume(delta)
+    local current = tonumber(state.volume) or 100
+    local step = math.max(1, tonumber(opts.volume_step) or 5)
+    local volume = math.max(0, math.min(100, current + delta * step))
+    mp.commandv("set", "volume", volume)
+    mp.commandv("set", "mute", "no")
+end
+
 local function set_volume_at(mouse_x, volume)
     local fraction = math.max(0, math.min(1,
         (mouse_x - volume.x) / volume.width))
