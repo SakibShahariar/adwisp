@@ -76,6 +76,8 @@ assert_true(events["end-file"] ~= nil, "end-file event should be registered")
 assert_true(key_bindings["adwisp-toggle"] ~= nil, "toggle key should be registered")
 assert_true(key_bindings["adwisp-mouse-click"] ~= nil, "mouse click should be registered")
 assert_true(key_bindings["adwisp-mouse-move"] ~= nil, "mouse move should be registered")
+assert_true(key_bindings["adwisp-volume-up"] ~= nil, "volume-up shortcut should be registered")
+assert_true(key_bindings["adwisp-volume-down"] ~= nil, "volume-down shortcut should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
 assert_true(script_messages["thumbfast-info"] ~= nil, "thumbfast info message should be registered")
 
@@ -108,6 +110,16 @@ assert_equal(commands[#commands][2], 5, "right seek should use configured step")
 key_bindings["adwisp-play-pause"].callback()
 assert_equal(commands[#commands][1], "cycle", "play/pause should cycle pause")
 assert_equal(commands[#commands][2], "pause", "play/pause should target pause")
+
+-- Keyboard volume shortcuts should adjust by the configured step and unmute.
+key_bindings["adwisp-volume-down"].callback()
+assert_equal(commands[#commands - 1][1], "set", "volume-down should set volume")
+assert_equal(commands[#commands - 1][2], "volume", "volume-down should target volume")
+assert_equal(commands[#commands - 1][3], 95, "volume-down should reduce volume by five")
+assert_equal(commands[#commands][2], "mute", "volume adjustment should clear mute")
+assert_equal(commands[#commands][3], "no", "volume adjustment should unmute playback")
+key_bindings["adwisp-volume-up"].callback()
+assert_equal(commands[#commands - 1][3], 100, "volume-up should increase volume by five")
 
 -- Mouse clicks should seek proportionally along the shared timeline geometry.
 local Layout = require "core.layout"
