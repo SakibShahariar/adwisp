@@ -155,6 +155,15 @@ key_bindings["adwisp-playlist-next"].callback()
 assert_equal(commands[#commands][1], "playlist-next", "Ctrl+Right should go to next playlist item")
 assert_equal(commands[#commands][2], "weak", "next shortcut should use weak mode")
 
+-- Excessively large but finite volume steps should be bounded before adjustment.
+local option_fixture = package.loaded["mp.options"].last_options
+option_fixture.volume_step = 1e100
+key_bindings["adwisp-volume-down"].callback()
+assert_equal(commands[#commands - 1][3], 0,
+    "excessive volume step should be bounded and volume clamped to zero")
+option_fixture.volume_step = 5
+observers.volume.callback("volume", 100)
+
 -- Keyboard volume shortcuts should adjust by the configured step and unmute.
 key_bindings["adwisp-volume-down"].callback()
 assert_equal(commands[#commands - 1][1], "set", "volume-down should set volume")
