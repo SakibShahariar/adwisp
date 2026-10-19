@@ -136,7 +136,10 @@ local function handle_mouse_click()
     local volume = layout.volume
     if mouse_x >= volume.x and mouse_x <= volume.x + volume.width
         and mouse_y >= volume.y and mouse_y <= volume.y + volume.height then
-        mp.commandv("cycle", "mute")
+        local fraction = math.max(0, math.min(1,
+            (mouse_x - volume.x) / volume.width))
+        mp.commandv("set", "volume", math.floor(fraction * 100 + 0.5))
+        mp.commandv("set", "mute", "no")
     end
 end
 
