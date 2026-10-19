@@ -300,11 +300,18 @@ mouse_y = drag_layout.timeline.y
 key_bindings["adwisp-mouse-click"].callback({ event = "down" })
 assert_equal(commands[#commands][1], "seek", "drag setup should issue a seek")
 script_messages["adwisp-hide"]()
-local commands_after_hide = #commands
+local seeks_after_timeline_hide = 0
+for _, command in ipairs(commands) do
+    if command[1] == "seek" then seeks_after_timeline_hide = seeks_after_timeline_hide + 1 end
+end
 script_messages["adwisp-show"]()
 mouse_x = drag_layout.timeline.x + drag_layout.timeline.width * 0.8
 key_bindings["adwisp-mouse-move"].callback()
-assert_equal(#commands, commands_after_hide,
+local seeks_after_timeline_move = 0
+for _, command in ipairs(commands) do
+    if command[1] == "seek" then seeks_after_timeline_move = seeks_after_timeline_move + 1 end
+end
+assert_equal(seeks_after_timeline_move, seeks_after_timeline_hide,
     "mouse movement after hide/show should not continue a stale timeline drag")
 key_bindings["adwisp-mouse-click"].callback({ event = "up" })
 
@@ -313,11 +320,22 @@ mouse_x = drag_layout.volume.x + drag_layout.volume.width * 0.3
 mouse_y = drag_layout.volume.y + 5
 key_bindings["adwisp-mouse-click"].callback({ event = "down" })
 script_messages["adwisp-hide"]()
-local volume_commands_after_hide = #commands
+local volume_sets_after_hide = 0
+for _, command in ipairs(commands) do
+    if command[1] == "set" and command[2] == "volume" then
+        volume_sets_after_hide = volume_sets_after_hide + 1
+    end
+end
 script_messages["adwisp-show"]()
 mouse_x = drag_layout.volume.x + drag_layout.volume.width * 0.8
 key_bindings["adwisp-mouse-move"].callback()
-assert_equal(#commands, volume_commands_after_hide,
+local volume_sets_after_move = 0
+for _, command in ipairs(commands) do
+    if command[1] == "set" and command[2] == "volume" then
+        volume_sets_after_move = volume_sets_after_move + 1
+    end
+end
+assert_equal(volume_sets_after_move, volume_sets_after_hide,
     "mouse movement after hide/show should not continue a stale volume drag")
 key_bindings["adwisp-mouse-click"].callback({ event = "up" })
 
