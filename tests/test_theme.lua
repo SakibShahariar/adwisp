@@ -36,5 +36,9 @@ assert(ass.background == "&H332211&", "ASS color should convert RGB to BGR")
 assert(ass.accent == "&HFFBCD0&", "accent should convert RGB to BGR")
 assert(Theme.to_ass({ accent = "invalid" }).accent == "&H53769B&",
     "invalid colors should use fallback")
+assert(Theme.to_ass({ accent = "#GG0000" }).accent == "&H53769B&",
+    "non-hex palette colors should use fallback")
+assert(Theme.to_ass({ accent = "#12345" }).accent == "&H53769B&",
+    "short palette colors should use fallback")
 
 print("All theme tests passed.")
