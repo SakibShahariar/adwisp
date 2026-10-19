@@ -33,4 +33,4 @@ As the project grows, split responsibilities into small modules:
 
 ## Current limitations
 
-The prototype is an early OSD experiment, not a complete player UI. The displayed labels are not yet mouse-hit-tested controls. The preferences UI, Matugen parsing/live reload, thumbnail previews, and performance benchmarks remain planned. The renderer has not yet been validated across mpv versions and operating systems; report issues with mpv version and logs.
+The prototype is an early OSD experiment, not a complete player UI. The current OSD controls are hit-tested for mouse clicks and dragging. A preferences UI and performance benchmarks remain planned; Matugen-compatible palette parsing/reload and the optional thumbfast request adapter are implemented but still need broader runtime validation. The renderer has not yet been validated across mpv versions and operating systems; report issues with mpv version and logs.
