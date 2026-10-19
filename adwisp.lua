@@ -73,7 +73,10 @@ local function handle_mouse_move()
         hover_target = "volume"
     end
 
-    local on_timeline = opts.thumbnail_preview ~= false and contains(layout.timeline)
+    local timeline = layout.timeline
+    local on_timeline = opts.thumbnail_preview ~= false
+        and mouse_x >= timeline.hit_x and mouse_x <= timeline.hit_x + timeline.hit_width
+        and mouse_y >= timeline.hit_y and mouse_y <= timeline.hit_y + timeline.hit_height
     if on_timeline and not thumbfast.disabled and state.duration > 0
         and thumbfast.width > 0 and thumbfast.height > 0 then
         local fraction = math.max(0, math.min(1,
