@@ -103,6 +103,14 @@ function Renderer:render()
         playlist.x, playlist.y, "‹    Previous       Next    ›"
     )
 
+    if layout.compact then
+        -- Keep text legible without letting labels dominate short windows.
+        ass = ass:gsub("\\fs22", "\\fs18")
+            :gsub("\\fs14", "\\fs12")
+            :gsub("\\fs13", "\\fs11")
+            :gsub("\\fs15", "\\fs12")
+    end
+
     local volume_fraction = math.max(0, math.min(1, (state.volume or 0) / 100))
     local volume_fill = math.floor(volume.width * volume_fraction)
     local volume_track = string.format([[
