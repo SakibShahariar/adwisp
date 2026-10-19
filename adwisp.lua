@@ -12,6 +12,7 @@ package.path = script_dir .. "/?.lua;" .. script_dir .. "/?/init.lua;" .. packag
 local opts = {
     seek_step = 5,
     theme_file = "",
+    thumbnail_preview = true,
 }
 options.read_options(opts, "adwisp")
 
@@ -19,7 +20,12 @@ local state = require "core.state"
 local Renderer = require "core.renderer"
 local Layout = require "core.layout"
 local Theme = require "core.theme"
+local utils = require "mp.utils"
 local renderer = Renderer.new(mp, state)
+
+-- thumbfast owns thumbnail generation and display. Adwisp only requests previews.
+local thumbfast = { width = 0, height = 0, disabled = true, available = false }
+local thumbnail_active = false
 
 local function render()
     renderer:render()
@@ -65,6 +71,25 @@ local function handle_mouse_move()
         hover_target = "playback"
     elseif contains(layout.volume) then
         hover_target = "volume"
+    end
+
+    local on_timeline = opts.thumbnail_preview ~= false and contains(layout.timeline)
+    if on_timeline and not thumbfast.disabled and state.duration > 0
+        and thumbfast.width > 0 and thumbfast.height > 0 then
+        local fraction = math.max(0, math.min(1,
+            (mouse_x - layout.timeline.x) / layout.timeline.width))
+        local seconds = fraction * state.duration
+        local osd_width = width
+        local x = math.floor(math.max(8, math.min(
+            osd_width - thumbfast.width - 8, mouse_x - thumbfast.width / 2)))
+        local y = math.floor(math.max(0, layout.timeline.y - thumbfast.height - 12))
+        mp.commandv("script-message-to", "thumbfast", "thumb", seconds, x, y)
+        thumbnail_active = true
+    elseif thumbnail_active then
+        if thumbfast.available then
+            mp.commandv("script-message-to", "thumbfast", "clear")
+        end
+        thumbnail_active = false
     end
 
     if state.hover_target ~= hover_target then
@@ -165,5 +190,15 @@ mp.register_script_message("adwisp-hide", function()
     render()
 end)
 mp.register_script_message("adwisp-reload-theme", reload_theme)
+mp.register_script_message("thumbfast-info", function(json)
+    local data = utils.parse_json(json)
+    if type(data) == "table" and type(data.width) == "number"
+        and type(data.height) == "number" then
+        thumbfast = data
+    else
+        mp.msg.warn("Adwisp: received invalid thumbfast info; previews disabled.")
+        thumbfast = { width = 0, height = 0, disabled = true, available = false }
+    end
+end)
 
 mp.msg.info("Adwisp modular prototype loaded. Press g to toggle the OSD.")
