@@ -186,6 +186,8 @@ assert_equal(commands[#commands - 1][3], 75, "volume click should map to percent
 assert_equal(commands[#commands][1], "set", "volume click should ensure audio is unmuted")
 assert_equal(commands[#commands][2], "mute", "volume click should target mute state")
 assert_equal(commands[#commands][3], "no", "volume click should unmute playback")
+assert_true(overlays[1].data:find("Volume 75%", 1, true) ~= nil,
+    "volume click should update the displayed value immediately")
 
 -- Mouse-down starts volume dragging and mouse movement updates the slider.
 mouse_x = layout.volume.x + layout.volume.width * 0.2

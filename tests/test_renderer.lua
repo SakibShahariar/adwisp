@@ -148,9 +148,23 @@ assert_true(overlay.data:find("\\fs22", 1, true) == nil,
 assert_true(overlay.data:find("\\fs11", 1, true) ~= nil,
     "compact progress labels should use the smallest font size")
 
+-- Invalid numeric properties should never break rendering or draw invalid values.
+state.visible = true
+state.time_pos = 0 / 0
+state.duration = math.huge
+state.volume = 140
+renderer:render()
+assert_true(overlay.data:find("--:-- / --:--", 1, true) ~= nil,
+    "non-finite playback values should use safe time placeholders")
+assert_true(overlay.data:find("Volume 100%", 1, true) ~= nil,
+    "rendered volume should clamp to the supported range")
+assert_true(overlay.data:find("nan", 1, true) == nil
+    and overlay.data:find("inf", 1, true) == nil,
+    "non-finite values should not leak into ASS output")
+
 state.visible = false
 renderer:render()
 assert_equal(overlay.data, "", "hiding renderer should clear visible data")
-assert_equal(overlay.update_count, 11, "hiding should update overlay once")
+assert_equal(overlay.update_count, 12, "hiding should update overlay once")
 
 print("All renderer tests passed.")
