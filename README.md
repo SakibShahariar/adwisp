@@ -104,7 +104,7 @@ accent=#d0bcff
 on_accent=#381e72
 ```
 
-Supported roles are `background`, `surface`, `text`, `muted`, `accent`, and `on_accent`; values must be six-digit `#RRGGBB` colors. Missing or invalid entries fall back to the built-in palette. See [Theming and Matugen](docs/THEMING.md) for details.
+Supported roles are `background`, `surface`, `text`, `muted`, `accent`, and `on_accent`; values must be six-digit `#RRGGBB` colors. Keys are case-sensitive; unknown keys and malformed lines are ignored. Missing or invalid entries fall back to the built-in palette. See [Theming and Matugen](docs/THEMING.md) for details.
 
 After regenerating the palette, ask mpv to reload it without restarting:
 
