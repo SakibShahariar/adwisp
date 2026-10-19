@@ -12,6 +12,11 @@ function Layout.compute(width, height)
         return nil
     end
 
+    -- OSD dimensions are pixel counts; normalize fractional inputs before geometry.
+    width = math.floor(width)
+    height = math.floor(height)
+    if width < 1 or height < 1 then return nil end
+
     local panel_width = math.min(560, math.max(1, width - 32))
     local compact = height < 240
     local panel_height = math.min(156, math.max(1, height - (compact and 16 or 32)))
