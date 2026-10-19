@@ -282,13 +282,18 @@ assert_equal(seeks_after_move, seeks_after_release,
     "movement after timeline release should not issue another seek")
 
 
+local updates_before_escape = overlays[1].update_count
 key_bindings["adwisp-dismiss-escape"].callback()
 assert_equal(overlays[1].data, "", "Escape should dismiss and clear OSD data")
+assert_equal(overlays[1].update_count, updates_before_escape + 1,
+    "Escape should clear the visible overlay once")
 
 script_messages["adwisp-hide"]()
 assert_equal(overlays[1].data, "", "hide message should leave OSD data cleared")
-assert_equal(overlays[1].update_count, 6, "hide message should update overlay")
+assert_equal(overlays[1].update_count, updates_before_escape + 1,
+    "hiding an already dismissed overlay should be cached")
 events["end-file"]()
-assert_equal(overlays[1].update_count, 6, "clearing an already hidden OSD should be cached")
+assert_equal(overlays[1].update_count, updates_before_escape + 1,
+    "clearing an already hidden OSD should be cached")
 
 print("All mocked mpv API tests passed.")
