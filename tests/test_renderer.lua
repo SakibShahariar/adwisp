@@ -180,6 +180,11 @@ assert_true(overlay.data:find(" / ", 1, true) ~= nil,
 
 -- ASS-sensitive title content must be escaped and line breaks flattened.
 state.visible = true
+state.title = "First\rSecond"
+renderer:render()
+assert_true(overlay.data:find("First Second", 1, true) ~= nil,
+    "carriage returns should be flattened before ASS rendering")
+
 state.title = "Folder\\clip\nNext {line}"
 renderer:render()
 assert_true(overlay.data:find("Folder\\\\clip Next \\{line\\}", 1, true) ~= nil,
