@@ -76,6 +76,9 @@ local function test_invalid_dimensions()
     assert_equal(Layout.compute(1280, 0), nil, "zero height should be rejected")
     assert_equal(Layout.compute(-1, 720), nil, "negative width should be rejected")
     assert_equal(Layout.compute("1280", 720), nil, "non-numeric width should be rejected")
+    assert_equal(Layout.compute(0 / 0, 720), nil, "NaN width should be rejected")
+    assert_equal(Layout.compute(1280, math.huge), nil, "infinite height should be rejected")
+    assert_equal(Layout.compute(-math.huge, 720), nil, "negative infinite width should be rejected")
 end
 
 local function test_layout_rectangles()
