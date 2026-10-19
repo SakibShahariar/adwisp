@@ -103,6 +103,15 @@ function Renderer:render()
         playlist.x, playlist.y, "‹    Previous       Next    ›"
     )
 
+    local volume_fraction = math.max(0, math.min(1, (state.volume or 0) / 100))
+    local volume_fill = math.floor(volume.width * volume_fraction)
+    local volume_track = string.format([[
+{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c&H6D6259&\\p1}m 0 0 l %d 0 %d 4 0 4{\\p0}
+{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c&H9B7653&\\p1}m 0 0 l %d 0 %d 4 0 4{\\p0}
+]], volume.x, volume.y + 25, volume.width, volume.width,
+        volume.x, volume.y + 25, volume_fill, volume_fill)
+    ass = ass .. volume_track
+
     local colors = Theme.to_ass(state.palette)
     ass = ass:gsub("&H30251E&", colors.background)
         :gsub("&HFAF7F3&", colors.text)

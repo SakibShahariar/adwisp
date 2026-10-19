@@ -26,6 +26,7 @@ local renderer = Renderer.new(mp, state)
 -- thumbfast owns thumbnail generation and display. Adwisp only requests previews.
 local thumbfast = { width = 0, height = 0, disabled = true, available = false }
 local thumbnail_active = false
+local dragging_volume = false
 
 local function clear_thumbnail()
     if thumbnail_active and thumbfast.available then
@@ -61,6 +62,13 @@ local function seek(delta)
     mp.commandv("seek", delta, "relative", "keyframes")
 end
 
+local function set_volume_at(mouse_x, volume)
+    local fraction = math.max(0, math.min(1,
+        (mouse_x - volume.x) / volume.width))
+    mp.commandv("set", "volume", math.floor(fraction * 100 + 0.5))
+    mp.commandv("set", "mute", "no")
+end
+
 local function handle_mouse_move()
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
     local mouse_x, mouse_y = mp.get_mouse_pos()
@@ -68,6 +76,10 @@ local function handle_mouse_move()
     local width, height = mp.get_osd_size()
     local layout = Layout.compute(width, height)
     if not layout then return end
+
+    if dragging_volume then
+        set_volume_at(mouse_x, layout.volume)
+    end
 
     local function contains(rect)
         return mouse_x >= rect.x and mouse_x <= rect.x + rect.width
@@ -106,7 +118,11 @@ local function handle_mouse_move()
     end
 end
 
-local function handle_mouse_click()
+local function handle_mouse_click(event)
+    if event and event.event == "up" then
+        dragging_volume = false
+        return
+    end
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
 
     local mouse_x, mouse_y = mp.get_mouse_pos()
@@ -115,6 +131,15 @@ local function handle_mouse_click()
     local width, height = mp.get_osd_size()
     local layout = Layout.compute(width, height)
     if not layout then return end
+
+    local volume = layout.volume
+    if event and event.event == "down"
+        and mouse_x >= volume.x and mouse_x <= volume.x + volume.width
+        and mouse_y >= volume.y and mouse_y <= volume.y + volume.height then
+        dragging_volume = true
+        set_volume_at(mouse_x, volume)
+        return
+    end
 
     local timeline = layout.timeline
     if mouse_x >= timeline.hit_x and mouse_x <= timeline.hit_x + timeline.hit_width
@@ -144,13 +169,9 @@ local function handle_mouse_click()
         return
     end
 
-    local volume = layout.volume
     if mouse_x >= volume.x and mouse_x <= volume.x + volume.width
         and mouse_y >= volume.y and mouse_y <= volume.y + volume.height then
-        local fraction = math.max(0, math.min(1,
-            (mouse_x - volume.x) / volume.width))
-        mp.commandv("set", "volume", math.floor(fraction * 100 + 0.5))
-        mp.commandv("set", "mute", "no")
+        set_volume_at(mouse_x, volume)
     end
 end
 
@@ -201,7 +222,7 @@ end)
 mp.add_key_binding("SPACE", "adwisp-play-pause", function()
     mp.commandv("cycle", "pause")
 end)
-mp.add_key_binding("MBTN_LEFT", "adwisp-mouse-click", handle_mouse_click)
+mp.add_key_binding("MBTN_LEFT", "adwisp-mouse-click", handle_mouse_click, { complex = true })
 mp.add_key_binding("mouse_move", "adwisp-mouse-move", handle_mouse_move, { complex = true })
 
 mp.register_script_message("adwisp-toggle", toggle)
