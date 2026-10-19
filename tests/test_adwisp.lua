@@ -137,7 +137,7 @@ key_bindings["adwisp-mouse-click"].callback()
 assert_equal(#commands, command_count, "click outside controls should be ignored")
 
 -- Hovering playback controls should update the visible overlay.
-local Layout = require "core.layout"
+-- Reuse the layout module loaded above
 local hover_layout = Layout.compute(1280, 720)
 mouse_x = hover_layout.playback.x + 5
 mouse_y = hover_layout.playback.y + 5
