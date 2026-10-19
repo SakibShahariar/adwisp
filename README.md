@@ -35,20 +35,15 @@ The prototype intentionally uses mpv's ASS OSD overlay, not native GTK widgets. 
 
 ## Configuration
 
-The initial prototype supports a few script options through mpv's standard `script-opts` mechanism. Create `script-opts/adwisp.conf` in your mpv config directory:
+The current prototype supports only `seek_step` through mpv's standard `script-opts` mechanism. Create `script-opts/adwisp.conf` in your mpv config directory:
 
 ```ini
 # Seek step in seconds
 seek_step=5
 
-# Seconds before the overlay auto-hides (0 disables auto-hide)
-auto_hide_seconds=0
-
-# Optional Matugen palette file (simple key=value format; see docs/THEMING.md)
-palette_file=~/.config/mpv/adwisp-palette.conf
 ```
 
-Options and theming are experimental. The preferences UI is on the roadmap.
+Auto-hide and Matugen palette loading are not implemented yet; those settings are intentionally omitted until they work. The preferences UI is on the roadmap.
 
 ## Roadmap
 
