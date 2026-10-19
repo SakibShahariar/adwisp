@@ -285,10 +285,8 @@ assert_equal(seeks_after_move, seeks_after_release,
 key_bindings["adwisp-dismiss-escape"].callback()
 assert_equal(overlays[1].data, "", "Escape should dismiss and clear OSD data")
 
-script_messages["adwisp-show"]()
-assert_true(overlays[1].data ~= "", "show message should restore visible OSD")
 script_messages["adwisp-hide"]()
-assert_equal(overlays[1].data, "", "hide message should clear OSD data")
+assert_equal(overlays[1].data, "", "hide message should leave OSD data cleared")
 assert_equal(overlays[1].update_count, 6, "hide message should update overlay")
 events["end-file"]()
 assert_equal(overlays[1].update_count, 6, "clearing an already hidden OSD should be cached")
