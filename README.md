@@ -59,7 +59,6 @@ Typical mpv configuration directories:
 | `Left` / `Right` | Seek backward / forward by `seek_step` seconds |
 | `Space` | Toggle playback pause |
 | `Ctrl` + `Up` / `Ctrl` + `Down` | Increase / decrease volume by `volume_step` |
-|
 | `q` | Dismiss the interface |
 | Mouse click on timeline | Seek to the clicked position |
 | Mouse click on playback control | Toggle pause |
