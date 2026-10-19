@@ -1,0 +1,58 @@
+package.path = "./?.lua;./?/init.lua;" .. package.path
+
+local Layout = require "core.layout"
+
+local function assert_equal(actual, expected, message)
+    if actual ~= expected then
+        error((message or "values differ") .. ": expected " .. tostring(expected)
+            .. ", got " .. tostring(actual), 2)
+    end
+end
+
+local function assert_true(value, message)
+    if not value then error(message or "expected true", 2) end
+end
+
+local function test_standard_layout()
+    local layout = Layout.compute(1280, 720)
+    assert_true(layout ~= nil, "layout should exist for valid dimensions")
+    assert_equal(layout.panel.width, 560, "panel should respect max width")
+    assert_equal(layout.panel.height, 156, "panel should use standard height")
+    assert_equal(layout.panel.x, 360, "panel should be horizontally centered")
+    assert_equal(layout.panel.y, 522, "panel should sit above bottom margin")
+    assert_true(layout.timeline.width > 0, "timeline width should be positive")
+    assert_true(layout.timeline.hit_width >= layout.timeline.width,
+        "timeline hit target should cover the visual timeline")
+end
+
+local function test_small_layout()
+    local layout = Layout.compute(320, 240)
+    assert_true(layout ~= nil, "small valid dimensions should be supported")
+    assert_true(layout.panel.width <= 288, "panel should fit within horizontal margins")
+    assert_true(layout.panel.height <= 156, "panel should not exceed standard height")
+    assert_true(layout.timeline.width > 0, "small timeline width should stay positive")
+end
+
+local function test_invalid_dimensions()
+    assert_equal(Layout.compute(0, 720), nil, "zero width should be rejected")
+    assert_equal(Layout.compute(1280, 0), nil, "zero height should be rejected")
+    assert_equal(Layout.compute(-1, 720), nil, "negative width should be rejected")
+    assert_equal(Layout.compute("1280", 720), nil, "non-numeric width should be rejected")
+end
+
+local function test_layout_rectangles()
+    local layout = Layout.compute(1920, 1080)
+    local panel = layout.panel
+    local timeline = layout.timeline
+    assert_true(timeline.x >= panel.x, "timeline should begin inside panel")
+    assert_true(timeline.x + timeline.width <= panel.x + panel.width,
+        "timeline should end inside panel")
+    assert_true(layout.playback.x >= panel.x, "playback should begin inside panel")
+end
+
+test_standard_layout()
+test_small_layout()
+test_invalid_dimensions()
+test_layout_rectangles()
+
+print("All layout tests passed.")
