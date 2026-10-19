@@ -157,6 +157,20 @@ assert_equal(commands[#commands][3], "no", "volume adjustment should unmute play
 key_bindings["adwisp-volume-up"].callback()
 assert_equal(commands[#commands - 1][3], 100, "volume-up should increase volume by five")
 
+-- NaN and infinite pointer coordinates must be ignored rather than entering geometry.
+local original_mouse_x, original_mouse_y = mouse_x, mouse_y
+mouse_x, mouse_y = 0 / 0, 20
+local command_count_before_invalid_mouse = #commands
+key_bindings["adwisp-mouse-click"].callback()
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(#commands, command_count_before_invalid_mouse,
+    "non-finite mouse coordinates should not issue commands")
+mouse_x, mouse_y = math.huge, 20
+key_bindings["adwisp-mouse-click"].callback()
+assert_equal(#commands, command_count_before_invalid_mouse,
+    "infinite mouse coordinates should not issue commands")
+mouse_x, mouse_y = original_mouse_x, original_mouse_y
+
 -- Mouse clicks should seek proportionally along the shared timeline geometry.
 local Layout = require "core.layout"
 local layout = Layout.compute(1280, 720)
