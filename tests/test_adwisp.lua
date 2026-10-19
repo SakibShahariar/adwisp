@@ -221,12 +221,6 @@ assert_equal(commands[#commands][1], "script-message-to",
 assert_equal(commands[#commands][2], "thumbfast", "clear should target thumbfast")
 assert_equal(commands[#commands][3], "clear", "leaving timeline should clear preview")
 
-script_messages["adwisp-hide"]()
-assert_equal(overlays[1].data, "", "hide message should clear OSD data")
-assert_equal(overlays[1].update_count, 6, "hide message should update overlay")
-events["end-file"]()
-assert_equal(overlays[1].update_count, 6, "clearing an already hidden OSD should be cached")
-
 -- Timeline dragging should seek continuously and stop on mouse release.
 mouse_x = layout.timeline.x + layout.timeline.width * 0.1
 mouse_y = layout.timeline.y
@@ -243,5 +237,12 @@ mouse_x = layout.timeline.x + layout.timeline.width * 0.9
 key_bindings["adwisp-mouse-move"].callback()
 assert_equal(#commands, after_timeline_drag,
     "movement after timeline release should not issue another command")
+
+
+script_messages["adwisp-hide"]()
+assert_equal(overlays[1].data, "", "hide message should clear OSD data")
+assert_equal(overlays[1].update_count, 6, "hide message should update overlay")
+events["end-file"]()
+assert_equal(overlays[1].update_count, 6, "clearing an already hidden OSD should be cached")
 
 print("All mocked mpv API tests passed.")
