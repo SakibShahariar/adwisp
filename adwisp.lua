@@ -221,16 +221,26 @@ local function handle_mouse_click(event)
     end
 end
 
+-- Ignore invalid numeric property values instead of letting NaN or infinity
+-- leak into interaction math or state used by the renderer.
+local function finite_property(value, fallback)
+    if type(value) ~= "number" or value ~= value
+        or value == math.huge or value == -math.huge then
+        return fallback
+    end
+    return value
+end
+
 -- Playback properties update the shared state and invalidate the renderer.
 local observers = {
     { "pause", "bool", function(value) state.paused = value == true end },
-    { "time-pos", "number", function(value) state.time_pos = value or 0 end },
-    { "duration", "number", function(value) state.duration = value or 0 end },
-    { "media-title", "string", function(value) state.title = value or "" end },
-    { "volume", "number", function(value) state.volume = value or 100 end },
+    { "time-pos", "number", function(value) state.time_pos = finite_property(value, 0) end },
+    { "duration", "number", function(value) state.duration = math.max(0, finite_property(value, 0)) end },
+    { "media-title", "string", function(value) state.title = type(value) == "string" and value or "" end },
+    { "volume", "number", function(value) state.volume = math.max(0, math.min(100, finite_property(value, 100))) end },
     { "mute", "bool", function(value) state.mute = value == true end },
-    { "playlist-pos", "number", function(value) state.playlist_pos = value or -1 end },
-    { "playlist-count", "number", function(value) state.playlist_count = value or 0 end },
+    { "playlist-pos", "number", function(value) state.playlist_pos = finite_property(value, -1) end },
+    { "playlist-count", "number", function(value) state.playlist_count = math.max(0, finite_property(value, 0)) end },
 }
 
 for _, observer in ipairs(observers) do
