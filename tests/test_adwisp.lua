@@ -6,6 +6,7 @@ local key_bindings = {}
 local script_messages = {}
 local commands = {}
 local overlays = {}
+local mouse_x, mouse_y = 0, 0
 
 local mp = {
     get_script_directory = function() return "." end,
@@ -34,6 +35,9 @@ local mp = {
     end,
     get_osd_size = function()
         return 1280, 720
+    end,
+    get_mouse_pos = function()
+        return mouse_x, mouse_y
     end,
     msg = { info = function() end },
 }
@@ -66,6 +70,7 @@ assert_true(observers["osd-dimensions"] ~= nil, "OSD dimensions should be observ
 assert_true(events["file-loaded"] ~= nil, "file-loaded event should be registered")
 assert_true(events["end-file"] ~= nil, "end-file event should be registered")
 assert_true(key_bindings["adwisp-toggle"] ~= nil, "toggle key should be registered")
+assert_true(key_bindings["adwisp-mouse-click"] ~= nil, "mouse click should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
 
 -- Property callbacks should update state and safely render while the UI is hidden.
@@ -97,6 +102,31 @@ assert_equal(commands[#commands][2], 5, "right seek should use configured step")
 key_bindings["adwisp-play-pause"].callback()
 assert_equal(commands[#commands][1], "cycle", "play/pause should cycle pause")
 assert_equal(commands[#commands][2], "pause", "play/pause should target pause")
+
+-- Mouse clicks should seek proportionally along the shared timeline geometry.
+local Layout = require "core.layout"
+local layout = Layout.compute(1280, 720)
+mouse_x = layout.timeline.x + layout.timeline.width / 2
+mouse_y = layout.timeline.y
+key_bindings["adwisp-mouse-click"].callback()
+assert_equal(commands[#commands][1], "seek", "timeline click should issue seek")
+assert_equal(commands[#commands][2], 50, "timeline midpoint should seek to 50 percent")
+assert_equal(commands[#commands][3], "absolute-percent",
+    "timeline click should use absolute-percent mode")
+
+-- Clicking the playback control should toggle pause.
+mouse_x = layout.playback.x + 5
+mouse_y = layout.playback.y + 5
+key_bindings["adwisp-mouse-click"].callback()
+assert_equal(commands[#commands][1], "cycle", "playback click should issue cycle")
+assert_equal(commands[#commands][2], "pause", "playback click should target pause")
+
+-- Clicks outside controls should not issue commands.
+local command_count = #commands
+mouse_x = 10
+mouse_y = 10
+key_bindings["adwisp-mouse-click"].callback()
+assert_equal(#commands, command_count, "click outside controls should be ignored")
 
 script_messages["adwisp-hide"]()
 assert_equal(overlays[1].data, "", "hide message should clear OSD data")
