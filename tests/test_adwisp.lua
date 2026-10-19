@@ -153,6 +153,30 @@ assert_equal(commands[#commands][1], "set", "volume click should ensure audio is
 assert_equal(commands[#commands][2], "mute", "volume click should target mute state")
 assert_equal(commands[#commands][3], "no", "volume click should unmute playback")
 
+-- Mouse-down starts volume dragging and mouse movement updates the slider.
+mouse_x = layout.volume.x + layout.volume.width * 0.2
+mouse_y = layout.volume.y + 5
+key_bindings["adwisp-mouse-click"].callback({ event = "down" })
+assert_equal(commands[#commands - 1][3], 20, "drag start should set volume at pointer")
+mouse_x = layout.volume.x + layout.volume.width * 0.6
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(commands[#commands - 1][3], 60, "drag movement should update volume")
+key_bindings["adwisp-mouse-click"].callback({ event = "up" })
+local after_drag = #commands
+mouse_x = layout.volume.x + layout.volume.width * 0.9
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(#commands, after_drag,
+    "mouse movement after drag release should not continue changing volume")
+
+-- Volume values should clamp at both ends of the slider.
+mouse_x = layout.volume.x
+mouse_y = layout.volume.y + 5
+key_bindings["adwisp-mouse-click"].callback()
+assert_equal(commands[#commands - 1][3], 0, "volume below slider should clamp to zero")
+mouse_x = layout.volume.x + layout.volume.width
+key_bindings["adwisp-mouse-click"].callback()
+assert_equal(commands[#commands - 1][3], 100, "volume at slider end should reach one hundred")
+
 -- Clicks outside controls should not issue commands.
 local command_count = #commands
 mouse_x = 10
@@ -199,8 +223,8 @@ assert_equal(commands[#commands][3], "clear", "leaving timeline should clear pre
 
 script_messages["adwisp-hide"]()
 assert_equal(overlays[1].data, "", "hide message should clear OSD data")
-assert_equal(overlays[1].update_count, 5, "hide message should update overlay")
+assert_equal(overlays[1].update_count, 6, "hide message should update overlay")
 events["end-file"]()
-assert_equal(overlays[1].update_count, 5, "clearing an already hidden OSD should be cached")
+assert_equal(overlays[1].update_count, 6, "clearing an already hidden OSD should be cached")
 
 print("All mocked mpv API tests passed.")
