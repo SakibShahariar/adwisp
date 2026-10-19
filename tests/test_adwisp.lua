@@ -104,21 +104,6 @@ key_bindings["adwisp-play-pause"].callback()
 assert_equal(commands[#commands][1], "cycle", "play/pause should cycle pause")
 assert_equal(commands[#commands][2], "pause", "play/pause should target pause")
 
--- Hovering playback controls should update the visible overlay.
-local Layout = require "core.layout"
-local hover_layout = Layout.compute(1280, 720)
-mouse_x = hover_layout.playback.x + 5
-mouse_y = hover_layout.playback.y + 5
-key_bindings["adwisp-mouse-move"].callback()
-assert_true(overlays[1].data:find("&H6A5140&", 1, true) ~= nil,
-    "hovering playback should draw a highlight")
-
-mouse_x = 10
-mouse_y = 10
-key_bindings["adwisp-mouse-move"].callback()
-assert_true(overlays[1].data:find("&H6A5140&", 1, true) == nil,
-    "moving outside controls should remove the highlight")
-
 -- Mouse clicks should seek proportionally along the shared timeline geometry.
 local Layout = require "core.layout"
 local layout = Layout.compute(1280, 720)
@@ -151,10 +136,25 @@ mouse_y = 10
 key_bindings["adwisp-mouse-click"].callback()
 assert_equal(#commands, command_count, "click outside controls should be ignored")
 
+-- Hovering playback controls should update the visible overlay.
+local Layout = require "core.layout"
+local hover_layout = Layout.compute(1280, 720)
+mouse_x = hover_layout.playback.x + 5
+mouse_y = hover_layout.playback.y + 5
+key_bindings["adwisp-mouse-move"].callback()
+assert_true(overlays[1].data:find("&H6A5140&", 1, true) ~= nil,
+    "hovering playback should draw a highlight")
+
+mouse_x = 10
+mouse_y = 10
+key_bindings["adwisp-mouse-move"].callback()
+assert_true(overlays[1].data:find("&H6A5140&", 1, true) == nil,
+    "moving outside controls should remove the highlight")
+
 script_messages["adwisp-hide"]()
 assert_equal(overlays[1].data, "", "hide message should clear OSD data")
-assert_equal(overlays[1].update_count, 3, "hide message should update overlay")
+assert_equal(overlays[1].update_count, 5, "hide message should update overlay")
 events["end-file"]()
-assert_equal(overlays[1].update_count, 3, "clearing an already hidden OSD should be cached")
+assert_equal(overlays[1].update_count, 5, "clearing an already hidden OSD should be cached")
 
 print("All mocked mpv API tests passed.")
