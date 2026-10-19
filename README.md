@@ -43,7 +43,7 @@ seek_step=5
 
 ```
 
-Auto-hide and Matugen palette loading are not implemented yet; those settings are intentionally omitted until they work. The preferences UI is on the roadmap.
+Set optional `theme_file=/absolute/path/to/palette.conf` to load a Matugen-compatible `key=value` palette. Run `/script-message adwisp-reload-theme` after regenerating it to reload colors without restarting mpv. The preferences UI is on the roadmap.
 
 ## Roadmap
 
