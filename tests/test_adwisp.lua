@@ -226,11 +226,13 @@ mouse_x = layout.timeline.x + layout.timeline.width * 0.1
 mouse_y = layout.timeline.y
 key_bindings["adwisp-mouse-click"].callback({ event = "down" })
 assert_equal(commands[#commands][1], "seek", "timeline drag start should seek")
-assert_equal(commands[#commands][2], 10, "timeline drag start should seek to pointer")
+assert_true(math.abs(commands[#commands][2] - 10) < 0.000001,
+    "timeline drag start should seek to pointer")
 mouse_x = layout.timeline.x + layout.timeline.width * 0.7
 key_bindings["adwisp-mouse-move"].callback()
 assert_equal(commands[#commands][1], "seek", "timeline drag movement should seek")
-assert_equal(commands[#commands][2], 70, "timeline drag should follow pointer")
+assert_true(math.abs(commands[#commands][2] - 70) < 0.000001,
+    "timeline drag should follow pointer")
 key_bindings["adwisp-mouse-click"].callback({ event = "up" })
 local after_timeline_drag = #commands
 mouse_x = layout.timeline.x + layout.timeline.width * 0.9
