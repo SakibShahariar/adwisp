@@ -56,6 +56,13 @@ local function handle_mouse_click()
     if mouse_x >= playback.x and mouse_x <= playback.x + playback.width
         and mouse_y >= playback.y and mouse_y <= playback.y + playback.height then
         mp.commandv("cycle", "pause")
+        return
+    end
+
+    local volume = layout.volume
+    if mouse_x >= volume.x and mouse_x <= volume.x + volume.width
+        and mouse_y >= volume.y and mouse_y <= volume.y + volume.height then
+        mp.commandv("cycle", "mute")
     end
 end
 
