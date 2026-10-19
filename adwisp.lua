@@ -105,7 +105,10 @@ end
 local function handle_mouse_move()
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
     local mouse_x, mouse_y = mp.get_mouse_pos()
-    if type(mouse_x) ~= "number" or type(mouse_y) ~= "number" then return end
+    if type(mouse_x) ~= "number" or type(mouse_y) ~= "number"
+        or mouse_x ~= mouse_x or mouse_y ~= mouse_y
+        or mouse_x == math.huge or mouse_x == -math.huge
+        or mouse_y == math.huge or mouse_y == -math.huge then return end
     local width, height = mp.get_osd_size()
     local layout = Layout.compute(width, height)
     if not layout then return end
