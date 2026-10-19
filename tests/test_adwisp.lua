@@ -105,6 +105,11 @@ assert_true(overlays[1].data:find("Play", 1, true) ~= nil,
 observers.pause.callback("pause", true)
 assert_equal(overlays[1].update_count, 2, "unchanged render should be cached")
 
+observers["playlist-count"].callback("playlist-count", 5)
+observers["playlist-pos"].callback("playlist-pos", 1)
+assert_true(overlays[1].data:find("2 / 5", 1, true) ~= nil,
+    "playlist row should show the current item position and total")
+
 key_bindings["adwisp-seek-back"].callback()
 assert_equal(commands[#commands][1], "seek", "left seek should issue seek command")
 assert_equal(commands[#commands][2], -5, "left seek should use configured step")
