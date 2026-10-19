@@ -27,7 +27,7 @@ function Layout.compute(width, height)
     local volume_width = math.min(120,
         math.max(1, inner_width - playback_width - control_gap))
     local control_y = y + (compact and 34 or 51)
-    local bar_y = y + (compact and 70 or math.min(104, math.floor(panel_height * 0.67))
+    local bar_y = y + (compact and 70 or math.min(104, math.floor(panel_height * 0.67)))
     local bar_x = inner_x
     local bar_width = inner_width
 
