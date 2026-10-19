@@ -190,13 +190,13 @@ local hover_layout = Layout.compute(1280, 720)
 mouse_x = hover_layout.playback.x + 5
 mouse_y = hover_layout.playback.y + 5
 key_bindings["adwisp-mouse-move"].callback()
-assert_true(overlays[1].data:find("&H1E2530&", 1, true) ~= nil,
+assert_true(overlays[1].data:find("\\alpha&H30&", 1, true) ~= nil,
     "hovering playback should draw a highlight")
 
 mouse_x = 10
 mouse_y = 10
 key_bindings["adwisp-mouse-move"].callback()
-assert_true(overlays[1].data:find("&H1E2530&", 1, true) == nil,
+assert_true(overlays[1].data:find("\\alpha&H30&", 1, true) == nil,
     "moving outside controls should remove the highlight")
 
 -- thumbfast supplies thumbnail dimensions; Adwisp requests previews only on timeline hover.
