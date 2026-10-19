@@ -45,3 +45,4 @@ jobs:
           lua tests/test_layout.lua
           lua tests/test_adwisp.lua
           lua tests/test_renderer.lua
+          lua tests/test_theme.lua
