@@ -127,6 +127,21 @@ key_bindings["adwisp-mouse-click"].callback()
 assert_equal(commands[#commands][1], "cycle", "playback click should issue cycle")
 assert_equal(commands[#commands][2], "pause", "playback click should target pause")
 
+-- Playlist row halves should navigate backward and forward.
+mouse_x = layout.playlist.x + layout.playlist.width * 0.25
+mouse_y = layout.playlist.y + 5
+key_bindings["adwisp-mouse-click"].callback()
+assert_equal(commands[#commands][1], "playlist-prev",
+    "left playlist half should go to previous item")
+assert_equal(commands[#commands][2], "weak", "previous item should use weak mode")
+
+mouse_x = layout.playlist.x + layout.playlist.width * 0.75
+mouse_y = layout.playlist.y + 5
+key_bindings["adwisp-mouse-click"].callback()
+assert_equal(commands[#commands][1], "playlist-next",
+    "right playlist half should go to next item")
+assert_equal(commands[#commands][2], "weak", "next item should use weak mode")
+
 -- Clicking the volume control should set volume proportionally and unmute.
 mouse_x = layout.volume.x + layout.volume.width * 0.75
 mouse_y = layout.volume.y + 5

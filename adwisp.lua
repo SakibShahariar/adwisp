@@ -133,6 +133,17 @@ local function handle_mouse_click()
         return
     end
 
+    local playlist = layout.playlist
+    if mouse_x >= playlist.x and mouse_x <= playlist.x + playlist.width
+        and mouse_y >= playlist.y and mouse_y <= playlist.y + playlist.height then
+        if mouse_x < playlist.x + playlist.width / 2 then
+            mp.commandv("playlist-prev", "weak")
+        else
+            mp.commandv("playlist-next", "weak")
+        end
+        return
+    end
+
     local volume = layout.volume
     if mouse_x >= volume.x and mouse_x <= volume.x + volume.width
         and mouse_y >= volume.y and mouse_y <= volume.y + volume.height then
