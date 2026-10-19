@@ -168,6 +168,16 @@ renderer:render()
 assert_equal(overlay.data, "", "hiding renderer should clear visible data")
 assert_equal(overlay.update_count, 12, "hiding should update overlay once")
 
+-- Very large but finite timestamps must remain safe for Lua 5.2 integer formatting.
+state.time_pos = 1e300
+state.duration = 1e300
+renderer:render()
+assert_true(overlay.data:find("nan", 1, true) == nil
+    and overlay.data:find("inf", 1, true) == nil,
+    "extreme finite timestamps must not leak invalid text")
+assert_true(overlay.data:find(" / ", 1, true) ~= nil,
+    "extreme timestamps should still render a time label")
+
 -- ASS-sensitive title content must be escaped and line breaks flattened.
 state.visible = true
 state.title = "Folder\\clip\nNext {line}"
