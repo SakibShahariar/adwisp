@@ -127,7 +127,7 @@ observers["playlist-pos"].callback("playlist-pos", 1)
 assert_true(overlays[1].data:find("2 / 5", 1, true) ~= nil,
     "playlist row should show the current item position and total")
 
-option_fixture = package.loaded["mp.options"].last_options
+local option_fixture = package.loaded["mp.options"].last_options
 option_fixture.seek_step = math.huge
 key_bindings["adwisp-seek-back"].callback()
 assert_equal(commands[#commands][2], -5,
