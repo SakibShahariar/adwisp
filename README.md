@@ -58,6 +58,7 @@ Typical mpv configuration directories:
 | `g` | Toggle the Adwisp interface |
 | `Left` / `Right` | Seek backward / forward by `seek_step` seconds |
 | `Space` | Toggle playback pause |
+| `Ctrl` + `Left` / `Ctrl` + `Right` | Previous / next playlist item |
 | `Ctrl` + `Up` / `Ctrl` + `Down` | Increase / decrease volume by `volume_step` |
 | `q` | Dismiss the interface |
 | Mouse click on timeline | Seek to the clicked position |
