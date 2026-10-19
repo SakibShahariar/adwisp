@@ -63,7 +63,7 @@ Auto-hide and Matugen palette loading are not implemented yet; those settings ar
 
 ## Contributing
 
-Issues and focused pull requests are welcome. Please include mpv version, operating system, and relevant logs when reporting bugs. Pull request commits must follow [Conventional Commits](https://www.conventionalcommits.org/), for example `feat(renderer): add playback controls` or `fix(input): handle seek clicks`; a GitHub Actions check validates commit messages. Avoid adding per-frame polling or unbounded caches; performance is a core design goal.
+Issues and focused pull requests are welcome. Please include mpv version, operating system, and relevant logs when reporting bugs. Pull request commits must follow [Conventional Commits](https://www.conventionalcommits.org/), for example `feat(renderer): add playback controls` or `fix(input): handle seek clicks`; a GitHub Actions check validates commit messages. The CI workflow runs Lua syntax checks, Luacheck, and layout unit tests on pushes and pull requests. Avoid adding per-frame polling or unbounded caches; performance is a core design goal.
 
 ## License
 
