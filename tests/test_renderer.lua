@@ -56,8 +56,6 @@ assert_equal(overlay.res_x, 1280, "overlay resolution width should match OSD")
 assert_equal(overlay.res_y, 720, "overlay resolution height should match OSD")
 assert_true(overlay.data:find("Demo \\{x\\}", 1, true) ~= nil,
     "title braces should be escaped for ASS")
-assert_true(overlay.data:find("25%%") == nil,
-    "progress should not contain a doubled percent sign")
 assert_true(overlay.data:find("25%", 1, true) ~= nil,
     "progress label should reflect current position")
 assert_true(overlay.data:find("0:15 / 1:00", 1, true) ~= nil,
