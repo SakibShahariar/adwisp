@@ -8,7 +8,7 @@ Adwisp is an experimental mpv script exploring a cohesive desktop-player interfa
 
 ## Current features
 
-- OSD interface with media title, playback timeline, time labels, volume display, and playlist navigation.
+- OSD interface with media title, playback timeline, time labels, volume display, and playlist navigation with current-item position.
 - Keyboard controls for showing/dismissing the interface, seeking, and play/pause.
 - Mouse clicks and dragging for timeline seeking and volume adjustment, plus play/pause and previous/next playlist navigation.
 - Event-driven updates from mpv properties, with duplicate-render suppression.
