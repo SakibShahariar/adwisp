@@ -13,6 +13,7 @@ local function escape_ass(value)
         :gsub("\\", "\\\\")
         :gsub("{", "\\{")
         :gsub("}", "\\}")
+        :gsub("\r", " ")
         :gsub("\n", " ")
 end
 
