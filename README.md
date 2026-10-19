@@ -31,7 +31,7 @@ Adwisp is an mpv Lua script project aiming to give mpv a cohesive, modern deskto
 2. Start or restart mpv.
 3. Press `g` to toggle the prototype overlay. Press `Left` / `Right` to seek while the overlay is visible, or `q` to dismiss it.
 
-The prototype intentionally uses mpv's ASS OSD overlay, not native GTK widgets. The entry point now delegates playback-state defaults to `core/state.lua` and drawing to `core/renderer.lua`. Packaging and configuration options will evolve as the project develops.
+The prototype intentionally uses mpv's ASS OSD overlay, not native GTK widgets. The entry point delegates playback-state defaults to `core/state.lua`, geometry to `core/layout.lua`, and drawing to `core/renderer.lua`. The layout module is pure Lua so rendering and future mouse hit-testing can share the same rectangles. Packaging and configuration options will evolve as the project develops.
 
 ## Configuration
 
@@ -51,7 +51,8 @@ Auto-hide and Matugen palette loading are not implemented yet; those settings ar
 - [x] Event-driven playback property observers
 - [x] Minimal OSD prototype and keyboard controls
 - [x] Initial separation of playback state and ASS rendering
-- [ ] Layout system and responsive control bar
+- [x] Pure layout geometry foundation
+- [ ] Mouse hit-testing and responsive control bar
 - [ ] Playback controls, playlist and volume UI
 - [ ] Preferences/settings interface
 - [ ] Matugen palette parser and reliable live reload
@@ -62,7 +63,7 @@ Auto-hide and Matugen palette loading are not implemented yet; those settings ar
 
 ## Contributing
 
-Issues and focused pull requests are welcome. Please include mpv version, operating system, and relevant logs when reporting bugs. Avoid adding per-frame polling or unbounded caches; performance is a core design goal.
+Issues and focused pull requests are welcome. Please include mpv version, operating system, and relevant logs when reporting bugs. Pull request commits must follow [Conventional Commits](https://www.conventionalcommits.org/), for example `feat(renderer): add playback controls` or `fix(input): handle seek clicks`; a GitHub Actions check validates commit messages. Avoid adding per-frame polling or unbounded caches; performance is a core design goal.
 
 ## License
 
