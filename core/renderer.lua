@@ -54,7 +54,8 @@ end
 
 local function fmt_time(seconds)
     if not is_finite_number(seconds) or seconds < 0 then return "--:--" end
-    seconds = math.floor(seconds)
+    -- mpv timestamps are normally small; cap hostile metadata before integer formatting.
+    seconds = math.floor(math.min(seconds, 2147483647))
     local hours = math.floor(seconds / 3600)
     local minutes = math.floor((seconds % 3600) / 60)
     local secs = seconds % 60
