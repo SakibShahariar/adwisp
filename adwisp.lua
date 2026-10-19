@@ -27,6 +27,13 @@ local renderer = Renderer.new(mp, state)
 local thumbfast = { width = 0, height = 0, disabled = true, available = false }
 local thumbnail_active = false
 
+local function clear_thumbnail()
+    if thumbnail_active and thumbfast.available then
+        mp.commandv("script-message-to", "thumbfast", "clear")
+    end
+    thumbnail_active = false
+end
+
 local function render()
     renderer:render()
 end
@@ -46,6 +53,7 @@ reload_theme()
 
 local function toggle()
     state.visible = not state.visible
+    if not state.visible then clear_thumbnail() end
     render()
 end
 
@@ -88,11 +96,8 @@ local function handle_mouse_move()
         local y = math.floor(math.max(0, layout.timeline.y - thumbfast.height - 12))
         mp.commandv("script-message-to", "thumbfast", "thumb", seconds, x, y)
         thumbnail_active = true
-    elseif thumbnail_active then
-        if thumbfast.available then
-            mp.commandv("script-message-to", "thumbfast", "clear")
-        end
-        thumbnail_active = false
+    else
+        clear_thumbnail()
     end
 
     if state.hover_target ~= hover_target then
@@ -160,6 +165,7 @@ end)
 
 mp.register_event("end-file", function()
     state.visible = false
+    clear_thumbnail()
     render()
 end)
 
@@ -175,6 +181,7 @@ mp.add_key_binding("RIGHT", "adwisp-seek-forward", function()
 end)
 mp.add_key_binding("q", "adwisp-dismiss", function()
     state.visible = false
+    clear_thumbnail()
     render()
 end)
 mp.add_key_binding("SPACE", "adwisp-play-pause", function()
@@ -190,6 +197,7 @@ mp.register_script_message("adwisp-show", function()
 end)
 mp.register_script_message("adwisp-hide", function()
     state.visible = false
+    clear_thumbnail()
     render()
 end)
 mp.register_script_message("adwisp-reload-theme", reload_theme)
