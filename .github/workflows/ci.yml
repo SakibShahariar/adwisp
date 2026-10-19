@@ -44,3 +44,4 @@ jobs:
         run: |
           lua tests/test_layout.lua
           lua tests/test_adwisp.lua
+          lua tests/test_renderer.lua
