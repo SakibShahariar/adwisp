@@ -85,6 +85,15 @@ local function test_invalid_dimensions()
         "tiny dimensions should preserve non-zero panel geometry")
 end
 
+local function test_fractional_dimensions_are_normalized()
+    local layout = Layout.compute(640.9, 360.7)
+    assert_true(layout ~= nil, "fractional dimensions should remain valid")
+    assert_equal(layout.width, 640, "layout width should be normalized to whole pixels")
+    assert_equal(layout.height, 360, "layout height should be normalized to whole pixels")
+    assert_equal(layout.panel.x, math.floor(layout.panel.x),
+        "panel coordinates should remain integer pixel positions")
+end
+
 local function test_layout_rectangles()
     local layout = Layout.compute(1920, 1080)
     local panel = layout.panel
@@ -100,6 +109,7 @@ test_small_layout()
 test_narrow_layout_controls_stay_inside_panel()
 test_compact_layout_fits_short_windows()
 test_invalid_dimensions()
+test_fractional_dimensions_are_normalized()
 test_layout_rectangles()
 
 print("All layout tests passed.")
