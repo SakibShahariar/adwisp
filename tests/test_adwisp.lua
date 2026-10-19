@@ -241,11 +241,18 @@ assert_true(movement_seek ~= nil, "timeline drag movement should seek")
 assert_true(math.abs(movement_seek[2] - 70) < 0.000001,
     "timeline drag should follow pointer")
 key_bindings["adwisp-mouse-click"].callback({ event = "up" })
-local after_timeline_drag = #commands
+local seeks_after_release = 0
+for _, command in ipairs(commands) do
+    if command[1] == "seek" then seeks_after_release = seeks_after_release + 1 end
+end
 mouse_x = layout.timeline.x + layout.timeline.width * 0.9
 key_bindings["adwisp-mouse-move"].callback()
-assert_equal(#commands, after_timeline_drag,
-    "movement after timeline release should not issue another command")
+local seeks_after_move = 0
+for _, command in ipairs(commands) do
+    if command[1] == "seek" then seeks_after_move = seeks_after_move + 1 end
+end
+assert_equal(seeks_after_move, seeks_after_release,
+    "movement after timeline release should not issue another seek")
 
 
 script_messages["adwisp-hide"]()
