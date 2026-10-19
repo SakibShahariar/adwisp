@@ -47,8 +47,13 @@ local function truncate_title(value, max_chars)
     return value:sub(1, pos - 1) .. "…"
 end
 
+local function is_finite_number(value)
+    return type(value) == "number" and value == value
+        and value ~= math.huge and value ~= -math.huge
+end
+
 local function fmt_time(seconds)
-    if type(seconds) ~= "number" or seconds < 0 then return "--:--" end
+    if not is_finite_number(seconds) or seconds < 0 then return "--:--" end
     seconds = math.floor(seconds)
     local hours = math.floor(seconds / 3600)
     local minutes = math.floor((seconds % 3600) / 60)
@@ -90,11 +95,15 @@ function Renderer:render()
     local width, height = self.mp.get_osd_size()
     if not width or not height or width <= 0 or height <= 0 then return end
 
+    local time_pos = is_finite_number(state.time_pos) and state.time_pos or 0
+    local duration = is_finite_number(state.duration) and state.duration or 0
+    local volume_value = is_finite_number(state.volume) and state.volume or 0
+    volume_value = math.max(0, math.min(100, volume_value))
     local now = fmt_time(state.time_pos)
     local total = fmt_time(state.duration)
     local progress = 0
-    if state.duration > 0 then
-        progress = math.max(0, math.min(1, state.time_pos / state.duration))
+    if duration > 0 then
+        progress = math.max(0, math.min(1, time_pos / duration))
     end
 
     local layout = Layout.compute(width, height)
@@ -114,7 +123,7 @@ function Renderer:render()
     local playlist = layout.playlist
     local filled = math.floor(timeline.width * progress)
     local pause_label = state.paused and "Play" or "Pause"
-    local volume_label = state.mute and "Muted" or string.format("Volume %d%%", math.floor(state.volume + 0.5))
+    local volume_label = state.mute and "Muted" or string.format("Volume %d%%", math.floor(volume_value + 0.5))
 
     local ass = string.format([[
 {\an7\pos(%d,%d)\bord0\shad0\1c&H30251E&\alpha&H18&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
@@ -146,7 +155,7 @@ function Renderer:render()
             :gsub("\\fs15", "\\fs12")
     end
 
-    local volume_fraction = math.max(0, math.min(1, (state.volume or 0) / 100))
+    local volume_fraction = volume_value / 100
     local volume_fill = math.floor(volume.width * volume_fraction)
     local volume_track = string.format([[
 {\an7\pos(%d,%d)\bord0\shad0\1c&H6D6259&\p1}m 0 0 l %d 0 %d 4 0 4{\p0}

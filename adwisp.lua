@@ -84,13 +84,19 @@ local function change_volume(delta)
 end
 
 local function set_volume_at(mouse_x, volume)
+    if type(volume.width) ~= "number" or volume.width <= 0 then return end
     local fraction = math.max(0, math.min(1,
         (mouse_x - volume.x) / volume.width))
-    mp.commandv("set", "volume", math.floor(fraction * 100 + 0.5))
+    local value = math.floor(fraction * 100 + 0.5)
+    state.volume = value
+    state.mute = false
+    mp.commandv("set", "volume", value)
     mp.commandv("set", "mute", "no")
+    render()
 end
 
 local function seek_at(mouse_x, timeline)
+    if type(timeline.width) ~= "number" or timeline.width <= 0 then return end
     local fraction = math.max(0, math.min(1,
         (mouse_x - timeline.x) / timeline.width))
     mp.commandv("seek", fraction * 100, "absolute-percent")
@@ -234,6 +240,8 @@ for _, observer in ipairs(observers) do
 end
 
 mp.register_event("file-loaded", function()
+    clear_interaction_state()
+    clear_thumbnail()
     state.visible = true
     render()
 end)
