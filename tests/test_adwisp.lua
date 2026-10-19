@@ -7,6 +7,7 @@ local script_messages = {}
 local commands = {}
 local overlays = {}
 local mouse_x, mouse_y = 0, 0
+local thumbfast_payload
 
 local mp = {
     get_script_directory = function() return "." end,
@@ -39,10 +40,13 @@ local mp = {
     get_mouse_pos = function()
         return mouse_x, mouse_y
     end,
-    msg = { info = function() end },
+    msg = { info = function() end, warn = function() end },
 }
 
 package.loaded.mp = mp
+package.loaded["mp.utils"] = {
+    parse_json = function() return thumbfast_payload end,
+}
 package.loaded["mp.options"] = {
     read_options = function(options)
         assert(options.seek_step == 5, "default seek step should be five seconds")
@@ -73,6 +77,7 @@ assert_true(key_bindings["adwisp-toggle"] ~= nil, "toggle key should be register
 assert_true(key_bindings["adwisp-mouse-click"] ~= nil, "mouse click should be registered")
 assert_true(key_bindings["adwisp-mouse-move"] ~= nil, "mouse move should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
+assert_true(script_messages["thumbfast-info"] ~= nil, "thumbfast info message should be registered")
 
 -- Property callbacks should update state and safely render while the UI is hidden.
 observers.pause.callback("pause", true)
@@ -150,6 +155,28 @@ mouse_y = 10
 key_bindings["adwisp-mouse-move"].callback()
 assert_true(overlays[1].data:find("&H6A5140&", 1, true) == nil,
     "moving outside controls should remove the highlight")
+
+-- thumbfast supplies thumbnail dimensions; Adwisp requests previews only on timeline hover.
+thumbfast_payload = { width = 160, height = 90, disabled = false, available = true }
+script_messages["thumbfast-info"]("{}")
+mouse_x = hover_layout.timeline.x + hover_layout.timeline.width / 2
+mouse_y = hover_layout.timeline.y
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(commands[#commands][1], "script-message-to",
+    "timeline hover should send a thumbfast script message")
+assert_equal(commands[#commands][2], "thumbfast", "preview should target thumbfast")
+assert_equal(commands[#commands][3], "thumb", "preview should use thumbfast thumb command")
+assert_equal(commands[#commands][4], 30, "timeline midpoint should preview midpoint time")
+assert_true(type(commands[#commands][5]) == "number", "preview should provide x coordinate")
+assert_true(type(commands[#commands][6]) == "number", "preview should provide y coordinate")
+
+mouse_x = 10
+mouse_y = 10
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(commands[#commands][1], "script-message-to",
+    "leaving timeline should send a thumbfast clear message")
+assert_equal(commands[#commands][2], "thumbfast", "clear should target thumbfast")
+assert_equal(commands[#commands][3], "clear", "leaving timeline should clear preview")
 
 script_messages["adwisp-hide"]()
 assert_equal(overlays[1].data, "", "hide message should clear OSD data")
