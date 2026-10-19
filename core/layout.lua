@@ -10,9 +10,12 @@ function Layout.compute(width, height)
     end
 
     local panel_width = math.min(560, math.max(1, width - 32))
-    local panel_height = math.min(156, math.max(1, height - 32))
+    local compact = height < 240
+    local panel_height = math.min(156, math.max(1, height - (compact and 16 or 32)))
     local x = math.floor((width - panel_width) / 2)
-    local y = math.max(16, math.floor(height - panel_height - 42))
+    local bottom_margin = compact and 8 or 42
+    local y = math.max(compact and 8 or 16,
+        math.floor(height - panel_height - bottom_margin))
     local padding = math.min(22, math.floor(panel_width * 0.06))
     local inner_x = x + padding
     local inner_width = math.max(1, panel_width - padding * 2)
@@ -23,30 +26,31 @@ function Layout.compute(width, height)
         math.max(1, math.floor((inner_width - control_gap) * 0.45)))
     local volume_width = math.min(120,
         math.max(1, inner_width - playback_width - control_gap))
-    local control_y = y + 51
-    local bar_y = y + math.min(104, math.floor(panel_height * 0.67))
+    local control_y = y + (compact and 34 or 51)
+    local bar_y = y + (compact and 70 or math.min(104, math.floor(panel_height * 0.67))
     local bar_x = inner_x
     local bar_width = inner_width
 
     return {
         width = width,
         height = height,
+        compact = compact,
         panel = { x = x, y = y, width = panel_width, height = panel_height },
-        title = { x = inner_x, y = y + 18 },
-        playback = { x = inner_x, y = control_y, width = playback_width, height = 32 },
+        title = { x = inner_x, y = y + (compact and 10 or 18) },
+        playback = { x = inner_x, y = control_y, width = playback_width, height = compact and 24 or 32 },
         volume = {
             x = inner_x + playback_width + control_gap,
             y = control_y,
             width = volume_width,
-            height = 32,
+            height = compact and 24 or 32,
         },
         timeline = {
             x = bar_x, y = bar_y, width = bar_width, height = 6,
             hit_x = bar_x, hit_y = bar_y - 10, hit_width = bar_width, hit_height = 26,
         },
-        progress_label = { x = bar_x, y = bar_y + 22 },
-        time_label = { x = bar_x + bar_width - 100, y = bar_y + 22 },
-        playlist = { x = inner_x, y = y + 132, width = inner_width, height = 20 },
+        progress_label = { x = bar_x, y = bar_y + (compact and 14 or 22) },
+        time_label = { x = bar_x + bar_width - 100, y = bar_y + (compact and 14 or 22) },
+        playlist = { x = inner_x, y = y + (compact and 116 or 132), width = inner_width, height = 20 },
     }
 end
 
