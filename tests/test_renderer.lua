@@ -168,6 +168,13 @@ renderer:render()
 assert_equal(overlay.data, "", "hiding renderer should clear visible data")
 assert_equal(overlay.update_count, 12, "hiding should update overlay once")
 
+-- ASS-sensitive title content must be escaped and line breaks flattened.
+state.visible = true
+state.title = "Folder\\\\clip\\nNext {line}"
+renderer:render()
+assert_true(overlay.data:find("Folder\\\\\\\\clip Next \\{line\\}", 1, true) ~= nil,
+    "title backslashes and braces should be escaped and newlines flattened")
+
 -- Invalid playlist metadata must not leak non-finite or out-of-range values.
 state.visible = true
 state.playlist_count = math.huge
