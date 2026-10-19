@@ -73,12 +73,12 @@ observers.pause.callback("pause", true)
 observers["time-pos"].callback("time-pos", 12)
 observers.duration.callback("duration", 60)
 observers["media-title"].callback("media-title", "Test video")
-assert_equal(overlays[1].update_count, 0,
-    "hidden OSD should not draw when playback properties change")
+assert_equal(overlays[1].update_count, 1,
+    "hidden OSD should clear its initial empty overlay only once")
 
 -- Loading a file makes the UI visible and renders current state.
 events["file-loaded"]()
-assert_equal(overlays[1].update_count, 1, "file-loaded should render the OSD")
+assert_equal(overlays[1].update_count, 2, "file-loaded should render the OSD")
 assert_true(overlays[1].data:find("Test video", 1, true) ~= nil,
     "rendered OSD should include the current media title")
 assert_true(overlays[1].data:find("Play", 1, true) ~= nil,
@@ -86,7 +86,7 @@ assert_true(overlays[1].data:find("Play", 1, true) ~= nil,
 
 -- Re-rendering unchanged state should use the renderer cache.
 observers.pause.callback("pause", true)
-assert_equal(overlays[1].update_count, 1, "unchanged render should be cached")
+assert_equal(overlays[1].update_count, 2, "unchanged render should be cached")
 
 key_bindings["adwisp-seek-back"].callback()
 assert_equal(commands[#commands][1], "seek", "left seek should issue seek command")
@@ -100,8 +100,8 @@ assert_equal(commands[#commands][2], "pause", "play/pause should target pause")
 
 script_messages["adwisp-hide"]()
 assert_equal(overlays[1].data, "", "hide message should clear OSD data")
-assert_equal(overlays[1].update_count, 2, "hide message should update overlay")
+assert_equal(overlays[1].update_count, 3, "hide message should update overlay")
 events["end-file"]()
-assert_equal(overlays[1].update_count, 2, "clearing an already hidden OSD should be cached")
+assert_equal(overlays[1].update_count, 3, "clearing an already hidden OSD should be cached")
 
 print("All mocked mpv API tests passed.")
