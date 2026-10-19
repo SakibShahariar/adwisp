@@ -97,6 +97,17 @@ function Renderer:render()
         playlist.x, playlist.y, "‹    Previous       Next    ›"
     )
 
+    if state.hover_target == "playback" or state.hover_target == "volume" then
+        local target = state.hover_target == "playback" and playback or volume
+        local hover_bg = string.format(
+            "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c&H6A5140&\\alpha&H30&\\p1}"
+                .. "m 0 0 l %d 0 %d %d 0 %d{\\p0}\\n",
+            target.x - 6, target.y - 5, target.width + 12, target.width + 12,
+            target.height + 10, target.height + 10
+        )
+        ass = hover_bg .. ass
+    end
+
     local size_key = width .. "x" .. height
     if self.last_data == ass and self.last_size == size_key then return end
     self.overlay.res_x = width
