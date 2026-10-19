@@ -99,9 +99,31 @@ width, height = 0, 360
 renderer:render()
 assert_equal(overlay.update_count, 5, "invalid OSD dimensions should be ignored")
 
+width, height = 640, 360
+-- The volume track follows the active palette and emits valid ASS commands.
+renderer:set_palette({
+    background = "#010203",
+    surface = "#040506",
+    text = "#070809",
+    muted = "#112233",
+    accent = "#ABCDEF",
+    on_accent = "#FFFFFF",
+})
+renderer:render()
+assert_equal(overlay.update_count, 6, "palette changes should invalidate renderer cache")
+assert_true(overlay.data:find("\\an7\\pos(", 1, true) ~= nil,
+    "volume track should use single-backslash ASS commands")
+assert_true(overlay.data:find("&H332211&", 1, true) ~= nil,
+    "volume track should use the palette muted color")
+assert_true(overlay.data:find("&HEFCDAB&", 1, true) ~= nil,
+    "volume track should use the palette accent color")
+assert_true(overlay.data:find("&H6D6259&", 1, true) == nil
+    and overlay.data:find("&H9B7653&", 1, true) == nil,
+    "volume track should not retain hard-coded fallback colors")
+
 state.visible = false
 renderer:render()
 assert_equal(overlay.data, "", "hiding renderer should clear visible data")
-assert_equal(overlay.update_count, 6, "hiding should update overlay once")
+assert_equal(overlay.update_count, 7, "hiding should update overlay once")
 
 print("All renderer tests passed.")
