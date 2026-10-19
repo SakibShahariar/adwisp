@@ -79,6 +79,10 @@ local function test_invalid_dimensions()
     assert_equal(Layout.compute(0 / 0, 720), nil, "NaN width should be rejected")
     assert_equal(Layout.compute(1280, math.huge), nil, "infinite height should be rejected")
     assert_equal(Layout.compute(-math.huge, 720), nil, "negative infinite width should be rejected")
+    local tiny = Layout.compute(1, 1)
+    assert_true(tiny ~= nil, "positive tiny dimensions should still produce a layout")
+    assert_true(tiny.panel.width >= 1 and tiny.panel.height >= 1,
+        "tiny dimensions should preserve non-zero panel geometry")
 end
 
 local function test_layout_rectangles()
