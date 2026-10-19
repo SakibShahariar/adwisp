@@ -86,7 +86,7 @@ function Renderer:render()
         inner_x, y + 18, title,
         inner_x, y + 51, pause_label,
         inner_x + 112, y + 51, volume_label,
-        bar_x, bar_y, bar_width, bar_x, bar_y, filled,
+        bar_x, bar_y, bar_width, bar_width, bar_x, bar_y, filled, filled,
         bar_x, bar_y + 22, string.format("%d%%", math.floor(progress * 100 + 0.5)),
         bar_x + bar_width - 100, bar_y + 22, now .. " / " .. total,
         inner_x, y + 132, "‹    Previous       Next    ›"
