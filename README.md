@@ -58,6 +58,8 @@ Typical mpv configuration directories:
 | `g` | Toggle the Adwisp interface |
 | `Left` / `Right` | Seek backward / forward by `seek_step` seconds |
 | `Space` | Toggle playback pause |
+| `Ctrl` + `Up` / `Ctrl` + `Down` | Increase / decrease volume by `volume_step` |
+|
 | `q` | Dismiss the interface |
 | Mouse click on timeline | Seek to the clicked position |
 | Mouse click on playback control | Toggle pause |
@@ -73,6 +75,9 @@ Adwisp uses mpv's standard script options. Edit `script-opts/adwisp.conf` in you
 ```ini
 # Seek distance in seconds for Left / Right
 seek_step=5
+
+# Volume change per Ctrl+Up / Ctrl+Down press
+volume_step=5
 
 # Set to no to disable the optional thumbfast preview adapter
 thumbnail_preview=yes
