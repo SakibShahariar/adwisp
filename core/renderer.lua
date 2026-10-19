@@ -162,8 +162,20 @@ function Renderer:render()
         :gsub("&H6D6259&", colors.muted)
         :gsub("&H9B7653&", colors.accent)
 
-    if state.hover_target == "playback" or state.hover_target == "volume" then
-        local target = state.hover_target == "playback" and playback or volume
+    if state.hover_target == "playback" or state.hover_target == "volume"
+        or state.hover_target == "playlist" or state.hover_target == "timeline" then
+        local target
+        if state.hover_target == "playback" then target = playback
+        elseif state.hover_target == "volume" then target = volume
+        elseif state.hover_target == "playlist" then target = playlist
+        else
+            target = {
+                x = timeline.x,
+                y = timeline.y - 5,
+                width = timeline.width,
+                height = timeline.height + 10,
+            }
+        end
         local hover_bg = string.format(
             "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\alpha&H30&\\p1}"
                 .. "m 0 0 l %d 0 %d %d 0 %d{\\p0}\\n",

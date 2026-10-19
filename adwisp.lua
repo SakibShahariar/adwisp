@@ -112,6 +112,13 @@ local function handle_mouse_move()
         hover_target = "playback"
     elseif contains(layout.volume) then
         hover_target = "volume"
+    elseif contains(layout.playlist) then
+        hover_target = "playlist"
+    elseif mouse_x >= layout.timeline.hit_x
+        and mouse_x <= layout.timeline.hit_x + layout.timeline.hit_width
+        and mouse_y >= layout.timeline.hit_y
+        and mouse_y <= layout.timeline.hit_y + layout.timeline.hit_height then
+        hover_target = "timeline"
     end
 
     local timeline = layout.timeline

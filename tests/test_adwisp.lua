@@ -154,6 +154,13 @@ key_bindings["adwisp-mouse-click"].callback()
 assert_equal(commands[#commands][1], "cycle", "playback click should issue cycle")
 assert_equal(commands[#commands][2], "pause", "playback click should target pause")
 
+-- Hovering the playlist row should draw themed feedback.
+mouse_x = layout.playlist.x + 5
+mouse_y = layout.playlist.y + 5
+key_bindings["adwisp-mouse-move"].callback()
+assert_true(overlays[1].data:find("\\alpha&H30&", 1, true) ~= nil,
+    "hovering playlist should draw a highlight")
+
 -- Playlist row halves should navigate backward and forward.
 mouse_x = layout.playlist.x + layout.playlist.width * 0.25
 mouse_y = layout.playlist.y + 5
@@ -232,6 +239,8 @@ script_messages["thumbfast-info"]("{}")
 mouse_x = hover_layout.timeline.x + hover_layout.timeline.width / 2
 mouse_y = hover_layout.timeline.y
 key_bindings["adwisp-mouse-move"].callback()
+assert_true(overlays[1].data:find("\\alpha&H30&", 1, true) ~= nil,
+    "hovering timeline should draw a highlight")
 assert_equal(commands[#commands][1], "script-message-to",
     "timeline hover should send a thumbfast script message")
 assert_equal(commands[#commands][2], "thumbfast", "preview should target thumbfast")
