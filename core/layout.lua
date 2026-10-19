@@ -5,6 +5,9 @@ local Layout = {}
 
 function Layout.compute(width, height)
     if type(width) ~= "number" or type(height) ~= "number"
+        or width ~= width or height ~= height
+        or width == math.huge or width == -math.huge
+        or height == math.huge or height == -math.huge
         or width <= 0 or height <= 0 then
         return nil
     end
