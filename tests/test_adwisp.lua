@@ -227,4 +227,21 @@ assert_equal(overlays[1].update_count, 6, "hide message should update overlay")
 events["end-file"]()
 assert_equal(overlays[1].update_count, 6, "clearing an already hidden OSD should be cached")
 
+-- Timeline dragging should seek continuously and stop on mouse release.
+mouse_x = layout.timeline.x + layout.timeline.width * 0.1
+mouse_y = layout.timeline.y
+key_bindings["adwisp-mouse-click"].callback({ event = "down" })
+assert_equal(commands[#commands][1], "seek", "timeline drag start should seek")
+assert_equal(commands[#commands][2], 10, "timeline drag start should seek to pointer")
+mouse_x = layout.timeline.x + layout.timeline.width * 0.7
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(commands[#commands][1], "seek", "timeline drag movement should seek")
+assert_equal(commands[#commands][2], 70, "timeline drag should follow pointer")
+key_bindings["adwisp-mouse-click"].callback({ event = "up" })
+local after_timeline_drag = #commands
+mouse_x = layout.timeline.x + layout.timeline.width * 0.9
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(#commands, after_timeline_drag,
+    "movement after timeline release should not issue another command")
+
 print("All mocked mpv API tests passed.")

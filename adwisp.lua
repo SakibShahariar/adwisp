@@ -27,6 +27,7 @@ local renderer = Renderer.new(mp, state)
 local thumbfast = { width = 0, height = 0, disabled = true, available = false }
 local thumbnail_active = false
 local dragging_volume = false
+local dragging_timeline = false
 
 local function clear_thumbnail()
     if thumbnail_active and thumbfast.available then
@@ -69,6 +70,12 @@ local function set_volume_at(mouse_x, volume)
     mp.commandv("set", "mute", "no")
 end
 
+local function seek_at(mouse_x, timeline)
+    local fraction = math.max(0, math.min(1,
+        (mouse_x - timeline.x) / timeline.width))
+    mp.commandv("seek", fraction * 100, "absolute-percent")
+end
+
 local function handle_mouse_move()
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
     local mouse_x, mouse_y = mp.get_mouse_pos()
@@ -79,6 +86,9 @@ local function handle_mouse_move()
 
     if dragging_volume then
         set_volume_at(mouse_x, layout.volume)
+    end
+    if dragging_timeline then
+        seek_at(mouse_x, layout.timeline)
     end
 
     local function contains(rect)
@@ -121,6 +131,7 @@ end
 local function handle_mouse_click(event)
     if event and event.event == "up" then
         dragging_volume = false
+        dragging_timeline = false
         return
     end
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
@@ -145,8 +156,10 @@ local function handle_mouse_click(event)
     if mouse_x >= timeline.hit_x and mouse_x <= timeline.hit_x + timeline.hit_width
         and mouse_y >= timeline.hit_y and mouse_y <= timeline.hit_y + timeline.hit_height then
         if state.duration > 0 then
-            local fraction = math.max(0, math.min(1, (mouse_x - timeline.x) / timeline.width))
-            mp.commandv("seek", fraction * 100, "absolute-percent")
+            if event and event.event == "down" then
+                dragging_timeline = true
+            end
+            seek_at(mouse_x, timeline)
         end
         return
     end
