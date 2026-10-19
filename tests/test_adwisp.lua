@@ -80,6 +80,7 @@ assert_true(key_bindings["adwisp-volume-up"] ~= nil, "volume-up shortcut should 
 assert_true(key_bindings["adwisp-volume-down"] ~= nil, "volume-down shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-prev"] ~= nil, "playlist-prev shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-next"] ~= nil, "playlist-next shortcut should be registered")
+assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
 assert_true(script_messages["thumbfast-info"] ~= nil, "thumbfast info message should be registered")
 
@@ -112,6 +113,10 @@ assert_equal(commands[#commands][2], 5, "right seek should use configured step")
 key_bindings["adwisp-play-pause"].callback()
 assert_equal(commands[#commands][1], "cycle", "play/pause should cycle pause")
 assert_equal(commands[#commands][2], "pause", "play/pause should target pause")
+
+key_bindings["adwisp-mute-toggle"].callback()
+assert_equal(commands[#commands][1], "cycle", "mute shortcut should cycle mute")
+assert_equal(commands[#commands][2], "mute", "mute shortcut should target mute state")
 
 key_bindings["adwisp-playlist-prev"].callback()
 assert_equal(commands[#commands][1], "playlist-prev", "Ctrl+Left should go to previous playlist item")
