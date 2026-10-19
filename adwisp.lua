@@ -322,9 +322,22 @@ end)
 mp.register_script_message("adwisp-reload-theme", reload_theme)
 mp.register_script_message("thumbfast-info", function(json)
     local data = utils.parse_json(json)
-    if type(data) == "table" and type(data.width) == "number"
-        and type(data.height) == "number" then
-        thumbfast = data
+    local function positive_finite(value)
+        return type(value) == "number" and value == value
+            and value ~= math.huge and value ~= -math.huge and value > 0
+    end
+    if type(data) == "table" and positive_finite(data.width)
+        and positive_finite(data.height) and type(data.disabled) == "boolean"
+        and type(data.available) == "boolean" then
+        thumbfast = {
+            width = math.floor(data.width),
+            height = math.floor(data.height),
+            disabled = data.disabled,
+            available = data.available,
+        }
+        if thumbfast.width < 1 or thumbfast.height < 1 then
+            thumbfast = { width = 0, height = 0, disabled = true, available = false }
+        end
     else
         mp.msg.warn("Adwisp: received invalid thumbfast info; previews disabled.")
         thumbfast = { width = 0, height = 0, disabled = true, available = false }
