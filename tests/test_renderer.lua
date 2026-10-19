@@ -121,9 +121,16 @@ assert_true(overlay.data:find("&H6D6259&", 1, true) == nil
     and overlay.data:find("&H9B7653&", 1, true) == nil,
     "volume track should not retain hard-coded fallback colors")
 
+-- Hover highlighting should follow the active palette surface color.
+state.hover_target = "playback"
+renderer:render()
+assert_equal(overlay.update_count, 7, "hover state should redraw the overlay")
+assert_true(overlay.data:find("\\1c&H060504&", 1, true) ~= nil,
+    "hover highlight should use the palette surface color")
+
 state.visible = false
 renderer:render()
 assert_equal(overlay.data, "", "hiding renderer should clear visible data")
-assert_equal(overlay.update_count, 7, "hiding should update overlay once")
+assert_equal(overlay.update_count, 8, "hiding should update overlay once")
 
 print("All renderer tests passed.")
