@@ -175,8 +175,8 @@ renderer:render()
 assert_true(overlay.data:find("nan", 1, true) == nil
     and overlay.data:find("inf", 1, true) == nil,
     "extreme finite timestamps must not leak invalid text")
-assert_true(overlay.data:find(" / ", 1, true) ~= nil,
-    "extreme timestamps should still render a time label")
+assert_true(overlay.data:find("596523:14:07", 1, true) ~= nil,
+    "extreme timestamps should be capped to a safe formatted time")
 
 -- ASS-sensitive title content must be escaped and line breaks flattened.
 state.visible = true
