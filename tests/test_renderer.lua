@@ -170,7 +170,7 @@ assert_equal(overlay.update_count, 12, "hiding should update overlay once")
 
 -- ASS-sensitive title content must be escaped and line breaks flattened.
 state.visible = true
-state.title = "Folder\\\\clip\\nNext {line}"
+state.title = "Folder\\clip\nNext {line}"
 renderer:render()
 assert_true(overlay.data:find("Folder\\\\\\\\clip Next \\{line\\}", 1, true) ~= nil,
     "title backslashes and braces should be escaped and newlines flattened")
