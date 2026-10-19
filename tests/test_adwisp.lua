@@ -71,6 +71,7 @@ assert_true(events["file-loaded"] ~= nil, "file-loaded event should be registere
 assert_true(events["end-file"] ~= nil, "end-file event should be registered")
 assert_true(key_bindings["adwisp-toggle"] ~= nil, "toggle key should be registered")
 assert_true(key_bindings["adwisp-mouse-click"] ~= nil, "mouse click should be registered")
+assert_true(key_bindings["adwisp-mouse-move"] ~= nil, "mouse move should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
 
 -- Property callbacks should update state and safely render while the UI is hidden.
@@ -102,6 +103,21 @@ assert_equal(commands[#commands][2], 5, "right seek should use configured step")
 key_bindings["adwisp-play-pause"].callback()
 assert_equal(commands[#commands][1], "cycle", "play/pause should cycle pause")
 assert_equal(commands[#commands][2], "pause", "play/pause should target pause")
+
+-- Hovering playback controls should update the visible overlay.
+local Layout = require "core.layout"
+local hover_layout = Layout.compute(1280, 720)
+mouse_x = hover_layout.playback.x + 5
+mouse_y = hover_layout.playback.y + 5
+key_bindings["adwisp-mouse-move"].callback()
+assert_true(overlays[1].data:find("&H6A5140&", 1, true) ~= nil,
+    "hovering playback should draw a highlight")
+
+mouse_x = 10
+mouse_y = 10
+key_bindings["adwisp-mouse-move"].callback()
+assert_true(overlays[1].data:find("&H6A5140&", 1, true) == nil,
+    "moving outside controls should remove the highlight")
 
 -- Mouse clicks should seek proportionally along the shared timeline geometry.
 local Layout = require "core.layout"
