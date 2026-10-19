@@ -16,6 +16,7 @@ options.read_options(opts, "adwisp")
 
 local state = require "core.state"
 local Renderer = require "core.renderer"
+local Layout = require "core.layout"
 local renderer = Renderer.new(mp, state)
 
 local function render()
@@ -29,6 +30,33 @@ end
 
 local function seek(delta)
     mp.commandv("seek", delta, "relative", "keyframes")
+end
+
+local function handle_mouse_click()
+    if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
+
+    local mouse_x, mouse_y = mp.get_mouse_pos()
+    if type(mouse_x) ~= "number" or type(mouse_y) ~= "number" then return end
+
+    local width, height = mp.get_osd_size()
+    local layout = Layout.compute(width, height)
+    if not layout then return end
+
+    local timeline = layout.timeline
+    if mouse_x >= timeline.hit_x and mouse_x <= timeline.hit_x + timeline.hit_width
+        and mouse_y >= timeline.hit_y and mouse_y <= timeline.hit_y + timeline.hit_height then
+        if state.duration > 0 then
+            local fraction = math.max(0, math.min(1, (mouse_x - timeline.x) / timeline.width))
+            mp.commandv("seek", fraction * 100, "absolute-percent")
+        end
+        return
+    end
+
+    local playback = layout.playback
+    if mouse_x >= playback.x and mouse_x <= playback.x + playback.width
+        and mouse_y >= playback.y and mouse_y <= playback.y + playback.height then
+        mp.commandv("cycle", "pause")
+    end
 end
 
 -- Playback properties update the shared state and invalidate the renderer.
@@ -76,6 +104,7 @@ end)
 mp.add_key_binding("SPACE", "adwisp-play-pause", function()
     mp.commandv("cycle", "pause")
 end)
+mp.add_key_binding("MBTN_LEFT", "adwisp-mouse-click", handle_mouse_click)
 
 mp.register_script_message("adwisp-toggle", toggle)
 mp.register_script_message("adwisp-show", function()
