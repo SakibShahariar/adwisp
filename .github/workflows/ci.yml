@@ -41,4 +41,6 @@ jobs:
         run: luacheck adwisp.lua core tests --no-color
 
       - name: Run unit tests
-        run: lua tests/test_layout.lua
+        run: |
+          lua tests/test_layout.lua
+          lua tests/test_adwisp.lua
