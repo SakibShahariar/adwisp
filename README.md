@@ -24,14 +24,14 @@ Adwisp is an mpv Lua script project aiming to give mpv a cohesive, modern deskto
 
 ## Install (development)
 
-1. Copy `adwisp.lua` into your mpv scripts directory:
+1. Copy `adwisp.lua` **and the entire `core/` directory** into your mpv scripts directory (keep the directory structure):
    - Linux: `~/.config/mpv/scripts/`
    - Windows: `%APPDATA%/mpv/scripts/`
    - macOS: `~/.config/mpv/scripts/`
 2. Start or restart mpv.
 3. Press `g` to toggle the prototype overlay. Press `Left` / `Right` to seek while the overlay is visible, or `q` to dismiss it.
 
-The prototype intentionally uses mpv's ASS OSD overlay, not native GTK widgets. Packaging and configuration options will evolve as the project develops.
+The prototype intentionally uses mpv's ASS OSD overlay, not native GTK widgets. The entry point now delegates playback-state defaults to `core/state.lua` and drawing to `core/renderer.lua`. Packaging and configuration options will evolve as the project develops.
 
 ## Configuration
 
@@ -55,6 +55,7 @@ Options and theming are experimental. The preferences UI is on the roadmap.
 - [x] Establish repository and basic Lua entry point
 - [x] Event-driven playback property observers
 - [x] Minimal OSD prototype and keyboard controls
+- [x] Initial separation of playback state and ASS rendering
 - [ ] Layout system and responsive control bar
 - [ ] Playback controls, playlist and volume UI
 - [ ] Preferences/settings interface
