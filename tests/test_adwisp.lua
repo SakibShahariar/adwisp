@@ -256,6 +256,20 @@ key_bindings["adwisp-mouse-move"].callback()
 assert_true(overlays[1].data:find("\\alpha&H30&", 1, true) == nil,
     "moving outside controls should remove the highlight")
 
+-- Malformed dimensions and missing status flags must disable previews safely.
+thumbfast_payload = { width = math.huge, height = 90, disabled = false, available = true }
+script_messages["thumbfast-info"]("{}")
+mouse_x = layout.timeline.x + layout.timeline.width / 2
+mouse_y = layout.timeline.y
+key_bindings["adwisp-mouse-move"].callback()
+assert_true(commands[#commands][3] ~= "thumb",
+    "infinite thumbnail dimensions must not trigger a preview")
+thumbfast_payload = { width = 160, height = 90, available = true }
+script_messages["thumbfast-info"]("{}")
+key_bindings["adwisp-mouse-move"].callback()
+assert_true(commands[#commands][3] ~= "thumb",
+    "missing thumbfast status flags must disable previews")
+
 -- thumbfast supplies thumbnail dimensions; Adwisp requests previews only on timeline hover.
 thumbfast_payload = { width = 160, height = 90, disabled = false, available = true }
 script_messages["thumbfast-info"]("{}")
