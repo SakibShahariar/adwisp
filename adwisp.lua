@@ -11,6 +11,7 @@ package.path = script_dir .. "/?.lua;" .. script_dir .. "/?/init.lua;" .. packag
 
 local opts = {
     seek_step = 5,
+    volume_step = 5,
     theme_file = "",
     thumbnail_preview = true,
 }
@@ -242,6 +243,12 @@ mp.add_key_binding("q", "adwisp-dismiss", function()
 end)
 mp.add_key_binding("SPACE", "adwisp-play-pause", function()
     mp.commandv("cycle", "pause")
+end)
+mp.add_key_binding("CTRL+UP", "adwisp-volume-up", function()
+    change_volume(1)
+end)
+mp.add_key_binding("CTRL+DOWN", "adwisp-volume-down", function()
+    change_volume(-1)
 end)
 mp.add_key_binding("MBTN_LEFT", "adwisp-mouse-click", handle_mouse_click, { complex = true })
 mp.add_key_binding("mouse_move", "adwisp-mouse-move", handle_mouse_move, { complex = true })
