@@ -153,6 +153,7 @@ state.visible = true
 state.time_pos = 0 / 0
 state.duration = math.huge
 state.volume = 140
+state.mute = false
 renderer:render()
 assert_true(overlay.data:find("--:-- / --:--", 1, true) ~= nil,
     "non-finite playback values should use safe time placeholders")
