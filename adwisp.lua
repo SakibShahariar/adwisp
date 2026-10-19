@@ -30,6 +30,12 @@ local thumbnail_active = false
 local dragging_volume = false
 local dragging_timeline = false
 
+local function clear_interaction_state()
+    dragging_volume = false
+    dragging_timeline = false
+    state.hover_target = nil
+end
+
 local function clear_thumbnail()
     if thumbnail_active and thumbfast.available then
         mp.commandv("script-message-to", "thumbfast", "clear")
@@ -56,7 +62,10 @@ reload_theme()
 
 local function toggle()
     state.visible = not state.visible
-    if not state.visible then clear_thumbnail() end
+    if not state.visible then
+        clear_interaction_state()
+        clear_thumbnail()
+    end
     render()
 end
 
@@ -231,6 +240,7 @@ end)
 
 mp.register_event("end-file", function()
     state.visible = false
+    clear_interaction_state()
     clear_thumbnail()
     render()
 end)
@@ -247,11 +257,13 @@ mp.add_key_binding("RIGHT", "adwisp-seek-forward", function()
 end)
 mp.add_key_binding("q", "adwisp-dismiss", function()
     state.visible = false
+    clear_interaction_state()
     clear_thumbnail()
     render()
 end)
 mp.add_key_binding("ESC", "adwisp-dismiss-escape", function()
     state.visible = false
+    clear_interaction_state()
     clear_thumbnail()
     render()
 end)
@@ -283,6 +295,7 @@ mp.register_script_message("adwisp-show", function()
 end)
 mp.register_script_message("adwisp-hide", function()
     state.visible = false
+    clear_interaction_state()
     clear_thumbnail()
     render()
 end)
