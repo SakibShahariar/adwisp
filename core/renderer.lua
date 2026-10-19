@@ -2,6 +2,8 @@
 -- Copyright (c) 2026 Adwisp contributors
 -- MIT License. See LICENSE.
 
+local Layout = require "core.layout"
+
 local Renderer = {}
 Renderer.__index = Renderer
 
@@ -59,15 +61,17 @@ function Renderer:render()
         progress = math.max(0, math.min(1, state.time_pos / state.duration))
     end
 
-    local panel_width = math.floor(math.min(560, width * 0.72))
-    local panel_height = 156
-    local x = math.floor((width - panel_width) / 2)
-    local y = math.max(16, height - panel_height - 42)
-    local inner_x = x + 22
-    local bar_x = x + 22
-    local bar_y = y + 104
-    local bar_width = panel_width - 44
-    local filled = math.floor(bar_width * progress)
+    local layout = Layout.compute(width, height)
+    if not layout then return end
+    local panel = layout.panel
+    local title_pos = layout.title
+    local playback = layout.playback
+    local volume = layout.volume
+    local timeline = layout.timeline
+    local progress_label = layout.progress_label
+    local time_label = layout.time_label
+    local playlist = layout.playlist
+    local filled = math.floor(timeline.width * progress)
     local pause_label = state.paused and "Play" or "Pause"
     local volume_label = state.mute and "Muted" or string.format("Volume %d%%", math.floor(state.volume + 0.5))
 
@@ -82,15 +86,15 @@ function Renderer:render()
 {\an7\pos(%d,%d)\fnSans\fs15\b1\1c&HFAF7F3&}%s
 {\an7\pos(%d,%d)\fnSans\fs15\1c&HFAF7F3&}%s
 ]],
-        x, y, panel_width, panel_width, panel_height, panel_height,
-        inner_x, y + 18, title,
-        inner_x, y + 51, pause_label,
-        inner_x + 112, y + 51, volume_label,
-        bar_x, bar_y, bar_width, bar_width,
-        bar_x, bar_y, filled, filled,
-        bar_x, bar_y + 22, string.format("%d%%", math.floor(progress * 100 + 0.5)),
-        bar_x + bar_width - 100, bar_y + 22, now .. " / " .. total,
-        inner_x, y + 132, "‹    Previous       Next    ›"
+        panel.x, panel.y, panel.width, panel.width, panel.height, panel.height,
+        title_pos.x, title_pos.y, title,
+        playback.x, playback.y, pause_label,
+        volume.x, volume.y, volume_label,
+        timeline.x, timeline.y, timeline.width, timeline.width,
+        timeline.x, timeline.y, filled, filled,
+        progress_label.x, progress_label.y, string.format("%d%%", math.floor(progress * 100 + 0.5)),
+        time_label.x, time_label.y, now .. " / " .. total,
+        playlist.x, playlist.y, "‹    Previous       Next    ›"
     )
 
     local size_key = width .. "x" .. height
