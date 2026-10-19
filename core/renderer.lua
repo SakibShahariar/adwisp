@@ -121,6 +121,12 @@ function Renderer:render()
     local progress_label = layout.progress_label
     local time_label = layout.time_label
     local playlist = layout.playlist
+    local playlist_label = "‹    Previous       Next    ›"
+    if type(state.playlist_count) == "number" and state.playlist_count > 0
+        and type(state.playlist_pos) == "number" and state.playlist_pos >= 0 then
+        playlist_label = string.format("‹    Previous      %d / %d      Next    ›",
+            math.min(state.playlist_pos + 1, state.playlist_count), state.playlist_count)
+    end
     local filled = math.floor(timeline.width * progress)
     local pause_label = state.paused and "Play" or "Pause"
     local volume_label = state.mute and "Muted" or string.format("Volume %d%%", math.floor(volume_value + 0.5))
@@ -144,7 +150,7 @@ function Renderer:render()
         timeline.x, timeline.y, filled, filled,
         progress_label.x, progress_label.y, string.format("%d%%", math.floor(progress * 100 + 0.5)),
         time_label.x, time_label.y, now .. " / " .. total,
-        playlist.x, playlist.y, "‹    Previous       Next    ›"
+        playlist.x, playlist.y, playlist_label
     )
 
     if layout.compact then

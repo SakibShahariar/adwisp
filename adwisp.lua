@@ -229,6 +229,8 @@ local observers = {
     { "media-title", "string", function(value) state.title = value or "" end },
     { "volume", "number", function(value) state.volume = value or 100 end },
     { "mute", "bool", function(value) state.mute = value == true end },
+    { "playlist-pos", "number", function(value) state.playlist_pos = value or -1 end },
+    { "playlist-count", "number", function(value) state.playlist_count = value or 0 end },
 }
 
 for _, observer in ipairs(observers) do

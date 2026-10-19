@@ -9,4 +9,6 @@ return {
     title = "",
     volume = 100,
     mute = false,
+    playlist_pos = -1,
+    playlist_count = 0,
 }
