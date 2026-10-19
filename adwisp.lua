@@ -32,6 +32,32 @@ local function seek(delta)
     mp.commandv("seek", delta, "relative", "keyframes")
 end
 
+local function handle_mouse_move()
+    if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
+    local mouse_x, mouse_y = mp.get_mouse_pos()
+    if type(mouse_x) ~= "number" or type(mouse_y) ~= "number" then return end
+    local width, height = mp.get_osd_size()
+    local layout = Layout.compute(width, height)
+    if not layout then return end
+
+    local function contains(rect)
+        return mouse_x >= rect.x and mouse_x <= rect.x + rect.width
+            and mouse_y >= rect.y and mouse_y <= rect.y + rect.height
+    end
+
+    local hover_target
+    if contains(layout.playback) then
+        hover_target = "playback"
+    elseif contains(layout.volume) then
+        hover_target = "volume"
+    end
+
+    if state.hover_target ~= hover_target then
+        state.hover_target = hover_target
+        render()
+    end
+end
+
 local function handle_mouse_click()
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
 
@@ -112,6 +138,7 @@ mp.add_key_binding("SPACE", "adwisp-play-pause", function()
     mp.commandv("cycle", "pause")
 end)
 mp.add_key_binding("MBTN_LEFT", "adwisp-mouse-click", handle_mouse_click)
+mp.add_key_binding("mouse_move", "adwisp-mouse-move", handle_mouse_move, { complex = true })
 
 mp.register_script_message("adwisp-toggle", toggle)
 mp.register_script_message("adwisp-show", function()
