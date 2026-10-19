@@ -33,6 +33,23 @@ local function test_small_layout()
     assert_true(layout.timeline.width > 0, "small timeline width should stay positive")
 end
 
+local function test_narrow_layout_controls_stay_inside_panel()
+    for _, width in ipairs({ 200, 240, 320, 420 }) do
+        local layout = Layout.compute(width, 360)
+        local panel_right = layout.panel.x + layout.panel.width
+        local playback_right = layout.playback.x + layout.playback.width
+        local volume_right = layout.volume.x + layout.volume.width
+        assert_true(layout.playback.x >= layout.panel.x,
+            "playback should remain inside panel at width " .. width)
+        assert_true(playback_right <= layout.volume.x,
+            "playback and volume should not overlap at width " .. width)
+        assert_true(volume_right <= panel_right,
+            "volume should remain inside panel at width " .. width)
+        assert_true(layout.volume.width > 0,
+            "volume control should retain positive width at width " .. width)
+    end
+end
+
 local function test_invalid_dimensions()
     assert_equal(Layout.compute(0, 720), nil, "zero width should be rejected")
     assert_equal(Layout.compute(1280, 0), nil, "zero height should be rejected")
@@ -52,6 +69,7 @@ end
 
 test_standard_layout()
 test_small_layout()
+test_narrow_layout_controls_stay_inside_panel()
 test_invalid_dimensions()
 test_layout_rectangles()
 
