@@ -122,10 +122,14 @@ function Renderer:render()
     local time_label = layout.time_label
     local playlist = layout.playlist
     local playlist_label = "‹    Previous       Next    ›"
-    if type(state.playlist_count) == "number" and state.playlist_count > 0
-        and type(state.playlist_pos) == "number" and state.playlist_pos >= 0 then
-        playlist_label = string.format("‹    Previous      %d / %d      Next    ›",
-            math.min(state.playlist_pos + 1, state.playlist_count), state.playlist_count)
+    if is_finite_number(state.playlist_count) and state.playlist_count >= 1
+        and is_finite_number(state.playlist_pos) and state.playlist_pos >= 0 then
+        local playlist_count = math.floor(state.playlist_count)
+        local playlist_pos = math.floor(state.playlist_pos)
+        if playlist_count >= 1 and playlist_pos < playlist_count then
+            playlist_label = string.format("‹    Previous      %d / %d      Next    ›",
+                playlist_pos + 1, playlist_count)
+        end
     end
     local filled = math.floor(timeline.width * progress)
     local pause_label = state.paused and "Play" or "Pause"
