@@ -36,7 +36,7 @@ function Layout.compute(width, height)
         height = height,
         compact = compact,
         panel = { x = x, y = y, width = panel_width, height = panel_height },
-        title = { x = inner_x, y = y + (compact and 10 or 18) },
+        title = { x = inner_x, y = y + (compact and 10 or 18), width = inner_width },
         playback = { x = inner_x, y = control_y, width = playback_width, height = compact and 24 or 32 },
         volume = {
             x = inner_x + playback_width + control_gap,

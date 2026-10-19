@@ -56,6 +56,16 @@ assert_equal(overlay.res_x, 1280, "overlay resolution width should match OSD")
 assert_equal(overlay.res_y, 720, "overlay resolution height should match OSD")
 assert_true(overlay.data:find("Demo \\{x\\}", 1, true) ~= nil,
     "title braces should be escaped for ASS")
+
+-- Long titles are shortened before ASS escaping so they cannot spill across controls.
+state.title = string.rep("A", 200)
+renderer:render()
+assert_true(overlay.data:find(string.rep("A", 20) .. "…", 1, true) ~= nil,
+    "long titles should be truncated with an ellipsis")
+assert_true(overlay.data:find(string.rep("A", 200), 1, true) == nil,
+    "full long title should not be rendered")
+state.title = "Demo {x}"
+renderer:render()
 assert_true(overlay.data:find("25%", 1, true) ~= nil,
     "progress label should reflect current position")
 assert_true(overlay.data:find("0:15 / 1:00", 1, true) ~= nil,
@@ -66,13 +76,13 @@ assert_true(overlay.data:find("Pause", 1, true) ~= nil,
     "playing state should offer Pause")
 
 renderer:render()
-assert_equal(overlay.update_count, 2, "identical visible render should be cached")
+assert_equal(overlay.update_count, 4, "restored title should redraw and then cache")
 
 state.paused = true
 state.mute = true
 state.time_pos = 90
 renderer:render()
-assert_equal(overlay.update_count, 3, "state changes should trigger a redraw")
+assert_equal(overlay.update_count, 5, "state changes should trigger a redraw")
 assert_true(overlay.data:find("Play", 1, true) ~= nil,
     "paused state should offer Play")
 assert_true(overlay.data:find("Muted", 1, true) ~= nil,
@@ -83,7 +93,7 @@ assert_true(overlay.data:find("100%", 1, true) ~= nil,
 state.time_pos = -5
 state.duration = 0
 renderer:render()
-assert_equal(overlay.update_count, 4, "time changes should trigger a redraw")
+assert_equal(overlay.update_count, 6, "time changes should trigger a redraw")
 assert_true(overlay.data:find("0%", 1, true) ~= nil,
     "zero duration should avoid division and show zero progress")
 assert_true(overlay.data:find("--:-- / 0:00", 1, true) ~= nil,
@@ -91,13 +101,13 @@ assert_true(overlay.data:find("--:-- / 0:00", 1, true) ~= nil,
 
 width, height = 640, 360
 renderer:render()
-assert_equal(overlay.update_count, 5, "OSD size changes should trigger a redraw")
+assert_equal(overlay.update_count, 7, "OSD size changes should trigger a redraw")
 assert_equal(overlay.res_x, 640, "new overlay width should be applied")
 assert_equal(overlay.res_y, 360, "new overlay height should be applied")
 
 width, height = 0, 360
 renderer:render()
-assert_equal(overlay.update_count, 5, "invalid OSD dimensions should be ignored")
+assert_equal(overlay.update_count, 7, "invalid OSD dimensions should be ignored")
 
 width, height = 640, 360
 -- The volume track follows the active palette and emits valid ASS commands.
@@ -110,7 +120,7 @@ renderer:set_palette({
     on_accent = "#FFFFFF",
 })
 renderer:render()
-assert_equal(overlay.update_count, 6, "palette changes should invalidate renderer cache")
+assert_equal(overlay.update_count, 8, "palette changes should invalidate renderer cache")
 assert_true(overlay.data:find("\\an7\\pos(", 1, true) ~= nil,
     "volume track should use single-backslash ASS commands")
 assert_true(overlay.data:find("&H332211&", 1, true) ~= nil,
@@ -124,7 +134,7 @@ assert_true(overlay.data:find("&H6D6259&", 1, true) == nil
 -- Hover highlighting should follow the active palette surface color.
 state.hover_target = "playback"
 renderer:render()
-assert_equal(overlay.update_count, 7, "hover state should redraw the overlay")
+assert_equal(overlay.update_count, 9, "hover state should redraw the overlay")
 assert_true(overlay.data:find("\\1c&H060504&", 1, true) ~= nil,
     "hover highlight should use the palette surface color")
 
@@ -141,6 +151,6 @@ assert_true(overlay.data:find("\\fs11", 1, true) ~= nil,
 state.visible = false
 renderer:render()
 assert_equal(overlay.data, "", "hiding renderer should clear visible data")
-assert_equal(overlay.update_count, 9, "hiding should update overlay once")
+assert_equal(overlay.update_count, 11, "hiding should update overlay once")
 
 print("All renderer tests passed.")

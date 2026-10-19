@@ -20,6 +20,7 @@ local function test_standard_layout()
     assert_equal(layout.panel.height, 156, "panel should use standard height")
     assert_equal(layout.panel.x, 360, "panel should be horizontally centered")
     assert_equal(layout.panel.y, 522, "panel should sit above bottom margin")
+    assert_true(layout.title.width > 0, "title should expose available width")
     assert_true(layout.timeline.width > 0, "timeline width should be positive")
     assert_true(layout.timeline.hit_width >= layout.timeline.width,
         "timeline hit target should cover the visual timeline")

@@ -16,6 +16,37 @@ local function escape_ass(value)
         :gsub("\n", " ")
 end
 
+local function truncate_title(value, max_chars)
+    value = tostring(value or "")
+    if max_chars < 2 then return "…" end
+
+    -- Count UTF-8 code points without depending on Lua's optional utf8 library.
+    local count, index = 0, 1
+    while index <= #value do
+        local byte = value:byte(index)
+        local step = 1
+        if byte >= 240 then step = 4
+        elseif byte >= 224 then step = 3
+        elseif byte >= 192 then step = 2 end
+        index = index + step
+        count = count + 1
+    end
+    if count <= max_chars then return value end
+
+    local keep = max_chars - 1
+    local chars, pos = 0, 1
+    while pos <= #value and chars < keep do
+        local byte = value:byte(pos)
+        local step = 1
+        if byte >= 240 then step = 4
+        elseif byte >= 224 then step = 3
+        elseif byte >= 192 then step = 2 end
+        pos = pos + step
+        chars = chars + 1
+    end
+    return value:sub(1, pos - 1) .. "…"
+end
+
 local function fmt_time(seconds)
     if type(seconds) ~= "number" or seconds < 0 then return "--:--" end
     seconds = math.floor(seconds)
@@ -59,7 +90,6 @@ function Renderer:render()
     local width, height = self.mp.get_osd_size()
     if not width or not height or width <= 0 or height <= 0 then return end
 
-    local title = escape_ass(state.title ~= "" and state.title or "Adwisp")
     local now = fmt_time(state.time_pos)
     local total = fmt_time(state.duration)
     local progress = 0
@@ -71,6 +101,11 @@ function Renderer:render()
     if not layout then return end
     local panel = layout.panel
     local title_pos = layout.title
+    local title_font_size = layout.compact and 18 or 22
+    local title_chars = math.max(8, math.floor(title_pos.width / (title_font_size * 0.56)))
+    local title = escape_ass(truncate_title(
+        state.title ~= "" and state.title or "Adwisp", title_chars
+    ))
     local playback = layout.playback
     local volume = layout.volume
     local timeline = layout.timeline
