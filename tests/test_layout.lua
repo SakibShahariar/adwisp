@@ -50,6 +50,26 @@ local function test_narrow_layout_controls_stay_inside_panel()
     end
 end
 
+local function test_compact_layout_fits_short_windows()
+    for _, height in ipairs({ 160, 180, 220, 239 }) do
+        local layout = Layout.compute(640, height)
+        local panel_bottom = layout.panel.y + layout.panel.height
+        assert_true(layout.compact, "short windows should select compact layout at height " .. height)
+        assert_true(layout.panel.y >= 0 and panel_bottom <= height,
+            "panel should fit vertically at height " .. height)
+        assert_true(layout.title.y < layout.playback.y,
+            "title should precede controls at height " .. height)
+        assert_true(layout.playback.y + layout.playback.height <= layout.timeline.y,
+            "controls should not overlap timeline at height " .. height)
+        assert_true(layout.progress_label.y < layout.playlist.y,
+            "progress labels should precede playlist at height " .. height)
+        assert_true(layout.playlist.y + layout.playlist.height <= panel_bottom,
+            "playlist should remain inside panel at height " .. height)
+    end
+    assert_true(not Layout.compute(640, 240).compact,
+        "standard layout should be retained at the compact threshold")
+end
+
 local function test_invalid_dimensions()
     assert_equal(Layout.compute(0, 720), nil, "zero width should be rejected")
     assert_equal(Layout.compute(1280, 0), nil, "zero height should be rejected")
@@ -70,6 +90,7 @@ end
 test_standard_layout()
 test_small_layout()
 test_narrow_layout_controls_stay_inside_panel()
+test_compact_layout_fits_short_windows()
 test_invalid_dimensions()
 test_layout_rectangles()
 
