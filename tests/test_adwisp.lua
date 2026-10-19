@@ -74,6 +74,7 @@ assert_true(observers["osd-dimensions"] ~= nil, "OSD dimensions should be observ
 assert_true(events["file-loaded"] ~= nil, "file-loaded event should be registered")
 assert_true(events["end-file"] ~= nil, "end-file event should be registered")
 assert_true(key_bindings["adwisp-toggle"] ~= nil, "toggle key should be registered")
+assert_true(key_bindings["adwisp-dismiss-escape"] ~= nil, "Escape dismiss shortcut should be registered")
 assert_true(key_bindings["adwisp-mouse-click"] ~= nil, "mouse click should be registered")
 assert_true(key_bindings["adwisp-mouse-move"] ~= nil, "mouse move should be registered")
 assert_true(key_bindings["adwisp-volume-up"] ~= nil, "volume-up shortcut should be registered")
@@ -281,6 +282,11 @@ assert_equal(seeks_after_move, seeks_after_release,
     "movement after timeline release should not issue another seek")
 
 
+key_bindings["adwisp-dismiss-escape"].callback()
+assert_equal(overlays[1].data, "", "Escape should dismiss and clear OSD data")
+
+script_messages["adwisp-show"]()
+assert_true(overlays[1].data ~= "", "show message should restore visible OSD")
 script_messages["adwisp-hide"]()
 assert_equal(overlays[1].data, "", "hide message should clear OSD data")
 assert_equal(overlays[1].update_count, 6, "hide message should update overlay")
