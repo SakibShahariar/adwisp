@@ -4,7 +4,7 @@
 
 Adwisp is an mpv Lua script project aiming to give mpv a cohesive, modern desktop-player interface inspired by GTK4 and libadwaita. It draws its interface inside mpv; it is **not** a GTK wrapper and is not based on uosc.
 
-> **Status: early scaffold.** The current code is a small, experimental OSD prototype. The complete player UI, preferences window, thumbnail previews, and live theme reload are planned, not implemented yet.
+> **Status: early scaffold.** The current code is a small, experimental OSD prototype. The complete player UI and preferences window remain planned. The current prototype includes an initial thumbfast seek-preview adapter and explicit theme reload; these integrations need real-mpv validation.
 
 ## Goals
 
@@ -20,7 +20,7 @@ Adwisp is an mpv Lua script project aiming to give mpv a cohesive, modern deskto
 
 - mpv with Lua scripting enabled.
 - Optional: [Matugen](https://github.com/InioX/matugen) and a generated color palette.
-- Optional: [thumbfast](https://github.com/po5/thumbfast) for seek previews when integration is implemented.
+- Optional: [thumbfast](https://github.com/po5/thumbfast) for seek-preview thumbnails.
 
 ## Install (development)
 
@@ -43,7 +43,7 @@ seek_step=5
 
 ```
 
-Set optional `theme_file=/absolute/path/to/palette.conf` to load a Matugen-compatible `key=value` palette. Run `/script-message adwisp-reload-theme` after regenerating it to reload colors without restarting mpv. The preferences UI is on the roadmap.
+Set optional `theme_file=/absolute/path/to/palette.conf` to load a Matugen-compatible `key=value` palette. Run `/script-message adwisp-reload-theme` after regenerating it to reload colors without restarting mpv. The preferences UI is on the roadmap. To enable seek previews, install `thumbfast.lua` in mpv’s scripts directory; Adwisp requests thumbnails when hovering the timeline and clears them when the pointer leaves. Previews are silently unavailable when thumbfast is not installed. Set `thumbnail_preview=no` in `script-opts/adwisp.conf` to disable the integration.
 
 ## Roadmap
 
@@ -56,7 +56,7 @@ Set optional `theme_file=/absolute/path/to/palette.conf` to load a Matugen-compa
 - [ ] Playback controls, playlist and volume UI
 - [ ] Preferences/settings interface
 - [ ] Matugen palette parser and reliable live reload
-- [ ] thumbfast seek-preview integration
+- [x] Initial thumbfast seek-preview integration (needs real-mpv validation)
 - [ ] Accessibility, localization, and configurable shortcuts
 - [ ] Benchmark idle CPU use and redraw behavior against stock mpv and uosc
 - [ ] Packaging, screenshots, and release workflow
