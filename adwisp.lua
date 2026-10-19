@@ -69,13 +69,22 @@ local function toggle()
     render()
 end
 
+local function option_step(value, fallback)
+    value = tonumber(value)
+    if type(value) ~= "number" or value ~= value
+        or value == math.huge or value == -math.huge then
+        return fallback
+    end
+    return math.max(1, math.min(3600, value))
+end
+
 local function seek(delta)
     mp.commandv("seek", delta, "relative", "keyframes")
 end
 
 local function change_volume(delta)
     local current = tonumber(state.volume) or 100
-    local step = math.max(1, tonumber(opts.volume_step) or 5)
+    local step = option_step(opts.volume_step, 5)
     local volume = math.max(0, math.min(100, current + delta * step))
     state.volume = volume
     state.mute = false
@@ -273,10 +282,10 @@ mp.observe_property("osd-dimensions", "native", render)
 
 mp.add_key_binding("g", "adwisp-toggle", toggle)
 mp.add_key_binding("LEFT", "adwisp-seek-back", function()
-    seek(-tonumber(opts.seek_step or 5))
+    seek(-option_step(opts.seek_step, 5))
 end)
 mp.add_key_binding("RIGHT", "adwisp-seek-forward", function()
-    seek(tonumber(opts.seek_step or 5))
+    seek(option_step(opts.seek_step, 5))
 end)
 mp.add_key_binding("q", "adwisp-dismiss", function()
     state.visible = false
