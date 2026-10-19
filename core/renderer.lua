@@ -72,33 +72,35 @@ function Renderer:render()
     local volume_label = state.mute and "Muted" or string.format("Volume %d%%", math.floor(state.volume + 0.5))
 
     local ass = string.format([[
-{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c&H30251E&\\alpha&H18&\\p1}m 0 0 l %d 0 %d %d 0 %d{\\p0}
-{\\an7\\pos(%d,%d)\\fnSans\\fs22\\b1\\1c&HFAF7F3&}%s
-{\\an7\\pos(%d,%d)\\fnSans\\fs14\\1c&HDBD2C8&}%s
-{\\an7\\pos(%d,%d)\\fnSans\\fs14\\1c&HDBD2C8&}%s
-{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c&H6D6259&\\p1}m 0 0 l %d 0 %d 6 0 6{\\p0}
-{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c&H9B7653&\\p1}m 0 0 l %d 0 0 6{\\p0}
-{\\an7\\pos(%d,%d)\\fnSans\\fs13\\1c&HDBD2C8&}%s
-{\\an7\\pos(%d,%d)\\fnSans\\fs15\\b1\\1c&HFAF7F3&}%s
-{\\an7\\pos(%d,%d)\\fnSans\\fs15\\1c&HFAF7F3&}%s
+{\an7\pos(%d,%d)\bord0\shad0\1c&H30251E&\alpha&H18&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
+{\an7\pos(%d,%d)\fnSans\fs22\b1\1c&HFAF7F3&}%s
+{\an7\pos(%d,%d)\fnSans\fs14\1c&HDBD2C8&}%s
+{\an7\pos(%d,%d)\fnSans\fs14\1c&HDBD2C8&}%s
+{\an7\pos(%d,%d)\bord0\shad0\1c&H6D6259&\p1}m 0 0 l %d 0 %d 6 0 6{\p0}
+{\an7\pos(%d,%d)\bord0\shad0\1c&H9B7653&\p1}m 0 0 l %d 0 %d 6 0 6{\p0}
+{\an7\pos(%d,%d)\fnSans\fs13\1c&HDBD2C8&}%s
+{\an7\pos(%d,%d)\fnSans\fs15\b1\1c&HFAF7F3&}%s
+{\an7\pos(%d,%d)\fnSans\fs15\1c&HFAF7F3&}%s
 ]],
         x, y, panel_width, panel_width, panel_height, panel_height,
         inner_x, y + 18, title,
         inner_x, y + 51, pause_label,
         inner_x + 112, y + 51, volume_label,
-        bar_x, bar_y, bar_width, bar_width, bar_x, bar_y, filled, filled,
+        bar_x, bar_y, bar_width, bar_width,
+        bar_x, bar_y, filled, filled,
         bar_x, bar_y + 22, string.format("%d%%", math.floor(progress * 100 + 0.5)),
         bar_x + bar_width - 100, bar_y + 22, now .. " / " .. total,
         inner_x, y + 132, "‹    Previous       Next    ›"
     )
 
-    if self.last_data == ass and self.last_size == (width .. "x" .. height) then return end
+    local size_key = width .. "x" .. height
+    if self.last_data == ass and self.last_size == size_key then return end
     self.overlay.res_x = width
     self.overlay.res_y = height
     self.overlay.data = ass
     self.overlay:update()
     self.last_data = ass
-    self.last_size = width .. "x" .. height
+    self.last_size = size_key
 end
 
 return Renderer
