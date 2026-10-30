@@ -156,7 +156,7 @@ assert_equal(commands[#commands][1], "playlist-next", "Ctrl+Right should go to n
 assert_equal(commands[#commands][2], "weak", "next shortcut should use weak mode")
 
 -- Excessively large but finite volume steps should be bounded before adjustment.
-local option_fixture = package.loaded["mp.options"].last_options
+option_fixture = package.loaded["mp.options"].last_options
 option_fixture.volume_step = 1e100
 key_bindings["adwisp-volume-down"].callback()
 assert_equal(commands[#commands - 1][3], 0,
