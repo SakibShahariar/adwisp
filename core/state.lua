@@ -8,6 +8,7 @@ return {
     duration = 0,
     title = "",
     volume = 100,
+    speed = 1,
     mute = false,
     buffering = false,
     buffering_progress = 0,

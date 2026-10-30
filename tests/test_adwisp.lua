@@ -113,6 +113,9 @@ assert_true(key_bindings["adwisp-mouse-click"] ~= nil, "mouse click should be re
 assert_true(key_bindings["adwisp-mouse-move"] ~= nil, "mouse move should be registered")
 assert_true(key_bindings["adwisp-volume-up"] ~= nil, "volume-up shortcut should be registered")
 assert_true(key_bindings["adwisp-volume-down"] ~= nil, "volume-down shortcut should be registered")
+assert_true(key_bindings["adwisp-speed-up"] ~= nil, "speed-up shortcut should be registered")
+assert_true(key_bindings["adwisp-speed-down"] ~= nil, "speed-down shortcut should be registered")
+assert_true(key_bindings["adwisp-speed-reset"] ~= nil, "speed-reset shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-prev"] ~= nil, "playlist-prev shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-next"] ~= nil, "playlist-next shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
@@ -136,12 +139,14 @@ observers["media-title"].callback("media-title", "Test video")
 observers["time-pos"].callback("time-pos", math.huge)
 observers.duration.callback("duration", -20)
 observers.volume.callback("volume", math.huge)
+observers.speed.callback("speed", math.huge)
 observers["playlist-count"].callback("playlist-count", 0 / 0)
 observers["playlist-pos"].callback("playlist-pos", -math.huge)
 local observed_state = require("core.state")
 assert_equal(observed_state.time_pos, 0, "non-finite playback position should fall back to zero")
 assert_equal(observed_state.duration, 0, "negative duration should clamp to zero")
 assert_equal(observed_state.volume, 100, "non-finite volume should fall back to a safe default")
+assert_equal(observed_state.speed, 1, "non-finite speed should fall back to normal speed")
 assert_equal(observed_state.playlist_count, 0, "non-finite playlist count should fall back to zero")
 assert_equal(observed_state.playlist_pos, -1, "non-finite playlist position should fall back to no selection")
 observers["cache-buffering-state"].callback("cache-buffering-state", 45)
@@ -159,10 +164,37 @@ assert_equal(observed_state.buffering, false,
 observers["time-pos"].callback("time-pos", 12)
 observers.duration.callback("duration", 60)
 observers.volume.callback("volume", 100)
+observers.speed.callback("speed", 1)
 observers["playlist-count"].callback("playlist-count", 0)
 observers["playlist-pos"].callback("playlist-pos", -1)
 assert_equal(overlays[1].update_count, 1,
     "hidden OSD should clear its initial empty overlay only once")
+
+-- Playback speed controls clamp values and always use mpv's speed property.
+local commands_before_speed = #commands
+key_bindings["adwisp-speed-up"].callback()
+assert_equal(commands[#commands - 1][1], "set",
+    "speed increase should set the mpv speed property")
+assert_equal(commands[#commands - 1][2], "speed",
+    "speed increase should target speed")
+assert_equal(commands[#commands - 1][3], 1.1,
+    "speed increase should use the configured step")
+key_bindings["adwisp-speed-down"].callback()
+assert_equal(commands[#commands - 1][3], 1,
+    "speed decrease should return to normal speed")
+key_bindings["adwisp-speed-reset"].callback()
+assert_equal(commands[#commands - 1][3], 1,
+    "speed reset should restore normal playback")
+observed_state.speed = 99.95
+key_bindings["adwisp-speed-up"].callback()
+assert_equal(commands[#commands - 1][3], 100,
+    "speed increase should respect mpv's upper speed bound")
+observed_state.speed = 0.02
+key_bindings["adwisp-speed-down"].callback()
+assert_equal(commands[#commands - 1][3], 0.01,
+    "speed decrease should respect mpv's lower speed bound")
+assert_true(#commands > commands_before_speed,
+    "speed actions should send commands to mpv")
 
 -- Loading a file makes the UI visible and renders current state.
 events["file-loaded"]()
@@ -699,5 +731,7 @@ assert_equal(#logs.info, info_before_query + 1,
     "state query should emit a response even when informational logging is quiet")
 assert_true(logs.info[#logs.info]:find('"visible":false', 1, true) ~= nil,
     "state query should return a JSON snapshot of UI state")
+assert_true(logs.info[#logs.info]:find('"speed":', 1, true) ~= nil,
+    "state query should include playback speed")
 
 print("All mocked mpv API tests passed.")

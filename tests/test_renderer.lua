@@ -25,6 +25,7 @@ local state = {
     duration = 60,
     title = "Demo {x}",
     volume = 50.5,
+    speed = 1.25,
     mute = false,
 }
 
@@ -72,6 +73,8 @@ assert_true(overlay.data:find("0:15 / 1:00", 1, true) ~= nil,
     "time label should format current and total time")
 assert_true(overlay.data:find("Volume 51%", 1, true) ~= nil,
     "volume label should round to the nearest integer")
+assert_true(overlay.data:find("Pause  1.2×", 1, true) ~= nil,
+    "playback control should show the current playback speed")
 assert_true(overlay.data:find("Pause", 1, true) ~= nil,
     "playing state should offer Pause")
 

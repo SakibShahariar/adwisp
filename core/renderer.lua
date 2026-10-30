@@ -156,6 +156,8 @@ function Renderer:render()
     end
     local filled = math.floor(timeline.width * progress)
     local pause_label = state.paused and "Play" or "Pause"
+    local playback_label = string.format("%s  %.2g×", pause_label,
+        is_finite_number(state.speed) and math.max(0.01, math.min(100, state.speed)) or 1)
     local volume_label = state.mute and "Muted"
         or (volume_value <= 20 and string.format("Low volume %d%%", math.floor(volume_value + 0.5))
             or string.format("Volume %d%%", math.floor(volume_value + 0.5)))
@@ -218,7 +220,7 @@ function Renderer:render()
         title_pos.x, title_pos.y, colors.text, title,
         title_pos.x + title_pos.width, title_pos.y, colors.accent, buffering_label,
         preview_label_x or 0, preview_label_y or 0, colors.accent, preview_label,
-        playback.x, playback.y, colors.muted, pause_label,
+        playback.x, playback.y, colors.muted, playback_label,
         volume.x, volume.y, volume_label_color, volume_label,
         timeline.x, timeline.y, colors.muted, timeline.width, timeline.width,
         timeline.x, timeline.y, colors.accent, filled, filled,

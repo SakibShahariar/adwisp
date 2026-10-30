@@ -63,6 +63,8 @@ Typical mpv configuration directories:
 | `m` | Toggle mute |
 | `Ctrl` + `Left` / `Ctrl` + `Right` | Previous / next playlist item |
 | `Ctrl` + `Up` / `Ctrl` + `Down` | Increase / decrease volume by `volume_step`; volume changes also unmute |
+| `Ctrl` + `Alt` + `Up` / `Ctrl` + `Alt` + `Down` | Increase / decrease playback speed by `speed_step` |
+| `Ctrl` + `Alt` + `Backspace` | Reset playback speed to 1× |
 | `q` | Dismiss the interface |
 | `Escape` | Dismiss the interface |
 | Mouse click on timeline | Seek to the clicked position |
@@ -117,6 +119,8 @@ seek_step=5
 
 # Volume change per Ctrl+Up / Ctrl+Down press
 volume_step=5
+# Playback-speed change per Ctrl+Alt+Up / Ctrl+Alt+Down press
+speed_step=0.1
 
 # Set to no to disable the optional thumbfast preview adapter
 thumbnail_preview=yes

@@ -12,6 +12,7 @@ package.path = script_dir .. "/?.lua;" .. script_dir .. "/?/init.lua;" .. packag
 local opts = {
     seek_step = 5,
     volume_step = 5,
+    speed_step = 0.1,
     theme_file = "",
     thumbnail_preview = true,
     time_pos_render_interval = 0.15,
@@ -146,6 +147,29 @@ local function change_volume(delta)
     state.mute = false
     mp.commandv("set", "volume", volume)
     mp.commandv("set", "mute", "no")
+end
+
+local function speed_step()
+    local value = tonumber(opts.speed_step)
+    if not finite_number(value) then value = 0.1 end
+    return math.max(0.01, math.min(5, value))
+end
+
+local function set_speed(value)
+    value = tonumber(value)
+    if not finite_number(value) then value = 1 end
+    value = math.max(0.01, math.min(100, value))
+    state.speed = value
+    mp.commandv("set", "speed", value)
+end
+
+local function change_speed(delta)
+    local current = finite_number(state.speed) and state.speed or 1
+    set_speed(current + delta * speed_step())
+end
+
+local function reset_speed()
+    set_speed(1)
 end
 
 local function set_volume_at(mouse_x, track)
@@ -381,6 +405,7 @@ local observers = {
     { "duration", "number", function(value) state.duration = math.max(0, finite_property(value, 0)) end },
     { "media-title", "string", function(value) state.title = type(value) == "string" and value or "" end },
     { "volume", "number", function(value) state.volume = math.max(0, math.min(100, finite_property(value, 100))) end },
+    { "speed", "number", function(value) state.speed = math.max(0.01, math.min(100, finite_property(value, 1))) end },
     { "mute", "bool", function(value) state.mute = value == true end },
     { "paused-for-cache", "bool", function(value) state.buffering = value == true end },
     { "cache-buffering-state", "number", function(value)
@@ -465,6 +490,13 @@ end)
 mp.add_key_binding("CTRL+DOWN", "adwisp-volume-down", function()
     change_volume(-1)
 end)
+mp.add_key_binding("CTRL+ALT+UP", "adwisp-speed-up", function()
+    change_speed(1)
+end)
+mp.add_key_binding("CTRL+ALT+DOWN", "adwisp-speed-down", function()
+    change_speed(-1)
+end)
+mp.add_key_binding("CTRL+ALT+BACKSPACE", "adwisp-speed-reset", reset_speed)
 mp.add_key_binding("MBTN_LEFT", "adwisp-mouse-click", handle_mouse_click, { complex = true })
 mp.add_key_binding("mouse_move", "adwisp-mouse-move", handle_mouse_move, { complex = true })
 
@@ -497,6 +529,7 @@ register_no_argument_message("adwisp-query", function()
         time_pos = finite_property(state.time_pos, 0),
         duration = finite_property(state.duration, 0),
         volume = finite_property(state.volume, 100),
+        speed = finite_property(state.speed, 1),
         mute = state.mute == true,
         playlist_pos = finite_property(state.playlist_pos, -1),
         playlist_count = finite_property(state.playlist_count, 0),
