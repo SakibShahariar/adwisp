@@ -468,18 +468,49 @@ end)
 mp.add_key_binding("MBTN_LEFT", "adwisp-mouse-click", handle_mouse_click, { complex = true })
 mp.add_key_binding("mouse_move", "adwisp-mouse-move", handle_mouse_move, { complex = true })
 
-mp.register_script_message("adwisp-toggle", toggle)
-mp.register_script_message("adwisp-show", function()
+local function register_no_argument_message(name, callback)
+    mp.register_script_message(name, function(...)
+        if select("#", ...) > 0 then
+            mp.msg.warn("Adwisp: script message " .. name .. " does not accept arguments.")
+            return
+        end
+        callback()
+    end)
+end
+
+register_no_argument_message("adwisp-toggle", toggle)
+register_no_argument_message("adwisp-show", function()
     state.visible = true
     render()
 end)
-mp.register_script_message("adwisp-hide", function()
+register_no_argument_message("adwisp-hide", function()
     state.visible = false
     clear_interaction_state()
     clear_thumbnail()
     render()
 end)
-mp.register_script_message("adwisp-reload-theme", reload_theme)
+register_no_argument_message("adwisp-reload-theme", reload_theme)
+register_no_argument_message("adwisp-query", function()
+    local payload = {
+        visible = state.visible == true,
+        paused = state.paused == true,
+        time_pos = finite_property(state.time_pos, 0),
+        duration = finite_property(state.duration, 0),
+        volume = finite_property(state.volume, 100),
+        mute = state.mute == true,
+        playlist_pos = finite_property(state.playlist_pos, -1),
+        playlist_count = finite_property(state.playlist_count, 0),
+        buffering = state.buffering == true,
+        buffering_progress = finite_property(state.buffering_progress, 0),
+    }
+    local json = utils.format_json(payload)
+    if type(json) ~= "string" then
+        mp.msg.warn("Adwisp: could not serialize state query.")
+        return
+    end
+    -- A query is an explicit response, so it remains visible even at log_level=quiet.
+    mp.msg.info("Adwisp state: " .. json)
+end)
 mp.register_script_message("thumbfast-info", function(json)
     local data = utils.parse_json(json)
     local function positive_finite(value)

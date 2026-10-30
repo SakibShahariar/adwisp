@@ -60,6 +60,11 @@ local mp = {
 package.loaded.mp = mp
 package.loaded["mp.utils"] = {
     parse_json = function() return thumbfast_payload end,
+    format_json = function(value)
+        return '{"visible":' .. tostring(value.visible)
+            .. ',"paused":' .. tostring(value.paused)
+            .. ',"volume":' .. tostring(value.volume) .. '}'
+    end,
 }
 package.loaded["mp.options"] = {
     read_options = function(options)
@@ -112,6 +117,10 @@ assert_true(key_bindings["adwisp-playlist-prev"] ~= nil, "playlist-prev shortcut
 assert_true(key_bindings["adwisp-playlist-next"] ~= nil, "playlist-next shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
+assert_true(script_messages["adwisp-hide"] ~= nil, "hide message should be registered")
+assert_true(script_messages["adwisp-toggle"] ~= nil, "toggle message should be registered")
+assert_true(script_messages["adwisp-reload-theme"] ~= nil, "theme reload message should be registered")
+assert_true(script_messages["adwisp-query"] ~= nil, "state query message should be registered")
 assert_true(script_messages["thumbfast-info"] ~= nil, "thumbfast info message should be registered")
 local saw_version = false
 for _, message in ipairs(logs.info) do
@@ -676,5 +685,19 @@ local info_count_before_quiet = #logs.info
 events["end-file"]()
 assert_equal(#logs.info, info_count_before_quiet,
     "quiet mode should suppress informational and debug messages")
+
+-- Script messages reject unexpected payloads and expose a JSON state snapshot.
+local warnings_before_invalid_message = #logs.warn
+script_messages["adwisp-show"]("unexpected")
+assert_equal(#logs.warn, warnings_before_invalid_message + 1,
+    "script messages with unexpected arguments should be rejected")
+assert_equal(observed_state.visible, false,
+    "invalid script-message payloads should not change UI state")
+local info_before_query = #logs.info
+script_messages["adwisp-query"]()
+assert_equal(#logs.info, info_before_query + 1,
+    "state query should emit a response even when informational logging is quiet")
+assert_true(logs.info[#logs.info]:find('"visible":false', 1, true) ~= nil,
+    "state query should return a JSON snapshot of UI state")
 
 print("All mocked mpv API tests passed.")

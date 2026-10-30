@@ -128,6 +128,20 @@ After regenerating the palette, ask mpv to reload it without restarting:
 /script-message adwisp-reload-theme
 ```
 
+### Script messages
+
+Adwisp exposes no-argument messages for external mpv scripts:
+
+| Message | Action |
+| --- | --- |
+| `/script-message adwisp-show` | Show the OSD |
+| `/script-message adwisp-hide` | Hide the OSD |
+| `/script-message adwisp-toggle` | Toggle visibility |
+| `/script-message adwisp-reload-theme` | Reload the configured palette |
+| `/script-message adwisp-query` | Print a JSON snapshot of UI and playback state to the mpv log |
+
+Unexpected arguments are rejected with a warning. The query omits media paths and remains available when informational logging is quiet.
+
 ### Thumbnail previews
 
 Install [thumbfast](https://github.com/po5/thumbfast) as an mpv script and leave `thumbnail_preview=yes`. Adwisp sends preview requests while the pointer is over the timeline and asks thumbfast to clear the preview when appropriate. If thumbfast is absent or unavailable, previews are not provided. This integration still needs manual validation in a real mpv session.
