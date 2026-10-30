@@ -659,6 +659,8 @@ for _, observer in ipairs(observers) do
     local property, property_type, apply = observer[1], observer[2], observer[3]
     mp.observe_property(property, property_type, function(_, value)
         apply(value)
+        -- Property changes can alter hit-test visibility without pointer motion.
+        last_mouse_x, last_mouse_y = nil, nil
         if property ~= "time-pos" then
             log_debug("property " .. property .. " updated")
         end
@@ -685,8 +687,14 @@ end)
 -- mpv emits shutdown before terminating Lua script event loops.
 mp.register_event("shutdown", cleanup_on_shutdown)
 
-mp.register_event("video-reconfig", render)
-mp.observe_property("osd-dimensions", "native", render)
+mp.register_event("video-reconfig", function()
+    last_mouse_x, last_mouse_y = nil, nil
+    render()
+end)
+mp.observe_property("osd-dimensions", "native", function()
+    last_mouse_x, last_mouse_y = nil, nil
+    render()
+end)
 
 mp.add_key_binding("g", "adwisp-toggle", toggle)
 mp.add_key_binding("LEFT", "adwisp-seek-back", handle_left)
