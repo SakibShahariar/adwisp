@@ -116,12 +116,24 @@ assert_true(muted_label_prefix:find("\\1c&H53769B&", 1, true) ~= nil,
     "muted label itself should use the fallback theme accent color")
 state.mute = false
 state.volume = 50.5
-
+state.buffering = true
+state.buffering_progress = 45
+renderer:render()
+assert_true(overlay.data:find("Buffering 45%", 1, true) ~= nil,
+    "buffering should display the current cache progress")
+local buffering_label_index = assert(overlay.data:find("Buffering 45%", 1, true))
+local buffering_label_prefix = overlay.data:sub(
+    math.max(1, buffering_label_index - 90), buffering_label_index)
+assert_true(buffering_label_prefix:find("\\1c&H53769B&", 1, true) ~= nil,
+    "buffering indicator should use the active theme accent color")
+state.buffering = false
 
 state.time_pos = -5
 state.duration = 0
 renderer:render()
-assert_equal(overlay.update_count, 9, "time changes should trigger a redraw")
+assert_true(overlay.data:find("Buffering", 1, true) == nil,
+    "buffering indicator should disappear when cache pause ends")
+assert_equal(overlay.update_count, 10, "time changes should trigger a redraw")
 assert_true(overlay.data:find("0%", 1, true) ~= nil,
     "zero duration should avoid division and show zero progress")
 assert_true(overlay.data:find("--:-- / 0:00", 1, true) ~= nil,
@@ -129,13 +141,13 @@ assert_true(overlay.data:find("--:-- / 0:00", 1, true) ~= nil,
 
 width, height = 640, 360
 renderer:render()
-assert_equal(overlay.update_count, 10, "OSD size changes should trigger a redraw")
+assert_equal(overlay.update_count, 11, "OSD size changes should trigger a redraw")
 assert_equal(overlay.res_x, 640, "new overlay width should be applied")
 assert_equal(overlay.res_y, 360, "new overlay height should be applied")
 
 width, height = 0, 360
 renderer:render()
-assert_equal(overlay.update_count, 10, "invalid OSD dimensions should be ignored")
+assert_equal(overlay.update_count, 11, "invalid OSD dimensions should be ignored")
 
 width, height = 640, 360
 -- The volume track follows the active palette and emits valid ASS commands.
@@ -148,7 +160,7 @@ renderer:set_palette({
     on_accent = "#FFFFFF",
 })
 renderer:render()
-assert_equal(overlay.update_count, 11, "palette changes should invalidate renderer cache")
+assert_equal(overlay.update_count, 12, "palette changes should invalidate renderer cache")
 assert_true(overlay.data:find("\\an7\\pos(", 1, true) ~= nil,
     "volume track should use single-backslash ASS commands")
 assert_true(overlay.data:find("&H332211&", 1, true) ~= nil,
@@ -173,7 +185,7 @@ renderer:render()
 -- Hover highlighting should follow the active palette surface color.
 state.hover_target = "playback"
 renderer:render()
-assert_equal(overlay.update_count, 14, "hover state should redraw the overlay")
+assert_equal(overlay.update_count, 15, "hover state should redraw the overlay")
 assert_true(overlay.data:find("\\1c&H060504&", 1, true) ~= nil,
     "hover highlight should use the palette surface color")
 
@@ -205,7 +217,7 @@ assert_true(overlay.data:find("nan", 1, true) == nil
 state.visible = false
 renderer:render()
 assert_equal(overlay.data, "", "hiding renderer should clear visible data")
-assert_equal(overlay.update_count, 17, "hiding should update overlay once")
+assert_equal(overlay.update_count, 18, "hiding should update overlay once")
 
 -- Very large but finite timestamps must remain safe for Lua 5.2 integer formatting.
 state.visible = true

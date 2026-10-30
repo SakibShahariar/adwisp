@@ -113,7 +113,24 @@ function Renderer:render()
     local panel = layout.panel
     local title_pos = layout.title
     local title_font_size = layout.compact and 18 or 22
-    local title_chars = math.max(8, math.floor(title_pos.width / (title_font_size * 0.56)))
+    local buffering_label = ""
+    local buffering_status_width = 0
+    if state.buffering == true and title_pos.width >= 140 then
+        local buffering_progress = is_finite_number(state.buffering_progress)
+            and math.max(0, math.min(100, state.buffering_progress)) or 0
+        if layout.compact and title_pos.width < 240 then
+            buffering_label = "Buffering"
+        else
+            buffering_label = string.format("Buffering %d%%",
+                math.floor(buffering_progress + 0.5))
+        end
+        buffering_status_width = math.min(120,
+            math.max(64, math.floor(title_pos.width * 0.35)))
+    end
+    local available_title_width = math.max(1,
+        title_pos.width - buffering_status_width - (buffering_status_width > 0 and 12 or 0))
+    local title_chars = math.max(buffering_status_width > 0 and 4 or 8,
+        math.floor(available_title_width / (title_font_size * 0.56)))
     local title = escape_ass(truncate_title(
         state.title ~= "" and state.title or "Adwisp", title_chars
     ))
@@ -161,6 +178,7 @@ function Renderer:render()
     local ass = string.format([[
 {\an7\pos(%d,%d)\bord0\shad0\1c%s\alpha&H18&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
 {\an7\pos(%d,%d)\fnSans\fs22\b1\1c%s}%s
+{\an9\pos(%d,%d)\fnSans\fs13\b1\1c%s}%s
 {\an7\pos(%d,%d)\fnSans\fs14\1c%s}%s
 {\an7\pos(%d,%d)\fnSans\fs14\1c%s}%s
 {\an7\pos(%d,%d)\bord0\shad0\1c%s\p1}m 0 0 l %d 0 %d 6 0 6{\p0}
@@ -171,6 +189,7 @@ function Renderer:render()
 ]],
         panel.x, panel.y, colors.background, panel.width, panel.width, panel.height, panel.height,
         title_pos.x, title_pos.y, colors.text, title,
+        title_pos.x + title_pos.width, title_pos.y, colors.accent, buffering_label,
         playback.x, playback.y, colors.muted, pause_label,
         volume.x, volume.y, volume_label_color, volume_label,
         timeline.x, timeline.y, colors.muted, timeline.width, timeline.width,

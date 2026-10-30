@@ -95,6 +95,10 @@ assert_equal(#overlays, 1, "entry point should create one OSD overlay")
 assert_equal(overlays[1].kind, "ass-events", "renderer should use ASS events")
 assert_true(observers.pause ~= nil, "pause property should be observed")
 assert_true(observers["time-pos"] ~= nil, "playback position should be observed")
+assert_true(observers["paused-for-cache"] ~= nil,
+    "cache pause state should be observed")
+assert_true(observers["cache-buffering-state"] ~= nil,
+    "cache buffering progress should be observed")
 assert_true(observers["osd-dimensions"] ~= nil, "OSD dimensions should be observed")
 assert_true(events["file-loaded"] ~= nil, "file-loaded event should be registered")
 assert_true(events["end-file"] ~= nil, "end-file event should be registered")
@@ -131,6 +135,18 @@ assert_equal(observed_state.duration, 0, "negative duration should clamp to zero
 assert_equal(observed_state.volume, 100, "non-finite volume should fall back to a safe default")
 assert_equal(observed_state.playlist_count, 0, "non-finite playlist count should fall back to zero")
 assert_equal(observed_state.playlist_pos, -1, "non-finite playlist position should fall back to no selection")
+observers["cache-buffering-state"].callback("cache-buffering-state", 45)
+observers["paused-for-cache"].callback("paused-for-cache", true)
+assert_equal(observed_state.buffering, true,
+    "paused-for-cache should activate the buffering indicator")
+assert_equal(observed_state.buffering_progress, 45,
+    "cache progress should be retained for the indicator")
+observers["cache-buffering-state"].callback("cache-buffering-state", 150)
+assert_equal(observed_state.buffering_progress, 100,
+    "cache progress should clamp to 100 percent")
+observers["paused-for-cache"].callback("paused-for-cache", false)
+assert_equal(observed_state.buffering, false,
+    "local or resumed playback should hide the buffering indicator")
 observers["time-pos"].callback("time-pos", 12)
 observers.duration.callback("duration", 60)
 observers.volume.callback("volume", 100)

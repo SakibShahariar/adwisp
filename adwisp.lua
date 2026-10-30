@@ -365,6 +365,10 @@ local observers = {
     { "media-title", "string", function(value) state.title = type(value) == "string" and value or "" end },
     { "volume", "number", function(value) state.volume = math.max(0, math.min(100, finite_property(value, 100))) end },
     { "mute", "bool", function(value) state.mute = value == true end },
+    { "paused-for-cache", "bool", function(value) state.buffering = value == true end },
+    { "cache-buffering-state", "number", function(value)
+        state.buffering_progress = math.max(0, math.min(100, finite_property(value, 0)))
+    end },
     { "playlist-pos", "number", function(value) state.playlist_pos = finite_property(value, -1) end },
     { "playlist-count", "number", function(value) state.playlist_count = math.max(0, finite_property(value, 0)) end },
 }
