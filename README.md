@@ -28,7 +28,9 @@ These features are still under active development. Automated tests and CI checks
 
 ## Installation
 
-Adwisp is currently installed manually; a package or release installer is not yet provided.
+Tagged releases include a ready-to-extract ZIP archive. Download `adwisp-vX.Y.Z.zip` from the [GitHub Releases](https://github.com/SakibShahariar/adwisp/releases) page and extract its contents into your mpv configuration directory (for example, `~/.config/mpv/`). The archive contains `scripts/adwisp/` and `script-opts/` in the expected layout.
+
+To install from source instead:
 
 1. Create a script directory, for example `~/.config/mpv/scripts/adwisp/`.
 2. Copy `adwisp.lua` and the complete `core/` directory into that directory. Keep the directory structure intact:

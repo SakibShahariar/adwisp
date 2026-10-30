@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Validate and publish release archive
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Lua
+        uses: leafo/gh-actions-lua@v11
+        with:
+          luaVersion: "5.2"
+
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install luacheck
+        run: luarocks install luacheck
+
+      - name: Check Lua syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find adwisp.lua core tests -type f -name '*.lua' -print0 |
+            while IFS= read -r -d '' file; do
+              luac -p "$file"
+            done
+
+      - name: Run Luacheck
+        run: luacheck adwisp.lua core tests --no-color
+
+      - name: Run unit tests
+        run: |
+          lua tests/test_layout.lua
+          lua tests/test_adwisp.lua
+          lua tests/test_renderer.lua
+          lua tests/test_theme.lua
+
+      - name: Build release archive
+        run: |
+          bash scripts/package.sh "$GITHUB_REF_NAME" dist
+          archive="dist/adwisp-$GITHUB_REF_NAME.zip"
+          unzip -Z1 "$archive" | grep -Fx 'scripts/adwisp/adwisp.lua'
+          unzip -Z1 "$archive" | grep -Fx 'scripts/adwisp/core/layout.lua'
+          unzip -Z1 "$archive" | grep -Fx 'script-opts/adwisp.conf'
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "dist/adwisp-$GITHUB_REF_NAME.zip" \\
+            --title "Adwisp $GITHUB_REF_NAME" --generate-notes
