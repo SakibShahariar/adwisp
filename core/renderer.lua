@@ -123,14 +123,17 @@ function Renderer:render()
     local progress_label = layout.progress_label
     local time_label = layout.time_label
     local playlist = layout.playlist
-    local playlist_label = "‹    Previous       Next    ›"
-    if is_finite_number(state.playlist_count) and state.playlist_count >= 1
-        and is_finite_number(state.playlist_pos) and state.playlist_pos >= 0 then
-        local playlist_count = math.floor(state.playlist_count)
-        local playlist_pos = math.floor(state.playlist_pos)
-        if playlist_count >= 1 and playlist_pos < playlist_count then
-            playlist_label = string.format("‹    Previous      %d / %d      Next    ›",
-                playlist_pos + 1, playlist_count)
+    local playlist_label = ""
+    local playlist_count = is_finite_number(state.playlist_count)
+        and math.max(0, math.floor(state.playlist_count)) or 0
+    if playlist_count >= 2 then
+        playlist_label = "‹    Previous       Next    ›"
+        if is_finite_number(state.playlist_pos) and state.playlist_pos >= 0 then
+            local playlist_pos = math.floor(state.playlist_pos)
+            if playlist_pos < playlist_count then
+                playlist_label = string.format("‹    Previous      %d / %d      Next    ›",
+                    playlist_pos + 1, playlist_count)
+            end
         end
     end
     local filled = math.floor(timeline.width * progress)

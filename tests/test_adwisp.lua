@@ -148,6 +148,17 @@ key_bindings["adwisp-mute-toggle"].callback()
 assert_equal(commands[#commands][1], "cycle", "mute shortcut should cycle mute")
 assert_equal(commands[#commands][2], "mute", "mute shortcut should target mute state")
 
+-- Single-item playlists must not accept keyboard navigation.
+observers["playlist-count"].callback("playlist-count", 1)
+observers["playlist-pos"].callback("playlist-pos", 0)
+local commands_before_single_item_keys = #commands
+key_bindings["adwisp-playlist-prev"].callback()
+key_bindings["adwisp-playlist-next"].callback()
+assert_equal(#commands, commands_before_single_item_keys,
+    "single-item playlists should ignore keyboard navigation")
+observers["playlist-count"].callback("playlist-count", 5)
+observers["playlist-pos"].callback("playlist-pos", 1)
+
 key_bindings["adwisp-playlist-prev"].callback()
 assert_equal(commands[#commands][1], "playlist-prev", "Ctrl+Left should go to previous playlist item")
 assert_equal(commands[#commands][2], "weak", "previous shortcut should use weak mode")
@@ -206,7 +217,27 @@ key_bindings["adwisp-mouse-click"].callback()
 assert_equal(commands[#commands][1], "cycle", "playback click should issue cycle")
 assert_equal(commands[#commands][2], "pause", "playback click should target pause")
 
--- Hovering the playlist row should draw themed feedback.
+-- A single-item playlist hides its controls and rejects mouse interaction.
+mouse_x, mouse_y = 10, 10
+key_bindings["adwisp-mouse-move"].callback()
+observers["playlist-count"].callback("playlist-count", 1)
+observers["playlist-pos"].callback("playlist-pos", 0)
+mouse_x = layout.playlist.x + 5
+mouse_y = layout.playlist.y + 5
+key_bindings["adwisp-mouse-move"].callback()
+assert_true(overlays[1].data:find("Previous", 1, true) == nil
+    and overlays[1].data:find("Next", 1, true) == nil,
+    "single-item playlists should hide navigation controls")
+assert_true(overlays[1].data:find("\\alpha&H30&", 1, true) == nil,
+    "single-item playlist row should not show hover feedback")
+local commands_before_single_item_click = #commands
+key_bindings["adwisp-mouse-click"].callback()
+assert_equal(#commands, commands_before_single_item_click,
+    "single-item playlists should ignore mouse navigation")
+observers["playlist-count"].callback("playlist-count", 5)
+observers["playlist-pos"].callback("playlist-pos", 1)
+
+-- Multi-item playlists retain their navigation controls and hover feedback.
 mouse_x = layout.playlist.x + 5
 mouse_y = layout.playlist.y + 5
 key_bindings["adwisp-mouse-move"].callback()

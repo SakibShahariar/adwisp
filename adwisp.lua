@@ -111,6 +111,12 @@ local function seek_at(mouse_x, timeline)
     mp.commandv("seek", fraction * 100, "absolute-percent")
 end
 
+local function has_playlist_navigation()
+    local count = state.playlist_count
+    return type(count) == "number" and count == count
+        and count ~= math.huge and count ~= -math.huge and math.floor(count) >= 2
+end
+
 local function handle_mouse_move()
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
     local mouse_x, mouse_y = mp.get_mouse_pos()
@@ -139,7 +145,7 @@ local function handle_mouse_move()
         hover_target = "playback"
     elseif contains(layout.volume) then
         hover_target = "volume"
-    elseif contains(layout.playlist) then
+    elseif has_playlist_navigation() and contains(layout.playlist) then
         hover_target = "playlist"
     elseif mouse_x >= layout.timeline.hit_x
         and mouse_x <= layout.timeline.hit_x + layout.timeline.hit_width
@@ -217,7 +223,8 @@ local function handle_mouse_click(event)
     end
 
     local playlist = layout.playlist
-    if mouse_x >= playlist.x and mouse_x <= playlist.x + playlist.width
+    if has_playlist_navigation() and mouse_x >= playlist.x
+        and mouse_x <= playlist.x + playlist.width
         and mouse_y >= playlist.y and mouse_y <= playlist.y + playlist.height then
         if mouse_x < playlist.x + playlist.width / 2 then
             mp.commandv("playlist-prev", "weak")
@@ -306,10 +313,14 @@ mp.add_key_binding("m", "adwisp-mute-toggle", function()
     mp.commandv("cycle", "mute")
 end)
 mp.add_key_binding("CTRL+LEFT", "adwisp-playlist-prev", function()
-    mp.commandv("playlist-prev", "weak")
+    if has_playlist_navigation() then
+        mp.commandv("playlist-prev", "weak")
+    end
 end)
 mp.add_key_binding("CTRL+RIGHT", "adwisp-playlist-next", function()
-    mp.commandv("playlist-next", "weak")
+    if has_playlist_navigation() then
+        mp.commandv("playlist-next", "weak")
+    end
 end)
 mp.add_key_binding("CTRL+UP", "adwisp-volume-up", function()
     change_volume(1)
