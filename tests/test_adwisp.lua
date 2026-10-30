@@ -366,6 +366,36 @@ assert_equal(commands[#commands][1], "script-message-to",
 assert_equal(commands[#commands][2], "thumbfast", "clear should target thumbfast")
 assert_equal(commands[#commands][3], "clear", "leaving timeline should clear preview")
 
+-- A new drag replaces the previous drag instead of activating both.
+mouse_x = volume_track.x + volume_track.width * 0.25
+mouse_y = volume_hit.y + volume_hit.height / 2
+key_bindings["adwisp-mouse-click"].callback({ event = "down" })
+local volume_commands_before_switch = 0
+for _, command in ipairs(commands) do
+    if command[1] == "set" and command[2] == "volume" then
+        volume_commands_before_switch = volume_commands_before_switch + 1
+    end
+end
+mouse_x = layout.timeline.x + layout.timeline.width * 0.4
+mouse_y = layout.timeline.y
+key_bindings["adwisp-mouse-click"].callback({ event = "down" })
+local seeks_before_switch_move = 0
+for _, command in ipairs(commands) do
+    if command[1] == "seek" then seeks_before_switch_move = seeks_before_switch_move + 1 end
+end
+mouse_x = volume_track.x + volume_track.width * 0.8
+mouse_y = volume_hit.y + volume_hit.height / 2
+key_bindings["adwisp-mouse-move"].callback()
+local volume_commands_after_switch_move = 0
+for _, command in ipairs(commands) do
+    if command[1] == "set" and command[2] == "volume" then
+        volume_commands_after_switch_move = volume_commands_after_switch_move + 1
+    end
+end
+assert_equal(volume_commands_after_switch_move, volume_commands_before_switch,
+    "timeline drag should replace volume drag")
+key_bindings["adwisp-mouse-click"].callback({ event = "up" })
+
 -- Timeline dragging should seek continuously and stop on mouse release.
 mouse_x = layout.timeline.x + layout.timeline.width * 0.1
 mouse_y = layout.timeline.y

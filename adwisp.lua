@@ -27,12 +27,10 @@ local renderer = Renderer.new(mp, state)
 -- thumbfast owns thumbnail generation and display. Adwisp only requests previews.
 local thumbfast = { width = 0, height = 0, disabled = true, available = false }
 local thumbnail_active = false
-local dragging_volume = false
-local dragging_timeline = false
+local active_drag = nil
 
 local function clear_interaction_state()
-    dragging_volume = false
-    dragging_timeline = false
+    active_drag = nil
     state.hover_target = nil
 end
 
@@ -133,47 +131,52 @@ local function has_playlist_navigation()
         and count ~= math.huge and count ~= -math.huge and math.floor(count) >= 2
 end
 
+local function finite_number(value)
+    return type(value) == "number" and value == value
+        and value ~= math.huge and value ~= -math.huge
+end
+
+local function contains(rect, mouse_x, mouse_y)
+    return mouse_x >= rect.x and mouse_x <= rect.x + rect.width
+        and mouse_y >= rect.y and mouse_y <= rect.y + rect.height
+end
+
+local function contains_timeline(timeline, mouse_x, mouse_y)
+    return mouse_x >= timeline.hit_x
+        and mouse_x <= timeline.hit_x + timeline.hit_width
+        and mouse_y >= timeline.hit_y
+        and mouse_y <= timeline.hit_y + timeline.hit_height
+end
+
 local function handle_mouse_move()
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
     local mouse_x, mouse_y = mp.get_mouse_pos()
-    if type(mouse_x) ~= "number" or type(mouse_y) ~= "number"
-        or mouse_x ~= mouse_x or mouse_y ~= mouse_y
-        or mouse_x == math.huge or mouse_x == -math.huge
-        or mouse_y == math.huge or mouse_y == -math.huge then return end
+    if not finite_number(mouse_x) or not finite_number(mouse_y) then return end
     local width, height = mp.get_osd_size()
     local layout = Layout.compute(width, height)
     if not layout then return end
 
-    if dragging_volume then
+    if active_drag == "volume" then
         set_volume_at(mouse_x, layout.volume.track)
-    end
-    if dragging_timeline then
+    elseif active_drag == "timeline" then
         seek_at(mouse_x, layout.timeline)
     end
 
-    local function contains(rect)
-        return mouse_x >= rect.x and mouse_x <= rect.x + rect.width
-            and mouse_y >= rect.y and mouse_y <= rect.y + rect.height
-    end
-
     local hover_target
-    if contains(layout.playback) then
+    if contains(layout.playback, mouse_x, mouse_y) then
         hover_target = "playback"
-    elseif contains(layout.volume) then
+    elseif contains(layout.volume, mouse_x, mouse_y) then
         hover_target = "volume"
-    elseif has_playlist_navigation() and contains(layout.playlist) then
+    elseif has_playlist_navigation() and contains(layout.playlist, mouse_x, mouse_y) then
         hover_target = "playlist"
-    elseif mouse_x >= layout.timeline.hit_x
-        and mouse_x <= layout.timeline.hit_x + layout.timeline.hit_width
-        and mouse_y >= layout.timeline.hit_y
-        and mouse_y <= layout.timeline.hit_y + layout.timeline.hit_height then
+    elseif contains_timeline(layout.timeline, mouse_x, mouse_y) then
         hover_target = "timeline"
     end
 
     local timeline = layout.timeline
-    local on_timeline = opts.thumbnail_preview ~= false
-        and mouse_x >= timeline.hit_x and mouse_x <= timeline.hit_x + timeline.hit_width
-        and mouse_y >= timeline.hit_y and mouse_y <= timeline.hit_y + timeline.hit_height
+    local on_timeline = active_drag == nil
+        and opts.thumbnail_preview ~= false
+        and contains_timeline(timeline, mouse_x, mouse_y)
     if on_timeline and not thumbfast.disabled and state.duration > 0
         and thumbfast.width > 0 and thumbfast.height > 0 then
         local fraction = math.max(0, math.min(1,
@@ -197,14 +200,13 @@ end
 
 local function handle_mouse_click(event)
     if event and event.event == "up" then
-        dragging_volume = false
-        dragging_timeline = false
+        active_drag = nil
         return
     end
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
 
     local mouse_x, mouse_y = mp.get_mouse_pos()
-    if type(mouse_x) ~= "number" or type(mouse_y) ~= "number" then return end
+    if not finite_number(mouse_x) or not finite_number(mouse_y) then return end
 
     local width, height = mp.get_osd_size()
     local layout = Layout.compute(width, height)
@@ -212,21 +214,28 @@ local function handle_mouse_click(event)
 
     local volume = layout.volume
     local volume_hit = volume.hit
-    if event and event.event == "down"
-        and mouse_x >= volume_hit.x and mouse_x <= volume_hit.x + volume_hit.width
-        and mouse_y >= volume_hit.y and mouse_y <= volume_hit.y + volume_hit.height then
-        dragging_volume = true
-        set_volume_at(mouse_x, volume.track)
-        return
+    local timeline = layout.timeline
+
+    if event and event.event == "down" then
+        -- A new press replaces any previous drag, so the two interactions
+        -- can never become active together.
+        active_drag = nil
+        if contains(volume_hit, mouse_x, mouse_y) then
+            active_drag = "volume"
+            set_volume_at(mouse_x, volume.track)
+            return
+        end
+        if contains_timeline(timeline, mouse_x, mouse_y) then
+            if state.duration > 0 then
+                active_drag = "timeline"
+                seek_at(mouse_x, timeline)
+            end
+            return
+        end
     end
 
-    local timeline = layout.timeline
-    if mouse_x >= timeline.hit_x and mouse_x <= timeline.hit_x + timeline.hit_width
-        and mouse_y >= timeline.hit_y and mouse_y <= timeline.hit_y + timeline.hit_height then
+    if contains_timeline(timeline, mouse_x, mouse_y) then
         if state.duration > 0 then
-            if event and event.event == "down" then
-                dragging_timeline = true
-            end
             seek_at(mouse_x, timeline)
         end
         return
@@ -251,8 +260,7 @@ local function handle_mouse_click(event)
         return
     end
 
-    if mouse_x >= volume_hit.x and mouse_x <= volume_hit.x + volume_hit.width
-        and mouse_y >= volume_hit.y and mouse_y <= volume_hit.y + volume_hit.height then
+    if contains(volume_hit, mouse_x, mouse_y) then
         set_volume_at(mouse_x, volume.track)
     end
 end
