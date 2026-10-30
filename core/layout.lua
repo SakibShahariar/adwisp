@@ -23,9 +23,35 @@ function Layout.compute(width, height)
     -- Very short windows need a denser row arrangement, not merely a shorter panel.
     local dense_compact = compact and panel_height < 144
     local x = math.floor((width - panel_width) / 2)
-    local bottom_margin = compact and 8 or 42
-    local y = math.max(compact and 8 or 16,
-        math.floor(height - panel_height - bottom_margin))
+    local layout_options = type(options) == "table" and options or {}
+    local position = layout_options.osd_position
+    if position ~= "top" and position ~= "bottom" and position ~= "custom" then
+        position = "bottom"
+    end
+
+    local margin = layout_options.osd_margin
+    if type(margin) ~= "number" or margin ~= margin
+        or margin == math.huge or margin == -math.huge or margin < 0 then
+        margin = compact and 8 or 42
+    end
+    local max_y = math.max(0, height - panel_height)
+    margin = math.min(math.floor(margin), max_y)
+
+    local y
+    if position == "top" then
+        y = margin
+    elseif position == "custom" then
+        local offset = layout_options.osd_custom_offset
+        if type(offset) == "number" and offset == offset
+            and offset ~= math.huge and offset ~= -math.huge and offset >= 0 then
+            y = math.max(0, math.min(max_y, math.floor(offset)))
+        else
+            position = "bottom"
+            y = max_y - margin
+        end
+    else
+        y = max_y - margin
+    end
     local padding = math.min(22, math.floor(panel_width * 0.06))
     local inner_x = x + padding
     local inner_width = math.max(1, panel_width - padding * 2)
@@ -68,6 +94,7 @@ function Layout.compute(width, height)
         width = width,
         height = height,
         compact = compact,
+        position = position,
         panel = { x = x, y = y, width = panel_width, height = panel_height },
         title = { x = inner_x, y = y + (dense_compact and 5 or (compact and 10 or 18)), width = inner_width },
         playback = { x = inner_x, y = control_y, width = playback_width,

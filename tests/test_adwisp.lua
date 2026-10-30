@@ -58,6 +58,12 @@ package.loaded["mp.options"] = {
         assert(options.seek_step == 5, "default seek step should be five seconds")
         assert(options.time_pos_render_interval == 0.15,
             "playback render interval should default to 150 milliseconds")
+        assert(options.osd_position == "bottom",
+            "OSD position should default to bottom")
+        assert(options.osd_margin == -1,
+            "OSD margin should default to responsive placement")
+        assert(options.osd_custom_offset == 120,
+            "custom OSD offset should have a safe default")
         package.loaded["mp.options"].last_options = options
     end,
 }
@@ -261,6 +267,24 @@ assert_equal(commands[#commands][1], "seek", "timeline click should issue seek")
 assert_equal(commands[#commands][2], 50, "timeline midpoint should seek to 50 percent")
 assert_equal(commands[#commands][3], "absolute-percent",
     "timeline click should use absolute-percent mode")
+
+-- Configured OSD placement must be shared by rendering and hit testing.
+option_fixture.osd_position = "top"
+option_fixture.osd_margin = 24
+local top_layout = Layout.compute(1280, 720, option_fixture)
+assert_equal(top_layout.panel.y, 24, "top OSD should use its configured margin")
+local commands_before_top_click = #commands
+mouse_x = top_layout.playback.x + 5
+mouse_y = top_layout.playback.y + 5
+key_bindings["adwisp-mouse-click"].callback()
+assert_equal(commands[#commands][1], "cycle",
+    "mouse hit testing should follow the repositioned playback control")
+assert_equal(#commands, commands_before_top_click + 1,
+    "clicking the repositioned control should issue exactly one command")
+option_fixture.osd_position = "bottom"
+option_fixture.osd_margin = -1
+mouse_x = layout.playback.x + 5
+mouse_y = layout.playback.y + 5
 
 -- Clicking the playback control should toggle pause.
 mouse_x = layout.playback.x + 5

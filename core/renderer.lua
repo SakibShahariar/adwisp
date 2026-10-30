@@ -108,7 +108,7 @@ function Renderer:render()
         progress = math.max(0, math.min(1, time_pos / duration))
     end
 
-    local layout = Layout.compute(width, height)
+    local layout = Layout.compute(width, height, state.layout_options)
     if not layout then return end
     local panel = layout.panel
     local title_pos = layout.title

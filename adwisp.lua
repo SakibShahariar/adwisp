@@ -19,6 +19,7 @@ local opts = {
 options.read_options(opts, "adwisp")
 
 local state = require "core.state"
+state.layout_options = opts
 local Renderer = require "core.renderer"
 local Layout = require "core.layout"
 local Theme = require "core.theme"
@@ -31,6 +32,7 @@ local thumbnail_active = false
 local last_thumbnail_request = nil
 local cached_layout = nil
 local cached_layout_width, cached_layout_height
+local cached_layout_position, cached_layout_margin, cached_layout_custom_offset
 local active_drag = nil
 
 local function clear_interaction_state()
@@ -178,9 +180,15 @@ end
 
 local function get_layout(width, height)
     if not cached_layout or width ~= cached_layout_width
-        or height ~= cached_layout_height then
-        cached_layout = Layout.compute(width, height)
+        or height ~= cached_layout_height
+        or opts.osd_position ~= cached_layout_position
+        or opts.osd_margin ~= cached_layout_margin
+        or opts.osd_custom_offset ~= cached_layout_custom_offset then
+        cached_layout = Layout.compute(width, height, opts)
         cached_layout_width, cached_layout_height = width, height
+        cached_layout_position = opts.osd_position
+        cached_layout_margin = opts.osd_margin
+        cached_layout_custom_offset = opts.osd_custom_offset
     end
     return cached_layout
 end

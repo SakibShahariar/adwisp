@@ -125,7 +125,49 @@ local function test_layout_rectangles()
     assert_volume_geometry(Layout.compute(640, 180), "compact")
 end
 
-local function test_dense_compact_layout_stays_inside_panel()
+local function 
+local function test_configurable_vertical_position()
+    local default = Layout.compute(1280, 720)
+    assert_equal(default.panel.y, 522, "default bottom placement should remain unchanged")
+
+    local top = Layout.compute(1280, 720, {
+        osd_position = "top",
+        osd_margin = 24,
+    })
+    assert_equal(top.position, "top", "top placement should be retained")
+    assert_equal(top.panel.y, 24, "top placement should use the configured margin")
+
+    local bottom = Layout.compute(1280, 720, {
+        osd_position = "bottom",
+        osd_margin = 60,
+    })
+    assert_equal(bottom.panel.y, 504, "bottom placement should use the configured margin")
+
+    local custom = Layout.compute(1280, 720, {
+        osd_position = "custom",
+        osd_custom_offset = 180,
+    })
+    assert_equal(custom.position, "custom", "custom placement should be retained")
+    assert_equal(custom.panel.y, 180, "custom offset should be measured from the top")
+
+    local clamped = Layout.compute(320, 240, {
+        osd_position = "custom",
+        osd_custom_offset = 9999,
+    })
+    assert_equal(clamped.panel.y + clamped.panel.height, 240,
+        "custom placement should clamp to the visible OSD bounds")
+
+    local invalid = Layout.compute(1280, 720, {
+        osd_position = "diagonal",
+        osd_margin = -10,
+    })
+    assert_equal(invalid.position, "bottom",
+        "invalid position should safely fall back to bottom")
+    assert_equal(invalid.panel.y, default.panel.y,
+        "invalid margin should retain the default responsive margin")
+end
+
+test_dense_compact_layout_stays_inside_panel()
     for _, height in ipairs({ 120, 128, 140, 152, 159 }) do
         for _, width in ipairs({ 200, 320, 640 }) do
             local candidate = Layout.compute(width, height)
@@ -220,6 +262,7 @@ end
 
 test_layout_rectangles()
 test_timeline_labels_do_not_overlap()
+test_configurable_vertical_position()
 test_dense_compact_layout_stays_inside_panel()
 
 print("All layout tests passed.")

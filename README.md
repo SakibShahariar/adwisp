@@ -90,6 +90,15 @@ thumbnail_preview=yes
 # Playback-position OSD rebuild interval in seconds (0.05–0.5)
 time_pos_render_interval=0.15
 
+# OSD placement: bottom, top, or custom
+osd_position=bottom
+
+# Edge margin in pixels; -1 keeps the responsive default
+osd_margin=-1
+
+# Top-origin vertical offset in pixels when osd_position=custom
+osd_custom_offset=120
+
 # Optional absolute path to a semantic palette file
 theme_file=
 ```
