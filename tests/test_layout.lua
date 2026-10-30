@@ -164,7 +164,8 @@ local function test_timeline_labels_do_not_overlap()
     local compact = Layout.compute(200, 180)
     assert_true(compact.compact and not compact.progress_label.visible,
         "compact narrow windows should hide the progress label")
-    assert_true(compact.time_label.visible and compact.time_label.current_only,
+    assert_true(compact.time_label.visible and compact.time_label.compact
+        and not compact.time_label.current_only,
         "compact narrow windows should retain elapsed time where it fits")
 end
 
