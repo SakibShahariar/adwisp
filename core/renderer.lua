@@ -183,13 +183,16 @@ function Renderer:render()
         if preview_width > 0 and preview_height > 0 then
             local preview_x = is_finite_number(state.preview_x) and state.preview_x or 0
             local preview_y = is_finite_number(state.preview_y) and state.preview_y or 0
-            preview_label_x = math.max(40, math.min(width - 40,
-                preview_x + preview_width / 2))
-            preview_label_y = preview_y + preview_height + 8
-            if preview_label_y + 18 > height then
-                preview_label_y = preview_y - 18
+            local horizontal_margin = math.min(40, width / 2)
+            preview_label_x = math.max(horizontal_margin, math.min(
+                width - horizontal_margin, preview_x + preview_width / 2))
+            preview_label_y = preview_y - 20
+            if preview_label_y < 8 then
+                preview_label_y = preview_y + preview_height + 8
             end
-            preview_label_y = math.max(8, math.min(height - 8, preview_label_y))
+            local vertical_margin = math.min(8, height / 2)
+            preview_label_y = math.max(vertical_margin, math.min(
+                height - vertical_margin, preview_label_y))
         else
             preview_label = ""
         end
