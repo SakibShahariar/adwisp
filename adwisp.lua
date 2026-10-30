@@ -14,6 +14,7 @@ local opts = {
     volume_step = 5,
     theme_file = "",
     thumbnail_preview = true,
+    time_pos_render_interval = 0.15,
 }
 options.read_options(opts, "adwisp")
 
@@ -45,7 +46,13 @@ local function clear_thumbnail()
     last_thumbnail_request = nil
 end
 
+local time_pos_render_pending = false
+local time_pos_render_generation = 0
+
 local function render()
+    -- Any immediate render supersedes a queued playback-position update.
+    time_pos_render_generation = time_pos_render_generation + 1
+    time_pos_render_pending = false
     renderer:render()
 end
 
@@ -138,6 +145,30 @@ end
 local function finite_number(value)
     return type(value) == "number" and value == value
         and value ~= math.huge and value ~= -math.huge
+end
+
+local function request_time_pos_render()
+    if not state.visible then return end
+    if type(mp.add_timeout) ~= "function" then
+        render()
+        return
+    end
+    if time_pos_render_pending then return end
+
+    local interval = tonumber(opts.time_pos_render_interval)
+    if not finite_number(interval) then interval = 0.15 end
+    interval = math.max(0.05, math.min(0.5, interval))
+
+    time_pos_render_pending = true
+    time_pos_render_generation = time_pos_render_generation + 1
+    local generation = time_pos_render_generation
+    mp.add_timeout(interval, function()
+        if generation ~= time_pos_render_generation or not time_pos_render_pending then
+            return
+        end
+        time_pos_render_pending = false
+        if state.visible then render() end
+    end)
 end
 
 local function contains(rect, mouse_x, mouse_y)
@@ -311,7 +342,11 @@ for _, observer in ipairs(observers) do
     local property, property_type, apply = observer[1], observer[2], observer[3]
     mp.observe_property(property, property_type, function(_, value)
         apply(value)
-        render()
+        if property == "time-pos" then
+            request_time_pos_render()
+        else
+            render()
+        end
     end)
 end
 

@@ -6,6 +6,7 @@ local key_bindings = {}
 local script_messages = {}
 local commands = {}
 local overlays = {}
+local timers = {}
 local mouse_x, mouse_y = 0, 0
 local thumbfast_payload
 
@@ -25,6 +26,11 @@ local mp = {
     end,
     commandv = function(...)
         commands[#commands + 1] = { ... }
+    end,
+    add_timeout = function(seconds, callback)
+        local timer = { timeout = seconds, callback = callback }
+        timers[#timers + 1] = timer
+        return timer
     end,
     create_osd_overlay = function(kind)
         local overlay = { kind = kind, update_count = 0 }
@@ -50,6 +56,8 @@ package.loaded["mp.utils"] = {
 package.loaded["mp.options"] = {
     read_options = function(options)
         assert(options.seek_step == 5, "default seek step should be five seconds")
+        assert(options.time_pos_render_interval == 0.15,
+            "playback render interval should default to 150 milliseconds")
         package.loaded["mp.options"].last_options = options
     end,
 }
@@ -121,6 +129,38 @@ assert_true(overlays[1].data:find("Play", 1, true) ~= nil,
 -- Re-rendering unchanged state should use the renderer cache.
 observers.pause.callback("pause", true)
 assert_equal(overlays[1].update_count, 2, "unchanged render should be cached")
+
+-- Playback-position updates are coalesced, but the latest value is rendered.
+local timer_count_before_position = #timers
+local updates_before_position = overlays[1].update_count
+observers["time-pos"].callback("time-pos", 24)
+assert_equal(#timers, timer_count_before_position + 1,
+    "the first visible time-pos update should schedule one render")
+local position_timer = timers[#timers]
+assert_equal(position_timer.timeout, 0.15,
+    "time-pos renders should use the configured interval")
+observers["time-pos"].callback("time-pos", 26)
+assert_equal(#timers, timer_count_before_position + 1,
+    "rapid time-pos updates should share the pending timer")
+assert_equal(overlays[1].update_count, updates_before_position,
+    "time-pos updates should not render before the throttle window")
+position_timer.callback()
+assert_equal(overlays[1].update_count, updates_before_position + 1,
+    "the scheduled callback should render once")
+assert_true(overlays[1].data:find("0:26", 1, true) ~= nil,
+    "the scheduled render should use the latest playback position")
+
+-- An immediate non-time observer supersedes a queued playback render.
+observers["time-pos"].callback("time-pos", 27)
+local stale_position_timer = timers[#timers]
+local updates_before_immediate = overlays[1].update_count
+observers["media-title"].callback("media-title", "Immediate update")
+assert_equal(overlays[1].update_count, updates_before_immediate + 1,
+    "non-time observers should still render immediately")
+stale_position_timer.callback()
+assert_equal(overlays[1].update_count, updates_before_immediate + 1,
+    "superseded time-pos callbacks should not trigger stale renders")
+observers["media-title"].callback("media-title", "Test video")
 
 observers["playlist-count"].callback("playlist-count", 5)
 observers["playlist-pos"].callback("playlist-pos", 1)

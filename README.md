@@ -87,6 +87,9 @@ volume_step=5
 # Set to no to disable the optional thumbfast preview adapter
 thumbnail_preview=yes
 
+# Playback-position OSD rebuild interval in seconds (0.05–0.5)
+time_pos_render_interval=0.15
+
 # Optional absolute path to a semantic palette file
 theme_file=
 ```
