@@ -90,6 +90,31 @@ assert_true(overlay.data:find("Muted", 1, true) ~= nil,
 assert_true(overlay.data:find("100%", 1, true) ~= nil,
     "progress should clamp to 100 percent when position exceeds duration")
 
+-- Muted and low-volume states use a distinct, theme-aware accent label.
+state.mute = false
+state.volume = 15
+renderer:render()
+assert_true(overlay.data:find("Low volume 15%", 1, true) ~= nil,
+    "low volume should have an explicit label")
+assert_true(overlay.data:find("\\1c&H00EFCDAB&", 1, true) ~= nil
+    or overlay.data:find("\\1c&HEFCDAB&", 1, true) ~= nil,
+    "low-volume label should use the active theme accent color")
+state.volume = 50
+renderer:render()
+assert_true(overlay.data:find("Volume 50%", 1, true) ~= nil,
+    "normal volume should retain the regular label")
+assert_true(overlay.data:find("Low volume", 1, true) == nil,
+    "normal volume should not retain the low-volume label")
+state.mute = true
+renderer:render()
+assert_true(overlay.data:find("Muted", 1, true) ~= nil,
+    "muted state should remain immediately recognizable")
+assert_true(overlay.data:find("\\1c&HEFCDAB&", 1, true) ~= nil,
+    "muted label should use the active theme accent color")
+state.mute = false
+state.volume = 50.5
+
+
 state.time_pos = -5
 state.duration = 0
 renderer:render()

@@ -139,7 +139,9 @@ function Renderer:render()
     end
     local filled = math.floor(timeline.width * progress)
     local pause_label = state.paused and "Play" or "Pause"
-    local volume_label = state.mute and "Muted" or string.format("Volume %d%%", math.floor(volume_value + 0.5))
+    local volume_label = state.mute and "Muted"
+        or (volume_value <= 20 and string.format("Low volume %d%%", math.floor(volume_value + 0.5))
+            or string.format("Volume %d%%", math.floor(volume_value + 0.5)))
     local progress_text = progress_label.visible
         and string.format("%d%%", math.floor(progress * 100 + 0.5)) or ""
     local time_text = ""
@@ -196,9 +198,12 @@ function Renderer:render()
     ass = ass .. volume_track_ass
 
     local colors = Theme.to_ass(state.palette)
+    local volume_label_color = (state.mute or volume_value <= 20)
+        and colors.accent or colors.muted
     ass = ass:gsub("&H30251E&", colors.background)
         :gsub("&HFAF7F3&", colors.text)
         :gsub("&HDBD2C8&", colors.muted)
+        :gsub("&H0A0B0C&", volume_label_color)
         :gsub("&H6D6259&", colors.muted)
         :gsub("&H9B7653&", colors.accent)
 
