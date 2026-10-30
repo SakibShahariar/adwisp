@@ -809,6 +809,7 @@ register_no_argument_message("adwisp-query", function()
     mp.msg.info("Adwisp state: " .. json)
 end)
 mp.register_script_message("thumbfast-info", function(json)
+    last_mouse_x, last_mouse_y = nil, nil
     local data = utils.parse_json(json)
     local function positive_finite(value)
         return type(value) == "number" and value == value
