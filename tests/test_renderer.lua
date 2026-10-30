@@ -299,6 +299,7 @@ state.focus_target = nil
 renderer:render()
 
 -- File-loop and A-B state are visible in the status area.
+width, height = 1280, 720
 state.loop_file = "inf"
 state.ab_loop_a = 10
 state.ab_loop_b = 20
