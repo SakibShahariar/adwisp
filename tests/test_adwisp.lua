@@ -386,6 +386,12 @@ end
 mouse_x = volume_track.x + volume_track.width * 0.8
 mouse_y = volume_hit.y + volume_hit.height / 2
 key_bindings["adwisp-mouse-move"].callback()
+local seeks_after_switch_move = 0
+for _, command in ipairs(commands) do
+    if command[1] == "seek" then seeks_after_switch_move = seeks_after_switch_move + 1 end
+end
+assert_true(seeks_after_switch_move > seeks_before_switch_move,
+    "timeline drag should remain active after replacing volume drag")
 local volume_commands_after_switch_move = 0
 for _, command in ipairs(commands) do
     if command[1] == "set" and command[2] == "volume" then
