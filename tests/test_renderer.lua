@@ -159,10 +159,21 @@ assert_true(overlay.data:find("&H6D6259&", 1, true) == nil
     and overlay.data:find("&H53769B&", 1, true) == nil,
     "volume track should not retain hard-coded fallback colors")
 
+-- Low-volume feedback must use the active theme accent, not a fallback color.
+state.volume = 10
+renderer:render()
+local themed_low_label_index = assert(overlay.data:find("Low volume 10%", 1, true))
+local themed_low_label_prefix = overlay.data:sub(
+    math.max(1, themed_low_label_index - 90), themed_low_label_index)
+assert_true(themed_low_label_prefix:find("\\1c&HEFCDAB&", 1, true) ~= nil,
+    "low-volume label should use the active palette accent color")
+state.volume = 50.5
+renderer:render()
+
 -- Hover highlighting should follow the active palette surface color.
 state.hover_target = "playback"
 renderer:render()
-assert_equal(overlay.update_count, 12, "hover state should redraw the overlay")
+assert_equal(overlay.update_count, 14, "hover state should redraw the overlay")
 assert_true(overlay.data:find("\\1c&H060504&", 1, true) ~= nil,
     "hover highlight should use the palette surface color")
 
@@ -194,7 +205,7 @@ assert_true(overlay.data:find("nan", 1, true) == nil
 state.visible = false
 renderer:render()
 assert_equal(overlay.data, "", "hiding renderer should clear visible data")
-assert_equal(overlay.update_count, 15, "hiding should update overlay once")
+assert_equal(overlay.update_count, 17, "hiding should update overlay once")
 
 -- Very large but finite timestamps must remain safe for Lua 5.2 integer formatting.
 state.visible = true
