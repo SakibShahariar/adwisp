@@ -149,6 +149,11 @@ local function change_volume(delta)
     mp.commandv("set", "mute", "no")
 end
 
+local function finite_number(value)
+    return type(value) == "number" and value == value
+        and value ~= math.huge and value ~= -math.huge
+end
+
 local function speed_step()
     local value = tonumber(opts.speed_step)
     if not finite_number(value) then value = 0.1 end
@@ -195,11 +200,6 @@ local function has_playlist_navigation()
     local count = state.playlist_count
     return type(count) == "number" and count == count
         and count ~= math.huge and count ~= -math.huge and math.floor(count) >= 2
-end
-
-local function finite_number(value)
-    return type(value) == "number" and value == value
-        and value ~= math.huge and value ~= -math.huge
 end
 
 local function request_time_pos_render()
