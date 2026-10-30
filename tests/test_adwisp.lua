@@ -265,6 +265,7 @@ assert_equal(commands[#commands][2], "pause",
 key_bindings["adwisp-focus-next"].callback()
 assert_equal(observed_state.focus_target, "volume",
     "Tab should advance focus to volume")
+observed_state.volume = 50
 local volume_before_focus = observed_state.volume
 key_bindings["adwisp-seek-forward"].callback()
 assert_equal(observed_state.volume, volume_before_focus + 5,

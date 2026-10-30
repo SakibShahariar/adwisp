@@ -77,7 +77,7 @@ Typical mpv configuration directories:
 | Drag timeline | Seek continuously while dragging |
 | Mouse click on left/right playlist control | Previous / next playlist item |
 
-Keyboard focus is visible with the active theme accent. With no control focused, Left/Right retain their normal seek behavior. Mouse clicks on playback, volume, and playlist controls also move keyboard focus.
+Keyboard focus is visible with the active theme accent. With no control focused, Left/Right retain their normal seek behavior.
 
 Mouse and OSD behavior can vary with mpv configuration and platform; please report issues with your mpv version and relevant logs.
 
@@ -176,17 +176,7 @@ After regenerating the palette, ask mpv to reload it without restarting:
 
 ### Script messages
 
-Adwisp exposes no-argument messages for external mpv scripts:
-
-| Message | Action |
-| --- | --- |
-| `/script-message adwisp-show` | Show the OSD |
-| `/script-message adwisp-hide` | Hide the OSD |
-| `/script-message adwisp-toggle` | Toggle visibility |
-| `/script-message adwisp-reload-theme` | Reload the configured palette |
-| `/script-message adwisp-query` | Print a JSON snapshot of UI and playback state to the mpv log |
-
-Unexpected arguments are rejected with a warning. The query omits media paths and remains available when informational logging is quiet.
+See the [Script-message API](#script-message-api) section for the complete message list and usage examples.
 
 ### Thumbnail previews
 
