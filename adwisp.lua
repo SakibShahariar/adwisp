@@ -224,6 +224,21 @@ local function hide_osd()
     render()
 end
 
+
+-- Cancel deferred work and release UI/thumbnail state before mpv exits.
+local function cleanup_on_shutdown()
+    idle_generation = idle_generation + 1
+    kill_timer(idle_timer)
+    idle_timer = nil
+    cancel_fade()
+    time_pos_render_generation = time_pos_render_generation + 1
+    time_pos_render_pending = false
+    clear_interaction_state()
+    clear_thumbnail()
+    state.visible = false
+    state.opacity = 1
+    renderer:clear()
+end
 local function note_activity()
     if not state.visible then return end
     idle_generation = idle_generation + 1
@@ -659,6 +674,9 @@ mp.register_event("end-file", function()
     log_debug("file ended")
     hide_osd()
 end)
+
+-- mpv emits shutdown before terminating Lua script event loops.
+mp.register_event("shutdown", cleanup_on_shutdown)
 
 mp.register_event("video-reconfig", render)
 mp.observe_property("osd-dimensions", "native", render)

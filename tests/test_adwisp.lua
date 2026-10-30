@@ -126,6 +126,7 @@ assert_true(observers["cache-buffering-state"] ~= nil,
 assert_true(observers["osd-dimensions"] ~= nil, "OSD dimensions should be observed")
 assert_true(events["file-loaded"] ~= nil, "file-loaded event should be registered")
 assert_true(events["end-file"] ~= nil, "end-file event should be registered")
+assert_true(events["shutdown"] ~= nil, "shutdown cleanup event should be registered")
 assert_true(key_bindings["adwisp-toggle"] ~= nil, "toggle key should be registered")
 assert_true(key_bindings["adwisp-dismiss-escape"] ~= nil, "Escape dismiss shortcut should be registered")
 assert_true(key_bindings["adwisp-mouse-click"] ~= nil, "mouse click should be registered")
@@ -887,6 +888,40 @@ key_bindings["adwisp-mouse-click"].callback({ event = "up" })
 script_messages["adwisp-hide"]()
 assert_equal(observed_state.visible, false,
     "explicit hide should still dismiss the OSD after dragging")
+
+
+-- Shutdown must invalidate pending callbacks and release OSD, drag, and
+-- thumbfast state without relying on an end-file event.
+script_messages["adwisp-show"]()
+for _ = 1, 6 do timers[#timers].callback() end
+thumbfast_payload = { width = 160, height = 90, disabled = false, available = true }
+script_messages["thumbfast-info"]("{}")
+local shutdown_layout = Layout.compute(1280, 720)
+mouse_x = shutdown_layout.timeline.x + shutdown_layout.timeline.width / 2
+mouse_y = shutdown_layout.timeline.y
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(observed_state.preview_visible, true,
+    "shutdown setup should activate a thumbfast preview")
+key_bindings["adwisp-focus-next"].callback()
+key_bindings["adwisp-mouse-click"].callback({ event = "down" })
+observers["time-pos"].callback("time-pos", 42)
+local pending_position_timer = timers[#timers]
+local updates_before_shutdown = overlays[1].update_count
+events["shutdown"]()
+assert_equal(observed_state.visible, false, "shutdown should mark the OSD hidden")
+assert_equal(observed_state.opacity, 1, "shutdown should reset opacity")
+assert_equal(observed_state.preview_visible, false,
+    "shutdown should clear thumbfast preview state")
+assert_equal(observed_state.hover_target, nil, "shutdown should clear hover state")
+assert_equal(observed_state.focus_target, nil, "shutdown should clear keyboard focus")
+assert_equal(overlays[1].data, "", "shutdown should clear the OSD overlay")
+assert_equal(commands[#commands][1], "script-message-to",
+    "shutdown should send a clear message to active thumbfast previews")
+assert_equal(commands[#commands][3], "clear",
+    "shutdown should clear the thumbfast preview")
+pending_position_timer.callback()
+assert_equal(overlays[1].update_count, updates_before_shutdown + 1,
+    "a stale playback timer must not redraw after shutdown")
 
 
 print("All mocked mpv API tests passed.")
