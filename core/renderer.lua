@@ -120,19 +120,37 @@ function Renderer:render()
     local panel = layout.panel
     local title_pos = layout.title
     local title_font_size = layout.compact and 18 or 22
-    local buffering_label = ""
-    local buffering_status_width = 0
-    if state.buffering == true and title_pos.width >= 140 then
+    local status_labels = {}
+    if state.buffering == true then
         local buffering_progress = is_finite_number(state.buffering_progress)
             and math.max(0, math.min(100, state.buffering_progress)) or 0
         if layout.compact and title_pos.width < 240 then
-            buffering_label = "Buffering"
+            status_labels[#status_labels + 1] = "Buffering"
         else
-            buffering_label = string.format("Buffering %d%%",
+            status_labels[#status_labels + 1] = string.format("Buffering %d%%",
                 math.floor(buffering_progress + 0.5))
         end
-        buffering_status_width = math.min(120,
-            math.max(64, math.floor(title_pos.width * 0.35)))
+    end
+    local loop_file = state.loop_file
+    if loop_file == "inf" or (is_finite_number(tonumber(loop_file)) and tonumber(loop_file) > 0) then
+        status_labels[#status_labels + 1] = "Loop"
+    end
+    local loop_a = is_finite_number(state.ab_loop_a) and state.ab_loop_a or -1
+    local loop_b = is_finite_number(state.ab_loop_b) and state.ab_loop_b or -1
+    if loop_a >= 0 and loop_b >= 0 then
+        status_labels[#status_labels + 1] = "A–B"
+    elseif loop_a >= 0 then
+        status_labels[#status_labels + 1] = "A"
+    elseif loop_b >= 0 then
+        status_labels[#status_labels + 1] = "B"
+    end
+    local buffering_label = table.concat(status_labels, " · ")
+    local buffering_status_width = 0
+    if buffering_label ~= "" and title_pos.width >= 140 then
+        buffering_status_width = math.min(140,
+            math.max(64, math.floor(title_pos.width * 0.38)))
+    elseif title_pos.width < 140 then
+        buffering_label = ""
     end
     local available_title_width = math.max(1,
         title_pos.width - buffering_status_width - (buffering_status_width > 0 and 12 or 0))

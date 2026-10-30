@@ -298,4 +298,20 @@ assert_true(overlay.data:find("\\alpha&H40&", 1, true) ~= nil,
 state.focus_target = nil
 renderer:render()
 
+-- File-loop and A-B state are visible in the status area.
+state.loop_file = "inf"
+state.ab_loop_a = 10
+state.ab_loop_b = 20
+renderer:render()
+assert_true(overlay.data:find("Loop", 1, true) ~= nil,
+    "active file looping should be visible")
+assert_true(overlay.data:find("A–B", 1, true) ~= nil,
+    "active A-B loop points should be visible")
+state.loop_file = "no"
+state.ab_loop_a = -1
+state.ab_loop_b = -1
+renderer:render()
+assert_true(overlay.data:find("A–B", 1, true) == nil,
+    "cleared A-B loop should no longer be displayed")
+
 print("All renderer tests passed.")

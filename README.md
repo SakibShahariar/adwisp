@@ -65,6 +65,10 @@ Typical mpv configuration directories:
 | `Ctrl` + `Up` / `Ctrl` + `Down` | Increase / decrease volume by `volume_step`; volume changes also unmute |
 | `Ctrl` + `Alt` + `Up` / `Ctrl` + `Alt` + `Down` | Increase / decrease playback speed by `speed_step` |
 | `Ctrl` + `Alt` + `Backspace` | Reset playback speed to 1× |
+| `Ctrl` + `Alt` + `L` | Toggle infinite looping of the current file |
+| `Ctrl` + `Alt` + `A` | Cycle A-B loop points: set A, set B, clear |
+| `Ctrl` + `Alt` + `S` | Take a screenshot using mpv |
+
 | `Tab` / `Shift+Tab` | Move keyboard focus between playback, volume, and playlist controls |
 | `Enter` | Activate the focused control |
 | `Left` / `Right` while volume or playlist is focused | Adjust volume or move through the playlist |
@@ -126,6 +130,11 @@ seek_step=5
 volume_step=5
 # Playback-speed change per Ctrl+Alt+Up / Ctrl+Alt+Down press
 speed_step=0.1
+
+# Loop, A-B repeat, and screenshot key bindings
+loop_toggle_key=CTRL+ALT+L
+ab_loop_key=CTRL+ALT+A
+screenshot_key=CTRL+ALT+S
 
 # Set to no to disable the optional thumbfast preview adapter
 thumbnail_preview=yes

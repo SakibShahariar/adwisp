@@ -13,6 +13,9 @@ local opts = {
     seek_step = 5,
     volume_step = 5,
     speed_step = 0.1,
+    loop_toggle_key = "CTRL+ALT+L",
+    ab_loop_key = "CTRL+ALT+A",
+    screenshot_key = "CTRL+ALT+S",
     theme_file = "",
     thumbnail_preview = true,
     time_pos_render_interval = 0.15,
@@ -483,6 +486,9 @@ local observers = {
     { "media-title", "string", function(value) state.title = type(value) == "string" and value or "" end },
     { "volume", "number", function(value) state.volume = math.max(0, math.min(100, finite_property(value, 100))) end },
     { "speed", "number", function(value) state.speed = math.max(0.01, math.min(100, finite_property(value, 1))) end },
+    { "loop-file", "string", function(value) state.loop_file = type(value) == "string" and value or "no" end },
+    { "ab-loop-a", "number", function(value) state.ab_loop_a = finite_property(value, -1) end },
+    { "ab-loop-b", "number", function(value) state.ab_loop_b = finite_property(value, -1) end },
     { "mute", "bool", function(value) state.mute = value == true end },
     { "paused-for-cache", "bool", function(value) state.buffering = value == true end },
     { "cache-buffering-state", "number", function(value)
@@ -577,6 +583,28 @@ mp.add_key_binding("CTRL+ALT+DOWN", "adwisp-speed-down", function()
     change_speed(-1)
 end)
 mp.add_key_binding("CTRL+ALT+BACKSPACE", "adwisp-speed-reset", reset_speed)
+
+local function register_configurable_key_binding(option_name, binding_name, callback, fallback)
+    local key = opts[option_name]
+    if type(key) ~= "string" or key:match("^%s*$") or #key > 64 then
+        key = fallback
+    end
+    local ok = pcall(mp.add_key_binding, key, binding_name, callback)
+    if not ok then
+        mp.msg.warn("Adwisp: invalid " .. option_name .. "; using " .. fallback .. ".")
+        mp.add_key_binding(fallback, binding_name, callback)
+    end
+end
+
+register_configurable_key_binding("loop_toggle_key", "adwisp-loop-toggle", function()
+    mp.commandv("cycle-values", "loop-file", "inf", "no")
+end, "CTRL+ALT+L")
+register_configurable_key_binding("ab_loop_key", "adwisp-ab-loop", function()
+    mp.commandv("ab-loop")
+end, "CTRL+ALT+A")
+register_configurable_key_binding("screenshot_key", "adwisp-screenshot", function()
+    mp.commandv("screenshot")
+end, "CTRL+ALT+S")
 mp.add_key_binding("MBTN_LEFT", "adwisp-mouse-click", handle_mouse_click, { complex = true })
 mp.add_key_binding("mouse_move", "adwisp-mouse-move", handle_mouse_move, { complex = true })
 
@@ -610,6 +638,9 @@ register_no_argument_message("adwisp-query", function()
         duration = finite_property(state.duration, 0),
         volume = finite_property(state.volume, 100),
         speed = finite_property(state.speed, 1),
+        loop_file = state.loop_file == "inf" and "inf" or state.loop_file,
+        ab_loop_a = finite_property(state.ab_loop_a, -1),
+        ab_loop_b = finite_property(state.ab_loop_b, -1),
         mute = state.mute == true,
         playlist_pos = finite_property(state.playlist_pos, -1),
         playlist_count = finite_property(state.playlist_count, 0),

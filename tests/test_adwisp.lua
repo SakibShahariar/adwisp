@@ -64,7 +64,10 @@ package.loaded["mp.utils"] = {
         return '{"visible":' .. tostring(value.visible)
             .. ',"paused":' .. tostring(value.paused)
             .. ',"volume":' .. tostring(value.volume)
-            .. ',"speed":' .. tostring(value.speed) .. '}'
+            .. ',"speed":' .. tostring(value.speed)
+            .. ',"loop_file":"' .. tostring(value.loop_file)
+            .. '","ab_loop_a":' .. tostring(value.ab_loop_a)
+            .. ',"ab_loop_b":' .. tostring(value.ab_loop_b) .. '}'
     end,
 }
 package.loaded["mp.options"] = {
@@ -84,6 +87,12 @@ package.loaded["mp.options"] = {
             "font family should have a safe default")
         assert(options.font_scale == 1,
             "font scale should default to 1")
+        assert(options.loop_toggle_key == "CTRL+ALT+L",
+            "file-loop shortcut should have a safe default")
+        assert(options.ab_loop_key == "CTRL+ALT+A",
+            "A-B loop shortcut should have a safe default")
+        assert(options.screenshot_key == "CTRL+ALT+S",
+            "screenshot shortcut should have a safe default")
         package.loaded["mp.options"].last_options = options
     end,
 }
@@ -124,6 +133,9 @@ assert_true(key_bindings["adwisp-speed-reset"] ~= nil, "speed-reset shortcut sho
 assert_true(key_bindings["adwisp-focus-next"] ~= nil, "Tab should focus the next control")
 assert_true(key_bindings["adwisp-focus-previous"] ~= nil, "Shift+Tab should focus the previous control")
 assert_true(key_bindings["adwisp-focus-activate"] ~= nil, "Enter should activate the focused control")
+assert_true(key_bindings["adwisp-loop-toggle"] ~= nil, "file-loop shortcut should be registered")
+assert_true(key_bindings["adwisp-ab-loop"] ~= nil, "A-B loop shortcut should be registered")
+assert_true(key_bindings["adwisp-screenshot"] ~= nil, "screenshot shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-prev"] ~= nil, "playlist-prev shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-next"] ~= nil, "playlist-next shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
@@ -155,6 +167,15 @@ assert_equal(observed_state.time_pos, 0, "non-finite playback position should fa
 assert_equal(observed_state.duration, 0, "negative duration should clamp to zero")
 assert_equal(observed_state.volume, 100, "non-finite volume should fall back to a safe default")
 assert_equal(observed_state.speed, 1, "non-finite speed should fall back to normal speed")
+observers["loop-file"].callback("loop-file", "inf")
+observers["ab-loop-a"].callback("ab-loop-a", 12)
+observers["ab-loop-b"].callback("ab-loop-b", 24)
+assert_equal(observed_state.loop_file, "inf", "loop-file state should be observed")
+assert_equal(observed_state.ab_loop_a, 12, "A-B start should be observed")
+assert_equal(observed_state.ab_loop_b, 24, "A-B end should be observed")
+observers["loop-file"].callback("loop-file", "no")
+observers["ab-loop-a"].callback("ab-loop-a", nil)
+observers["ab-loop-b"].callback("ab-loop-b", nil)
 assert_equal(observed_state.playlist_count, 0, "non-finite playlist count should fall back to zero")
 assert_equal(observed_state.playlist_pos, -1, "non-finite playlist position should fall back to no selection")
 observers["cache-buffering-state"].callback("cache-buffering-state", 45)
@@ -177,6 +198,23 @@ observers["playlist-count"].callback("playlist-count", 0)
 observers["playlist-pos"].callback("playlist-pos", -1)
 assert_equal(overlays[1].update_count, 1,
     "hidden OSD should clear its initial empty overlay only once")
+
+-- Loop, A-B repeat, and screenshot shortcuts use mpv's documented commands.
+key_bindings["adwisp-loop-toggle"].callback()
+assert_equal(commands[#commands][1], "cycle-values",
+    "loop toggle should use mpv's cycle-values command")
+assert_equal(commands[#commands][2], "loop-file",
+    "loop toggle should target the current file")
+assert_equal(commands[#commands][3], "inf",
+    "loop toggle should enable infinite file looping")
+assert_equal(commands[#commands][4], "no",
+    "loop toggle should disable file looping on the next cycle")
+key_bindings["adwisp-ab-loop"].callback()
+assert_equal(commands[#commands][1], "ab-loop",
+    "A-B shortcut should use mpv's A-B loop state command")
+key_bindings["adwisp-screenshot"].callback()
+assert_equal(commands[#commands][1], "screenshot",
+    "screenshot shortcut should use mpv's screenshot command")
 
 -- Playback speed controls clamp values and always use mpv's speed property.
 local commands_before_speed = #commands
@@ -781,5 +819,7 @@ assert_true(logs.info[#logs.info]:find('"visible":false', 1, true) ~= nil,
     "state query should return a JSON snapshot of UI state")
 assert_true(logs.info[#logs.info]:find('"speed":', 1, true) ~= nil,
     "state query should include playback speed")
+assert_true(logs.info[#logs.info]:find('"loop_file":', 1, true) ~= nil,
+    "state query should include file-loop state")
 
 print("All mocked mpv API tests passed.")
