@@ -18,8 +18,12 @@ local opts = {
     osd_position = "bottom",
     osd_margin = -1,
     osd_custom_offset = 120,
+    log_level = "info",
 }
 options.read_options(opts, "adwisp")
+if opts.log_level ~= "quiet" and opts.log_level ~= "debug" then
+    opts.log_level = "info"
+end
 
 local state = require "core.state"
 state.layout_options = opts
@@ -28,6 +32,18 @@ local Layout = require "core.layout"
 local Theme = require "core.theme"
 local utils = require "mp.utils"
 local renderer = Renderer.new(mp, state)
+
+local function log_info(message)
+    if opts.log_level ~= "quiet" then
+        mp.msg.info("Adwisp: " .. message)
+    end
+end
+
+local function log_debug(message)
+    if opts.log_level == "debug" then
+        mp.msg.info("Adwisp [debug]: " .. message)
+    end
+end
 
 -- thumbfast owns thumbnail generation and display. Adwisp only requests previews.
 local thumbfast = { width = 0, height = 0, disabled = true, available = false }
@@ -79,9 +95,9 @@ local function reload_theme()
     end
 
     if source == "file" then
-        mp.msg.info("Adwisp: theme reloaded from file.")
+        log_info("theme reloaded from file.")
     elseif source == "fallback" then
-        mp.msg.info("Adwisp: using the built-in fallback theme.")
+        log_info("using the built-in fallback theme.")
     else
         mp.msg.warn("Adwisp: theme reload failed; keeping the previous palette: "
             .. tostring(err))
@@ -89,6 +105,10 @@ local function reload_theme()
 end
 
 reload_theme()
+log_debug("options loaded; seek_step=" .. tostring(opts.seek_step)
+    .. ", volume_step=" .. tostring(opts.volume_step)
+    .. ", thumbnail_preview=" .. tostring(opts.thumbnail_preview)
+    .. ", osd_position=" .. tostring(opts.osd_position))
 
 local function toggle()
     state.visible = not state.visible
@@ -353,6 +373,9 @@ for _, observer in ipairs(observers) do
     local property, property_type, apply = observer[1], observer[2], observer[3]
     mp.observe_property(property, property_type, function(_, value)
         apply(value)
+        if property ~= "time-pos" then
+            log_debug("property " .. property .. " updated")
+        end
         if property == "time-pos" then
             request_time_pos_render()
         else
@@ -362,6 +385,7 @@ for _, observer in ipairs(observers) do
 end
 
 mp.register_event("file-loaded", function()
+    log_debug("file loaded")
     clear_interaction_state()
     clear_thumbnail()
     state.visible = true
@@ -369,6 +393,7 @@ mp.register_event("file-loaded", function()
 end)
 
 mp.register_event("end-file", function()
+    log_debug("file ended")
     state.visible = false
     clear_interaction_state()
     clear_thumbnail()
@@ -453,10 +478,15 @@ mp.register_script_message("thumbfast-info", function(json)
         if thumbfast.width < 1 or thumbfast.height < 1 then
             thumbfast = { width = 0, height = 0, disabled = true, available = false }
         end
+        log_debug("thumbfast info: available=" .. tostring(thumbfast.available)
+            .. ", disabled=" .. tostring(thumbfast.disabled)
+            .. ", size=" .. thumbfast.width .. "x" .. thumbfast.height)
     else
         mp.msg.warn("Adwisp: received invalid thumbfast info; previews disabled.")
         thumbfast = { width = 0, height = 0, disabled = true, available = false }
     end
 end)
 
-mp.msg.info("Adwisp modular prototype loaded. Press g to toggle the OSD.")
+local mpv_version = type(mp.get_property) == "function"
+    and mp.get_property("mpv-version") or "unknown"
+log_info("loaded on " .. tostring(mpv_version) .. ". Press g to toggle the OSD.")

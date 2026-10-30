@@ -99,6 +99,9 @@ osd_margin=-1
 # Top-origin vertical offset in pixels when osd_position=custom
 osd_custom_offset=120
 
+# Logging verbosity: quiet, info, or debug
+log_level=info
+
 # Optional absolute path to a semantic palette file
 theme_file=
 ```

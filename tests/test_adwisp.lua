@@ -9,6 +9,7 @@ local overlays = {}
 local timers = {}
 local mouse_x, mouse_y = 0, 0
 local thumbfast_payload
+local logs = { info = {}, warn = {} }
 
 local mp = {
     get_script_directory = function() return "." end,
@@ -43,10 +44,17 @@ local mp = {
     get_osd_size = function()
         return 1280, 720
     end,
+    get_property = function(name)
+        if name == "mpv-version" then return "mpv test-version" end
+        return nil
+    end,
     get_mouse_pos = function()
         return mouse_x, mouse_y
     end,
-    msg = { info = function() end, warn = function() end },
+    msg = {
+        info = function(message) logs.info[#logs.info + 1] = message end,
+        warn = function(message) logs.warn[#logs.warn + 1] = message end,
+    },
 }
 
 package.loaded.mp = mp
@@ -64,6 +72,8 @@ package.loaded["mp.options"] = {
             "OSD margin should default to responsive placement")
         assert(options.osd_custom_offset == 120,
             "custom OSD offset should have a safe default")
+        assert(options.log_level == "info",
+            "logging should default to concise informational output")
         package.loaded["mp.options"].last_options = options
     end,
 }
@@ -99,6 +109,11 @@ assert_true(key_bindings["adwisp-playlist-next"] ~= nil, "playlist-next shortcut
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
 assert_true(script_messages["thumbfast-info"] ~= nil, "thumbfast info message should be registered")
+local saw_version = false
+for _, message in ipairs(logs.info) do
+    if message:find("mpv test-version", 1, true) then saw_version = true end
+end
+assert_true(saw_version, "startup diagnostics should include the mpv version")
 
 -- Property callbacks should update state and safely render while the UI is hidden.
 observers.pause.callback("pause", true)
@@ -609,5 +624,22 @@ assert_equal(overlays[1].update_count, updates_before_escape + 1,
 events["end-file"]()
 assert_equal(overlays[1].update_count, updates_before_escape + 1,
     "clearing an already hidden OSD should be cached")
+
+-- Verbosity controls diagnostics without changing playback behavior.
+option_fixture = package.loaded["mp.options"].last_options
+option_fixture.log_level = "debug"
+events["file-loaded"]()
+local saw_file_loaded_debug = false
+for _, message in ipairs(logs.info) do
+    if message:find("Adwisp [debug]: file loaded", 1, true) then
+        saw_file_loaded_debug = true
+    end
+end
+assert_true(saw_file_loaded_debug, "debug mode should log file lifecycle events")
+option_fixture.log_level = "quiet"
+local info_count_before_quiet = #logs.info
+events["end-file"]()
+assert_equal(#logs.info, info_count_before_quiet,
+    "quiet mode should suppress informational and debug messages")
 
 print("All mocked mpv API tests passed.")
