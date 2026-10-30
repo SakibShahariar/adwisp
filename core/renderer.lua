@@ -347,7 +347,7 @@ function Renderer:render()
     local opacity = is_finite_number(state.opacity)
         and math.max(0, math.min(1, state.opacity)) or 1
     local fade_alpha = math.floor((1 - opacity) * 255 + 0.5)
-    local panel_alpha = math.min(255, 18 + fade_alpha)
+    local panel_alpha = math.min(255, 24 + fade_alpha)
     local hover_alpha = math.min(255, 48 + fade_alpha)
     local focus_alpha = math.min(255, 64 + fade_alpha)
     ass = ass:gsub("{\\", "{\\alpha&H" .. string.format("%02X", fade_alpha) .. "&\\")
