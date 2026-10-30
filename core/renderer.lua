@@ -53,6 +53,13 @@ local function is_finite_number(value)
         and value ~= math.huge and value ~= -math.huge
 end
 
+local function safe_font_family(value)
+    if type(value) ~= "string" then return "Sans" end
+    value = value:sub(1, 48):gsub("[^%w _%-]", "")
+    value = value:match("^%s*(.-)%s*$")
+    return value ~= "" and value or "Sans"
+end
+
 local function fmt_time(seconds)
     if not is_finite_number(seconds) or seconds < 0 then return "--:--" end
     -- mpv timestamps are normally small; cap hostile metadata before integer formatting.
@@ -200,6 +207,13 @@ function Renderer:render()
         end
     end
 
+    local layout_options = type(state.layout_options) == "table"
+        and state.layout_options or {}
+    local font_family = safe_font_family(layout_options.font_family)
+    local font_scale = layout_options.font_scale
+    if not is_finite_number(font_scale) then font_scale = 1 end
+    font_scale = math.max(0.75, math.min(1.25, font_scale))
+
     local colors = Theme.to_ass(state.palette)
     local volume_label_color = (state.mute or volume_value <= 20)
         and colors.accent or colors.muted
@@ -236,6 +250,11 @@ function Renderer:render()
             :gsub("\\fs13", "\\fs11")
             :gsub("\\fs15", "\\fs12")
     end
+
+    ass = ass:gsub("\\fnSans", function() return "\\fn" .. font_family end)
+    ass = ass:gsub("\\fs(%d+)", function(size)
+        return "\\fs" .. math.max(1, math.floor(tonumber(size) * font_scale + 0.5))
+    end)
 
     local volume_fraction = volume_value / 100
     local volume_fill = math.floor(volume_track_geometry.width * volume_fraction)

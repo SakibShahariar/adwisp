@@ -137,6 +137,10 @@ osd_margin=-1
 # Top-origin vertical offset in pixels when osd_position=custom
 osd_custom_offset=120
 
+# Font family and scale (scale is clamped to 0.75–1.25)
+font_family=Sans
+font_scale=1.0
+
 # Logging verbosity: quiet, info, or debug
 log_level=info
 

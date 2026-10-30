@@ -79,6 +79,10 @@ package.loaded["mp.options"] = {
             "custom OSD offset should have a safe default")
         assert(options.log_level == "info",
             "logging should default to concise informational output")
+        assert(options.font_family == "Sans",
+            "font family should have a safe default")
+        assert(options.font_scale == 1,
+            "font scale should default to 1")
         package.loaded["mp.options"].last_options = options
     end,
 }

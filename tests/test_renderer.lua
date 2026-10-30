@@ -276,4 +276,18 @@ assert_true(overlay.data:find("0:15", 1, true) ~= nil,
 assert_true(overlay.data:find("/1:00", 1, true) == nil,
     "very narrow timelines should omit total time when it cannot fit")
 
+-- Font configuration is applied to every ASS text run and sanitized.
+state.layout_options = { font_family = "Noto Sans", font_scale = 1.2 }
+renderer:render()
+assert_true(overlay.data:find("\\fnNoto Sans", 1, true) ~= nil,
+    "configured font family should be applied to ASS text")
+assert_true(overlay.data:find("\\fs26", 1, true) ~= nil,
+    "font scale should scale the title font size")
+state.layout_options = { font_family = "Noto Sans}\\evil", font_scale = 9 }
+renderer:render()
+assert_true(overlay.data:find("\\fnNoto Sans\\evil", 1, true) == nil,
+    "font family input must not inject ASS override tags")
+assert_true(overlay.data:find("\\fs28", 1, true) ~= nil,
+    "font scale should clamp to its documented maximum")
+
 print("All renderer tests passed.")

@@ -19,9 +19,21 @@ local opts = {
     osd_position = "bottom",
     osd_margin = -1,
     osd_custom_offset = 120,
+    font_family = "Sans",
+    font_scale = 1.0,
     log_level = "info",
 }
 options.read_options(opts, "adwisp")
+if type(opts.font_family) ~= "string" then opts.font_family = "Sans" end
+opts.font_family = opts.font_family:sub(1, 48):gsub("[^%w _%-]", "")
+opts.font_family = opts.font_family:match("^%s*(.-)%s*$")
+if opts.font_family == "" then opts.font_family = "Sans" end
+local configured_font_scale = tonumber(opts.font_scale)
+if type(configured_font_scale) ~= "number" or configured_font_scale ~= configured_font_scale
+    or configured_font_scale == math.huge or configured_font_scale == -math.huge then
+    configured_font_scale = 1
+end
+opts.font_scale = math.max(0.75, math.min(1.25, configured_font_scale))
 if opts.log_level ~= "quiet" and opts.log_level ~= "debug" then
     opts.log_level = "info"
 end
