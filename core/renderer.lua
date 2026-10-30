@@ -119,6 +119,7 @@ function Renderer:render()
     ))
     local playback = layout.playback
     local volume = layout.volume
+    local volume_track_geometry = volume.track
     local timeline = layout.timeline
     local progress_label = layout.progress_label
     local time_label = layout.time_label
@@ -171,13 +172,16 @@ function Renderer:render()
     end
 
     local volume_fraction = volume_value / 100
-    local volume_fill = math.floor(volume.width * volume_fraction)
-    local volume_track = string.format([[
-{\an7\pos(%d,%d)\bord0\shad0\1c&H6D6259&\p1}m 0 0 l %d 0 %d 4 0 4{\p0}
-{\an7\pos(%d,%d)\bord0\shad0\1c&H9B7653&\p1}m 0 0 l %d 0 %d 4 0 4{\p0}
-]], volume.x, volume.y + 25, volume.width, volume.width,
-        volume.x, volume.y + 25, volume_fill, volume_fill)
-    ass = ass .. volume_track
+    local volume_fill = math.floor(volume_track_geometry.width * volume_fraction)
+    local volume_track_ass = string.format([[
+{\an7\pos(%d,%d)\bord0\shad0\1c&H6D6259&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
+{\an7\pos(%d,%d)\bord0\shad0\1c&H9B7653&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
+]], volume_track_geometry.x, volume_track_geometry.y,
+        volume_track_geometry.width, volume_track_geometry.width,
+        volume_track_geometry.height, volume_track_geometry.height,
+        volume_track_geometry.x, volume_track_geometry.y,
+        volume_fill, volume_fill, volume_track_geometry.height, volume_track_geometry.height)
+    ass = ass .. volume_track_ass
 
     local colors = Theme.to_ass(state.palette)
     ass = ass:gsub("&H30251E&", colors.background)

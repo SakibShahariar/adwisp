@@ -102,6 +102,27 @@ local function test_layout_rectangles()
     assert_true(timeline.x + timeline.width <= panel.x + panel.width,
         "timeline should end inside panel")
     assert_true(layout.playback.x >= panel.x, "playback should begin inside panel")
+
+    local function assert_volume_geometry(candidate, label)
+        local volume = candidate.volume
+        local track = volume.track
+        local hit = volume.hit
+        assert_true(track.x == volume.x and track.width == volume.width,
+            label .. " volume track should share the control's horizontal geometry")
+        assert_true(track.y == volume.y + 25 and track.height == 4,
+            label .. " volume track should use its canonical vertical geometry")
+        assert_true(hit.x == track.x and hit.width == track.width,
+            label .. " volume hit area should match the track width")
+        assert_true(hit.y <= track.y and hit.y + hit.height >= track.y + track.height,
+            label .. " volume hit area should cover the visible track")
+        assert_true(hit.y >= volume.y and hit.y + hit.height <= volume.y + volume.height,
+            label .. " volume hit area should remain inside its control")
+        assert_true(hit.y + hit.height <= candidate.timeline.hit_y,
+            label .. " volume hit area should not overlap the timeline hit area")
+    end
+
+    assert_volume_geometry(layout, "standard")
+    assert_volume_geometry(Layout.compute(640, 180), "compact")
 end
 
 test_standard_layout()

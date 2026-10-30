@@ -35,9 +35,17 @@ function Layout.compute(width, height)
     local volume_width = math.min(120,
         math.max(1, inner_width - playback_width - control_gap))
     local control_y = y + (compact and 34 or 51)
-    local bar_y = y + (compact and 70 or math.min(104, math.floor(panel_height * 0.67)))
+    local bar_y = y + (compact and 78 or math.min(104, math.floor(panel_height * 0.67)))
     local bar_x = inner_x
     local bar_width = inner_width
+
+    local volume_x = inner_x + playback_width + control_gap
+    local volume_track = {
+        x = volume_x, y = control_y + 25, width = volume_width, height = 4,
+    }
+    local volume_hit = {
+        x = volume_x, y = volume_track.y - 2, width = volume_width, height = 8,
+    }
 
     return {
         width = width,
@@ -47,10 +55,12 @@ function Layout.compute(width, height)
         title = { x = inner_x, y = y + (compact and 10 or 18), width = inner_width },
         playback = { x = inner_x, y = control_y, width = playback_width, height = compact and 24 or 32 },
         volume = {
-            x = inner_x + playback_width + control_gap,
+            x = volume_x,
             y = control_y,
             width = volume_width,
-            height = compact and 24 or 32,
+            height = 32,
+            track = volume_track,
+            hit = volume_hit,
         },
         timeline = {
             x = bar_x, y = bar_y, width = bar_width, height = 6,

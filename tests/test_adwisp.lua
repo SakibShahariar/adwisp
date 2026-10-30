@@ -259,9 +259,19 @@ assert_equal(commands[#commands][1], "playlist-next",
     "right playlist half should go to next item")
 assert_equal(commands[#commands][2], "weak", "next item should use weak mode")
 
--- Clicking the volume control should set volume proportionally and unmute.
+-- The volume label is not part of the slider hit area.
 mouse_x = layout.volume.x + layout.volume.width * 0.75
 mouse_y = layout.volume.y + 5
+local commands_before_volume_label_click = #commands
+key_bindings["adwisp-mouse-click"].callback()
+assert_equal(#commands, commands_before_volume_label_click,
+    "clicking the volume label should not change the slider")
+
+-- Clicking the visible volume track should set volume proportionally and unmute.
+local volume_track = layout.volume.track
+local volume_hit = layout.volume.hit
+mouse_x = volume_track.x + volume_track.width * 0.75
+mouse_y = volume_track.y + volume_track.height / 2
 key_bindings["adwisp-mouse-click"].callback()
 assert_equal(commands[#commands - 1][1], "set", "volume click should set volume")
 assert_equal(commands[#commands - 1][2], "volume", "volume click should target volume")
@@ -273,26 +283,26 @@ assert_true(overlays[1].data:find("Volume 75%", 1, true) ~= nil,
     "volume click should update the displayed value immediately")
 
 -- Mouse-down starts volume dragging and mouse movement updates the slider.
-mouse_x = layout.volume.x + layout.volume.width * 0.2
-mouse_y = layout.volume.y + 5
+mouse_x = volume_track.x + volume_track.width * 0.2
+mouse_y = volume_hit.y + volume_hit.height / 2
 key_bindings["adwisp-mouse-click"].callback({ event = "down" })
 assert_equal(commands[#commands - 1][3], 20, "drag start should set volume at pointer")
-mouse_x = layout.volume.x + layout.volume.width * 0.6
+mouse_x = volume_track.x + volume_track.width * 0.6
 key_bindings["adwisp-mouse-move"].callback()
 assert_equal(commands[#commands - 1][3], 60, "drag movement should update volume")
 key_bindings["adwisp-mouse-click"].callback({ event = "up" })
 local after_drag = #commands
-mouse_x = layout.volume.x + layout.volume.width * 0.9
+mouse_x = volume_track.x + volume_track.width * 0.9
 key_bindings["adwisp-mouse-move"].callback()
 assert_equal(#commands, after_drag,
     "mouse movement after drag release should not continue changing volume")
 
 -- Volume values should clamp at both ends of the slider.
-mouse_x = layout.volume.x
-mouse_y = layout.volume.y + 5
+mouse_x = volume_track.x
+mouse_y = volume_track.y + volume_track.height / 2
 key_bindings["adwisp-mouse-click"].callback()
 assert_equal(commands[#commands - 1][3], 0, "volume below slider should clamp to zero")
-mouse_x = layout.volume.x + layout.volume.width
+mouse_x = volume_track.x + volume_track.width
 key_bindings["adwisp-mouse-click"].callback()
 assert_equal(commands[#commands - 1][3], 100, "volume at slider end should reach one hundred")
 
@@ -415,8 +425,8 @@ assert_equal(seeks_after_timeline_move, seeks_after_timeline_hide,
 key_bindings["adwisp-mouse-click"].callback({ event = "up" })
 
 -- Hiding during a volume drag should likewise cancel stale updates.
-mouse_x = drag_layout.volume.x + drag_layout.volume.width * 0.3
-mouse_y = drag_layout.volume.y + 5
+mouse_x = drag_layout.volume.track.x + drag_layout.volume.track.width * 0.3
+mouse_y = drag_layout.volume.hit.y + drag_layout.volume.hit.height / 2
 key_bindings["adwisp-mouse-click"].callback({ event = "down" })
 script_messages["adwisp-hide"]()
 local volume_sets_after_hide = 0
@@ -426,7 +436,7 @@ for _, command in ipairs(commands) do
     end
 end
 script_messages["adwisp-show"]()
-mouse_x = drag_layout.volume.x + drag_layout.volume.width * 0.8
+mouse_x = drag_layout.volume.track.x + drag_layout.volume.track.width * 0.8
 key_bindings["adwisp-mouse-move"].callback()
 local volume_sets_after_move = 0
 for _, command in ipairs(commands) do

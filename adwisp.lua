@@ -108,10 +108,10 @@ local function change_volume(delta)
     mp.commandv("set", "mute", "no")
 end
 
-local function set_volume_at(mouse_x, volume)
-    if type(volume.width) ~= "number" or volume.width <= 0 then return end
+local function set_volume_at(mouse_x, track)
+    if type(track.width) ~= "number" or track.width <= 0 then return end
     local fraction = math.max(0, math.min(1,
-        (mouse_x - volume.x) / volume.width))
+        (mouse_x - track.x) / track.width))
     local value = math.floor(fraction * 100 + 0.5)
     state.volume = value
     state.mute = false
@@ -145,7 +145,7 @@ local function handle_mouse_move()
     if not layout then return end
 
     if dragging_volume then
-        set_volume_at(mouse_x, layout.volume)
+        set_volume_at(mouse_x, layout.volume.track)
     end
     if dragging_timeline then
         seek_at(mouse_x, layout.timeline)
@@ -211,11 +211,12 @@ local function handle_mouse_click(event)
     if not layout then return end
 
     local volume = layout.volume
+    local volume_hit = volume.hit
     if event and event.event == "down"
-        and mouse_x >= volume.x and mouse_x <= volume.x + volume.width
-        and mouse_y >= volume.y and mouse_y <= volume.y + volume.height then
+        and mouse_x >= volume_hit.x and mouse_x <= volume_hit.x + volume_hit.width
+        and mouse_y >= volume_hit.y and mouse_y <= volume_hit.y + volume_hit.height then
         dragging_volume = true
-        set_volume_at(mouse_x, volume)
+        set_volume_at(mouse_x, volume.track)
         return
     end
 
@@ -250,9 +251,9 @@ local function handle_mouse_click(event)
         return
     end
 
-    if mouse_x >= volume.x and mouse_x <= volume.x + volume.width
-        and mouse_y >= volume.y and mouse_y <= volume.y + volume.height then
-        set_volume_at(mouse_x, volume)
+    if mouse_x >= volume_hit.x and mouse_x <= volume_hit.x + volume_hit.width
+        and mouse_y >= volume_hit.y and mouse_y <= volume_hit.y + volume_hit.height then
+        set_volume_at(mouse_x, volume.track)
     end
 end
 
