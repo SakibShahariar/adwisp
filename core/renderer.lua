@@ -344,6 +344,17 @@ function Renderer:render()
         ass = hover_bg .. ass
     end
 
+    local opacity = is_finite_number(state.opacity)
+        and math.max(0, math.min(1, state.opacity)) or 1
+    local fade_alpha = math.floor((1 - opacity) * 255 + 0.5)
+    local panel_alpha = math.min(255, 18 + fade_alpha)
+    local hover_alpha = math.min(255, 48 + fade_alpha)
+    local focus_alpha = math.min(255, 64 + fade_alpha)
+    ass = ass:gsub("{\\", "{\\alpha&H" .. string.format("%02X", fade_alpha) .. "&\\")
+    ass = ass:gsub("\\alpha&H18&", "\\alpha&H" .. string.format("%02X", panel_alpha) .. "&")
+    ass = ass:gsub("\\alpha&H30&", "\\alpha&H" .. string.format("%02X", hover_alpha) .. "&")
+    ass = ass:gsub("\\alpha&H40&", "\\alpha&H" .. string.format("%02X", focus_alpha) .. "&")
+
     local size_key = width .. "x" .. height
     if self.last_data == ass and self.last_size == size_key then return end
     self.overlay.res_x = width

@@ -315,4 +315,14 @@ renderer:render()
 assert_true(overlay.data:find("A–B", 1, true) == nil,
     "cleared A-B loop should no longer be displayed")
 
+-- Opacity is applied consistently to ASS text and the base panel.
+state.opacity = 0.5
+renderer:render()
+assert_true(overlay.data:find("\\alpha&H80&", 1, true) ~= nil,
+    "half opacity should apply alpha to text runs")
+assert_true(overlay.data:find("\\alpha&H92&", 1, true) ~= nil,
+    "half opacity should preserve and combine the panel's base alpha")
+state.opacity = 1
+renderer:render()
+
 print("All renderer tests passed.")

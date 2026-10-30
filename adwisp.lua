@@ -16,6 +16,8 @@ local opts = {
     loop_toggle_key = "CTRL+ALT+L",
     ab_loop_key = "CTRL+ALT+A",
     screenshot_key = "CTRL+ALT+S",
+    idle_hide_timeout = 0,
+    fade_duration = 0.25,
     theme_file = "",
     thumbnail_preview = true,
     time_pos_render_interval = 0.15,
@@ -37,6 +39,18 @@ if type(configured_font_scale) ~= "number" or configured_font_scale ~= configure
     configured_font_scale = 1
 end
 opts.font_scale = math.max(0.75, math.min(1.25, configured_font_scale))
+local idle_hide_timeout = tonumber(opts.idle_hide_timeout)
+if type(idle_hide_timeout) ~= "number" or idle_hide_timeout ~= idle_hide_timeout
+    or idle_hide_timeout == math.huge or idle_hide_timeout == -math.huge then
+    idle_hide_timeout = 0
+end
+opts.idle_hide_timeout = math.max(0, math.min(600, idle_hide_timeout))
+local fade_duration = tonumber(opts.fade_duration)
+if type(fade_duration) ~= "number" or fade_duration ~= fade_duration
+    or fade_duration == math.huge or fade_duration == -math.huge then
+    fade_duration = 0.25
+end
+opts.fade_duration = math.max(0.05, math.min(1, fade_duration))
 if opts.log_level ~= "quiet" and opts.log_level ~= "debug" then
     opts.log_level = "info"
 end
@@ -100,6 +114,122 @@ local function render()
     renderer:render()
 end
 
+local idle_timer
+local fade_timer
+local idle_generation = 0
+local fade_generation = 0
+local start_fade_out
+
+local function kill_timer(timer)
+    if timer and type(timer.kill) == "function" then
+        timer:kill()
+    end
+end
+
+local function schedule_idle_hide()
+    idle_generation = idle_generation + 1
+    local generation = idle_generation
+    kill_timer(idle_timer)
+    idle_timer = nil
+    if not state.visible or opts.idle_hide_timeout <= 0
+        or type(mp.add_timeout) ~= "function" then
+        return
+    end
+    idle_timer = mp.add_timeout(opts.idle_hide_timeout, function()
+        if generation ~= idle_generation or not state.visible then return end
+        idle_timer = nil
+        start_fade_out()
+    end)
+end
+
+local function cancel_fade()
+    fade_generation = fade_generation + 1
+    kill_timer(fade_timer)
+    fade_timer = nil
+end
+
+local function animate_opacity(target, on_complete)
+    cancel_fade()
+    local generation = fade_generation
+    local start = finite_number(state.opacity) and math.max(0, math.min(1, state.opacity)) or 1
+    local duration = opts.fade_duration
+    if not finite_number(duration) or duration <= 0
+        or type(mp.add_timeout) ~= "function" then
+        state.opacity = target
+        render()
+        if on_complete then on_complete() end
+        return
+    end
+
+    local steps = 6
+    local step = 0
+    local function advance()
+        if generation ~= fade_generation or not state.visible then return end
+        fade_timer = nil
+        step = step + 1
+        state.opacity = start + (target - start) * (step / steps)
+        render()
+        if step >= steps then
+            state.opacity = target
+            if on_complete then on_complete() end
+        else
+            fade_timer = mp.add_timeout(duration / steps, advance)
+        end
+    end
+    fade_timer = mp.add_timeout(duration / steps, advance)
+end
+
+start_fade_out = function()
+    if not state.visible then return end
+    idle_generation = idle_generation + 1
+    animate_opacity(0, function()
+        state.visible = false
+        state.opacity = 1
+        clear_interaction_state()
+        clear_thumbnail()
+        render()
+    end)
+end
+
+local function show_osd()
+    idle_generation = idle_generation + 1
+    cancel_fade()
+    state.visible = true
+    if opts.idle_hide_timeout > 0 then
+        state.opacity = 0
+        render()
+        schedule_idle_hide()
+        animate_opacity(1)
+    else
+        state.opacity = 1
+        render()
+    end
+end
+
+local function hide_osd()
+    idle_generation = idle_generation + 1
+    kill_timer(idle_timer)
+    idle_timer = nil
+    cancel_fade()
+    state.visible = false
+    state.opacity = 1
+    clear_interaction_state()
+    clear_thumbnail()
+    render()
+end
+
+local function note_activity()
+    if not state.visible then return end
+    idle_generation = idle_generation + 1
+    kill_timer(idle_timer)
+    idle_timer = nil
+    cancel_fade()
+    local was_faded = state.opacity ~= 1
+    state.opacity = 1
+    if was_faded then render() end
+    schedule_idle_hide()
+end
+
 local active_palette
 
 local function reload_theme()
@@ -134,12 +264,7 @@ log_debug("options loaded; seek_step=" .. tostring(opts.seek_step)
     .. ", osd_position=" .. tostring(opts.osd_position))
 
 local function toggle()
-    state.visible = not state.visible
-    if not state.visible then
-        clear_interaction_state()
-        clear_thumbnail()
-    end
-    render()
+    if state.visible then hide_osd() else show_osd() end
 end
 
 local function option_step(value, fallback)
@@ -156,6 +281,7 @@ local function seek(delta)
 end
 
 local function change_volume(delta)
+    note_activity()
     local current = tonumber(state.volume) or 100
     local step = option_step(opts.volume_step, 5)
     local volume = math.max(0, math.min(100, current + delta * step))
@@ -177,6 +303,7 @@ local function speed_step()
 end
 
 local function set_speed(value)
+    note_activity()
     value = tonumber(value)
     if not finite_number(value) then value = 1 end
     value = math.max(0.01, math.min(100, value))
@@ -235,6 +362,7 @@ end
 
 local function cycle_focus(reverse)
     if not state.visible then return end
+    note_activity()
     local targets = focus_targets()
     local current = 0
     for index, target in ipairs(targets) do
@@ -253,6 +381,7 @@ end
 
 local function activate_focus()
     if not state.visible then return end
+    note_activity()
     if state.focus_target == "playback" then
         mp.commandv("cycle", "pause")
     elseif state.focus_target == "volume" then
@@ -335,6 +464,7 @@ end
 
 local function handle_mouse_move()
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
+    note_activity()
     local mouse_x, mouse_y = mp.get_mouse_pos()
     if not finite_number(mouse_x) or not finite_number(mouse_y) then return end
     local width, height = mp.get_osd_size()
@@ -404,9 +534,11 @@ end
 local function handle_mouse_click(event)
     if event and event.event == "up" then
         active_drag = nil
+        note_activity()
         return
     end
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
+    note_activity()
 
     local mouse_x, mouse_y = mp.get_mouse_pos()
     if not finite_number(mouse_x) or not finite_number(mouse_y) then return end
@@ -517,16 +649,12 @@ mp.register_event("file-loaded", function()
     log_debug("file loaded")
     clear_interaction_state()
     clear_thumbnail()
-    state.visible = true
-    render()
+    show_osd()
 end)
 
 mp.register_event("end-file", function()
     log_debug("file ended")
-    state.visible = false
-    clear_interaction_state()
-    clear_thumbnail()
-    render()
+    hide_osd()
 end)
 
 mp.register_event("video-reconfig", render)
@@ -542,31 +670,25 @@ mp.add_key_binding("SHIFT+TAB", "adwisp-focus-previous", function()
     cycle_focus(true)
 end)
 mp.add_key_binding("ENTER", "adwisp-focus-activate", activate_focus)
-mp.add_key_binding("q", "adwisp-dismiss", function()
-    state.visible = false
-    clear_interaction_state()
-    clear_thumbnail()
-    render()
-end)
-mp.add_key_binding("ESC", "adwisp-dismiss-escape", function()
-    state.visible = false
-    clear_interaction_state()
-    clear_thumbnail()
-    render()
-end)
+mp.add_key_binding("q", "adwisp-dismiss", hide_osd)
+mp.add_key_binding("ESC", "adwisp-dismiss-escape", hide_osd)
 mp.add_key_binding("SPACE", "adwisp-play-pause", function()
+    note_activity()
     mp.commandv("cycle", "pause")
 end)
 mp.add_key_binding("m", "adwisp-mute-toggle", function()
+    note_activity()
     mp.commandv("cycle", "mute")
 end)
 mp.add_key_binding("CTRL+LEFT", "adwisp-playlist-prev", function()
     if has_playlist_navigation() then
+        note_activity()
         mp.commandv("playlist-prev", "weak")
     end
 end)
 mp.add_key_binding("CTRL+RIGHT", "adwisp-playlist-next", function()
     if has_playlist_navigation() then
+        note_activity()
         mp.commandv("playlist-next", "weak")
     end
 end)
@@ -597,12 +719,15 @@ local function register_configurable_key_binding(option_name, binding_name, call
 end
 
 register_configurable_key_binding("loop_toggle_key", "adwisp-loop-toggle", function()
+    note_activity()
     mp.commandv("cycle-values", "loop-file", "inf", "no")
 end, "CTRL+ALT+L")
 register_configurable_key_binding("ab_loop_key", "adwisp-ab-loop", function()
+    note_activity()
     mp.commandv("ab-loop")
 end, "CTRL+ALT+A")
 register_configurable_key_binding("screenshot_key", "adwisp-screenshot", function()
+    note_activity()
     mp.commandv("screenshot")
 end, "CTRL+ALT+S")
 mp.add_key_binding("MBTN_LEFT", "adwisp-mouse-click", handle_mouse_click, { complex = true })
@@ -619,16 +744,8 @@ local function register_no_argument_message(name, callback)
 end
 
 register_no_argument_message("adwisp-toggle", toggle)
-register_no_argument_message("adwisp-show", function()
-    state.visible = true
-    render()
-end)
-register_no_argument_message("adwisp-hide", function()
-    state.visible = false
-    clear_interaction_state()
-    clear_thumbnail()
-    render()
-end)
+register_no_argument_message("adwisp-show", show_osd)
+register_no_argument_message("adwisp-hide", hide_osd)
 register_no_argument_message("adwisp-reload-theme", reload_theme)
 register_no_argument_message("adwisp-query", function()
     local payload = {

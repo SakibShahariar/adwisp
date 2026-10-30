@@ -14,6 +14,7 @@ Adwisp is an experimental mpv script exploring a cohesive desktop-player interfa
 - Hover feedback for interactive controls; active drag state is cancelled when the UI is dismissed or a file ends.
 - Event-driven updates from mpv properties, with duplicate-render suppression.
 - A theme-aware buffering indicator driven by mpv's cache-pause and buffering-progress properties.
+- Optional event-driven idle hiding with a short ASS opacity fade; disabled by default.
 - Semantic theme palette with a built-in fallback and explicit reload message.
 - Optional seek-preview requests through [thumbfast](https://github.com/po5/thumbfast), with a timestamp label beside the preview; Adwisp does not generate thumbnails itself.
 
@@ -154,6 +155,11 @@ osd_custom_offset=120
 # Font family and scale (scale is clamped to 0.75–1.25)
 font_family=Sans
 font_scale=1.0
+
+# Auto-hide after this many seconds of inactivity; 0 disables it
+idle_hide_timeout=0
+# Fade duration in seconds (0.05–1.0)
+fade_duration=0.25
 
 # Logging verbosity: quiet, info, or debug
 log_level=info

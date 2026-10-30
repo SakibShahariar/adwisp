@@ -29,7 +29,8 @@ local mp = {
         commands[#commands + 1] = { ... }
     end,
     add_timeout = function(seconds, callback)
-        local timer = { timeout = seconds, callback = callback }
+        local timer = { timeout = seconds, callback = callback, killed = false }
+        function timer:kill() self.killed = true end
         timers[#timers + 1] = timer
         return timer
     end,
@@ -93,6 +94,10 @@ package.loaded["mp.options"] = {
             "A-B loop shortcut should have a safe default")
         assert(options.screenshot_key == "CTRL+ALT+S",
             "screenshot shortcut should have a safe default")
+        assert(options.idle_hide_timeout == 0,
+            "idle hide should be disabled by default")
+        assert(options.fade_duration == 0.25,
+            "fade duration should have a safe default")
         package.loaded["mp.options"].last_options = options
     end,
 }
@@ -821,5 +826,51 @@ assert_true(logs.info[#logs.info]:find('"speed":', 1, true) ~= nil,
     "state query should include playback speed")
 assert_true(logs.info[#logs.info]:find('"loop_file":', 1, true) ~= nil,
     "state query should include file-loop state")
+
+-- Optional idle hiding uses cancellable timers and a finite fade sequence.
+option_fixture.idle_hide_timeout = 2
+option_fixture.fade_duration = 0.12
+local timers_before_idle = #timers
+script_messages["adwisp-show"]()
+assert_equal(observed_state.opacity, 0,
+    "showing with idle-hide enabled should begin at transparent opacity")
+local first_idle_timer = timers[timers_before_idle + 1]
+for _ = 1, 6 do
+    timers[#timers].callback()
+end
+assert_equal(observed_state.opacity, 1,
+    "fade-in should reach full opacity after its finite steps")
+assert_true(first_idle_timer.killed == false,
+    "idle timer should remain active after the fade-in completes")
+key_bindings["adwisp-focus-next"].callback()
+assert_true(first_idle_timer.killed,
+    "user interaction should cancel the previous idle timer")
+first_idle_timer.callback()
+assert_equal(observed_state.visible, true,
+    "a stale idle timer must not hide the interface after interaction")
+local renewed_idle_timer = timers[#timers]
+renewed_idle_timer.callback()
+assert_equal(observed_state.visible, true,
+    "idle timeout should start a fade rather than hide immediately")
+local stale_fade_timer = timers[#timers]
+stale_fade_timer.callback()
+assert_true(observed_state.opacity < 1 and observed_state.opacity > 0,
+    "fade-out should reduce opacity in visible intermediate steps")
+key_bindings["adwisp-focus-next"].callback()
+assert_equal(observed_state.opacity, 1,
+    "interaction during fade-out should restore full opacity")
+stale_fade_timer.callback()
+assert_equal(observed_state.visible, true,
+    "a cancelled fade callback must not hide the active interface")
+local final_idle_timer = timers[#timers]
+final_idle_timer.callback()
+for _ = 1, 6 do
+    timers[#timers].callback()
+end
+assert_equal(observed_state.visible, false,
+    "the OSD should hide after the complete idle fade-out")
+assert_equal(observed_state.opacity, 1,
+    "hidden OSD should reset opacity for the next show")
+
 
 print("All mocked mpv API tests passed.")
