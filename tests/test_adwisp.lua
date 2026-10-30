@@ -473,6 +473,19 @@ assert_true(overlays[1].data:find("0:30", 1, true) ~= nil,
 assert_true(overlays[1].data:find("\\an8\\pos(", 1, true) ~= nil,
     "preview timestamp should use its own positioned label")
 
+-- Disabling thumbfast clears the timestamp immediately; re-enabling restores it.
+thumbfast_payload = { width = 160, height = 90, disabled = true, available = false }
+script_messages["thumbfast-info"]("{}")
+assert_true(overlays[1].data:find("0:30", 1, true) == nil,
+    "unavailable thumbfast previews should hide the timestamp")
+assert_equal(commands[#commands][3], "clear",
+    "disabling thumbfast should clear its active preview")
+thumbfast_payload = { width = 160, height = 90, disabled = false, available = true }
+script_messages["thumbfast-info"]("{}")
+key_bindings["adwisp-mouse-move"].callback()
+assert_true(overlays[1].data:find("0:30", 1, true) ~= nil,
+    "re-enabled thumbfast previews should restore the timestamp")
+
 -- Repeated motion within the same 100ms preview bucket should not resend a request.
 local preview_command_count = #commands
 key_bindings["adwisp-mouse-move"].callback()
