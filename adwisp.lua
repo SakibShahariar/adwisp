@@ -114,6 +114,11 @@ local function render()
     renderer:render()
 end
 
+local function finite_number(value)
+    return type(value) == "number" and value == value
+        and value ~= math.huge and value ~= -math.huge
+end
+
 local idle_timer
 local fade_timer
 local idle_generation = 0
@@ -138,6 +143,7 @@ local function schedule_idle_hide()
     idle_timer = mp.add_timeout(opts.idle_hide_timeout, function()
         if generation ~= idle_generation or not state.visible then return end
         idle_timer = nil
+        if active_drag ~= nil then return end
         start_fade_out()
     end)
 end
@@ -291,11 +297,6 @@ local function change_volume(delta)
     mp.commandv("set", "mute", "no")
 end
 
-local function finite_number(value)
-    return type(value) == "number" and value == value
-        and value ~= math.huge and value ~= -math.huge
-end
-
 local function speed_step()
     local value = tonumber(opts.speed_step)
     if not finite_number(value) then value = 0.1 end
@@ -392,6 +393,7 @@ local function activate_focus()
 end
 
 local function handle_left()
+    note_activity()
     if state.focus_target == "volume" then
         change_volume(-1)
     elseif state.focus_target == "playlist" and has_playlist_navigation() then
@@ -402,6 +404,7 @@ local function handle_left()
 end
 
 local function handle_right()
+    note_activity()
     if state.focus_target == "volume" then
         change_volume(1)
     elseif state.focus_target == "playlist" and has_playlist_navigation() then
