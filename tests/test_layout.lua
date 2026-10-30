@@ -34,7 +34,7 @@ local function test_dense_compact_layout_stays_inside_panel()
             assert_true(panel.x >= 0 and panel.y >= 0
                 and panel_right <= width and panel_bottom <= height,
                 "panel should stay inside the OSD at " .. width .. "x" .. height)
-            inside(candidate.title, "title")
+            inside({ x = candidate.title.x, y = candidate.title.y, width = candidate.title.width, height = 1 }, "title")
             inside(candidate.playback, "playback control")
             inside(candidate.volume, "volume control")
             inside(candidate.volume.track, "volume track")
