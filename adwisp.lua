@@ -27,6 +27,9 @@ local renderer = Renderer.new(mp, state)
 -- thumbfast owns thumbnail generation and display. Adwisp only requests previews.
 local thumbfast = { width = 0, height = 0, disabled = true, available = false }
 local thumbnail_active = false
+local last_thumbnail_request = nil
+local cached_layout = nil
+local cached_layout_width, cached_layout_height
 local active_drag = nil
 
 local function clear_interaction_state()
@@ -39,6 +42,7 @@ local function clear_thumbnail()
         mp.commandv("script-message-to", "thumbfast", "clear")
     end
     thumbnail_active = false
+    last_thumbnail_request = nil
 end
 
 local function render()
@@ -141,6 +145,15 @@ local function contains(rect, mouse_x, mouse_y)
         and mouse_y >= rect.y and mouse_y <= rect.y + rect.height
 end
 
+local function get_layout(width, height)
+    if not cached_layout or width ~= cached_layout_width
+        or height ~= cached_layout_height then
+        cached_layout = Layout.compute(width, height)
+        cached_layout_width, cached_layout_height = width, height
+    end
+    return cached_layout
+end
+
 local function contains_timeline(timeline, mouse_x, mouse_y)
     return mouse_x >= timeline.hit_x
         and mouse_x <= timeline.hit_x + timeline.hit_width
@@ -153,7 +166,7 @@ local function handle_mouse_move()
     local mouse_x, mouse_y = mp.get_mouse_pos()
     if not finite_number(mouse_x) or not finite_number(mouse_y) then return end
     local width, height = mp.get_osd_size()
-    local layout = Layout.compute(width, height)
+    local layout = get_layout(width, height)
     if not layout then return end
 
     if active_drag == "volume" then
@@ -181,12 +194,19 @@ local function handle_mouse_move()
         and thumbfast.width > 0 and thumbfast.height > 0 then
         local fraction = math.max(0, math.min(1,
             (mouse_x - layout.timeline.x) / layout.timeline.width))
-        local seconds = fraction * state.duration
+        local seconds = math.floor(fraction * state.duration * 10 + 0.5) / 10
         local osd_width = width
         local x = math.floor(math.max(8, math.min(
             osd_width - thumbfast.width - 8, mouse_x - thumbfast.width / 2)))
         local y = math.floor(math.max(0, layout.timeline.y - thumbfast.height - 12))
-        mp.commandv("script-message-to", "thumbfast", "thumb", seconds, x, y)
+        local request = { seconds = seconds, x = x, y = y }
+        if not last_thumbnail_request
+            or request.seconds ~= last_thumbnail_request.seconds
+            or request.x ~= last_thumbnail_request.x
+            or request.y ~= last_thumbnail_request.y then
+            mp.commandv("script-message-to", "thumbfast", "thumb", seconds, x, y)
+            last_thumbnail_request = request
+        end
         thumbnail_active = true
     else
         clear_thumbnail()
@@ -377,6 +397,7 @@ mp.register_script_message("thumbfast-info", function(json)
     if type(data) == "table" and positive_finite(data.width)
         and positive_finite(data.height) and type(data.disabled) == "boolean"
         and type(data.available) == "boolean" then
+        last_thumbnail_request = nil
         thumbfast = {
             width = math.floor(data.width),
             height = math.floor(data.height),

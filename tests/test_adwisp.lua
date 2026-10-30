@@ -358,6 +358,12 @@ assert_equal(commands[#commands][4], 30, "timeline midpoint should preview midpo
 assert_true(type(commands[#commands][5]) == "number", "preview should provide x coordinate")
 assert_true(type(commands[#commands][6]) == "number", "preview should provide y coordinate")
 
+-- Repeated motion within the same 100ms preview bucket should not resend a request.
+local preview_command_count = #commands
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(#commands, preview_command_count,
+    "unchanged thumbnail preview requests should be deduplicated")
+
 mouse_x = 10
 mouse_y = 10
 key_bindings["adwisp-mouse-move"].callback()
