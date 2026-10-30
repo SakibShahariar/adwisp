@@ -872,5 +872,21 @@ assert_equal(observed_state.visible, false,
 assert_equal(observed_state.opacity, 1,
     "hidden OSD should reset opacity for the next show")
 
+-- An active mouse drag suppresses the idle timeout until the pointer is released.
+script_messages["adwisp-show"]()
+for _ = 1, 6 do
+    timers[#timers].callback()
+end
+mouse_x, mouse_y = 500, 600
+key_bindings["adwisp-mouse-click"].callback({ event = "down" })
+local drag_idle_timer = timers[#timers]
+drag_idle_timer.callback()
+assert_equal(observed_state.visible, true,
+    "idle timeout should not hide the OSD during an active drag")
+key_bindings["adwisp-mouse-click"].callback({ event = "up" })
+script_messages["adwisp-hide"]()
+assert_equal(observed_state.visible, false,
+    "explicit hide should still dismiss the OSD after dragging")
+
 
 print("All mocked mpv API tests passed.")
