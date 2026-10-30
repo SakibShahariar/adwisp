@@ -169,6 +169,7 @@ assert_equal(overlay.data, "", "hiding renderer should clear visible data")
 assert_equal(overlay.update_count, 12, "hiding should update overlay once")
 
 -- Very large but finite timestamps must remain safe for Lua 5.2 integer formatting.
+state.visible = true
 state.time_pos = 1e300
 state.duration = 1e300
 renderer:render()
