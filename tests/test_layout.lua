@@ -13,7 +13,57 @@ local function assert_true(value, message)
     if not value then error(message or "expected true", 2) end
 end
 
-local function test_standard_layout()
+local function 
+local function test_dense_compact_layout_stays_inside_panel()
+    for _, height in ipairs({ 120, 128, 140, 152, 159 }) do
+        for _, width in ipairs({ 200, 320, 640 }) do
+            local candidate = Layout.compute(width, height)
+            local panel = candidate.panel
+            local panel_right = panel.x + panel.width
+            local panel_bottom = panel.y + panel.height
+
+            local function inside(rect, label)
+                assert_true(rect.x >= panel.x and rect.y >= panel.y
+                    and rect.x + rect.width <= panel_right
+                    and rect.y + rect.height <= panel_bottom,
+                    label .. " should stay inside the panel at " .. width .. "x" .. height)
+            end
+
+            assert_true(candidate.compact,
+                "dense layout should remain compact at height " .. height)
+            assert_true(panel.x >= 0 and panel.y >= 0
+                and panel_right <= width and panel_bottom <= height,
+                "panel should stay inside the OSD at " .. width .. "x" .. height)
+            inside(candidate.title, "title")
+            inside(candidate.playback, "playback control")
+            inside(candidate.volume, "volume control")
+            inside(candidate.volume.track, "volume track")
+            inside(candidate.volume.hit, "volume hit target")
+            inside(candidate.timeline, "timeline")
+            inside({
+                x = candidate.timeline.hit_x,
+                y = candidate.timeline.hit_y,
+                width = candidate.timeline.hit_width,
+                height = candidate.timeline.hit_height,
+            }, "timeline hit target")
+            inside(candidate.playlist, "playlist")
+
+            assert_true(candidate.title.y < candidate.playback.y,
+                "title should precede controls at " .. width .. "x" .. height)
+            assert_true(candidate.playback.y + candidate.playback.height
+                <= candidate.timeline.y,
+                "playback should not overlap timeline at " .. width .. "x" .. height)
+            assert_true(candidate.volume.hit.y + candidate.volume.hit.height
+                <= candidate.timeline.hit_y,
+                "volume and timeline hit targets should not overlap at "
+                    .. width .. "x" .. height)
+            assert_true(candidate.progress_label.y + 11 <= candidate.playlist.y,
+                "timeline labels should precede playlist at " .. width .. "x" .. height)
+        end
+    end
+end
+
+test_standard_layout()
     local layout = Layout.compute(1280, 720)
     assert_true(layout ~= nil, "layout should exist for valid dimensions")
     assert_equal(layout.panel.width, 560, "panel should respect max width")
