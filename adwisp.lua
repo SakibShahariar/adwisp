@@ -63,8 +63,14 @@ local function clear_thumbnail()
     if thumbnail_active and thumbfast.available then
         mp.commandv("script-message-to", "thumbfast", "clear")
     end
+    local was_visible = state.preview_visible == true
+    state.preview_visible = false
+    state.preview_time = 0
+    state.preview_x, state.preview_y = 0, 0
+    state.preview_width, state.preview_height = 0, 0
     thumbnail_active = false
     last_thumbnail_request = nil
+    return was_visible
 end
 
 local time_pos_render_pending = false
@@ -252,6 +258,8 @@ local function handle_mouse_move()
     local on_timeline = active_drag == nil
         and opts.thumbnail_preview ~= false
         and contains_timeline(timeline, mouse_x, mouse_y)
+    local preview_changed = false
+    local preview_cleared = false
     if on_timeline and not thumbfast.disabled and state.duration > 0
         and thumbfast.width > 0 and thumbfast.height > 0 then
         local fraction = math.max(0, math.min(1,
@@ -262,6 +270,13 @@ local function handle_mouse_move()
             osd_width - thumbfast.width - 8, mouse_x - thumbfast.width / 2)))
         local y = math.floor(math.max(0, layout.timeline.y - thumbfast.height - 12))
         local request = { seconds = seconds, x = x, y = y }
+        preview_changed = not state.preview_visible
+            or seconds ~= state.preview_time
+            or x ~= state.preview_x or y ~= state.preview_y
+        state.preview_visible = true
+        state.preview_time = seconds
+        state.preview_x, state.preview_y = x, y
+        state.preview_width, state.preview_height = thumbfast.width, thumbfast.height
         if not last_thumbnail_request
             or request.seconds ~= last_thumbnail_request.seconds
             or request.x ~= last_thumbnail_request.x
@@ -271,11 +286,13 @@ local function handle_mouse_move()
         end
         thumbnail_active = true
     else
-        clear_thumbnail()
+        preview_cleared = clear_thumbnail()
     end
 
     if state.hover_target ~= hover_target then
         state.hover_target = hover_target
+        render()
+    elseif preview_changed or preview_cleared then
         render()
     end
 end
@@ -472,6 +489,10 @@ mp.register_script_message("thumbfast-info", function(json)
     if type(data) == "table" and positive_finite(data.width)
         and positive_finite(data.height) and type(data.disabled) == "boolean"
         and type(data.available) == "boolean" then
+        local preview_cleared = false
+        if data.disabled or not data.available then
+            preview_cleared = clear_thumbnail()
+        end
         last_thumbnail_request = nil
         thumbfast = {
             width = math.floor(data.width),
@@ -479,6 +500,7 @@ mp.register_script_message("thumbfast-info", function(json)
             disabled = data.disabled,
             available = data.available,
         }
+        if preview_cleared then render() end
         if thumbfast.width < 1 or thumbfast.height < 1 then
             thumbfast = { width = 0, height = 0, disabled = true, available = false }
         end
@@ -487,7 +509,9 @@ mp.register_script_message("thumbfast-info", function(json)
             .. ", size=" .. thumbfast.width .. "x" .. thumbfast.height)
     else
         mp.msg.warn("Adwisp: received invalid thumbfast info; previews disabled.")
+        local preview_cleared = clear_thumbnail()
         thumbfast = { width = 0, height = 0, disabled = true, available = false }
+        if preview_cleared then render() end
     end
 end)
 

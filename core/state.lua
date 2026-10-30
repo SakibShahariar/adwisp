@@ -11,6 +11,12 @@ return {
     mute = false,
     buffering = false,
     buffering_progress = 0,
+    preview_visible = false,
+    preview_time = 0,
+    preview_x = 0,
+    preview_y = 0,
+    preview_width = 0,
+    preview_height = 0,
     playlist_pos = -1,
     playlist_count = 0,
 }

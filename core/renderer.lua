@@ -172,6 +172,29 @@ function Renderer:render()
         end
     end
 
+    local preview_label = ""
+    local preview_label_x, preview_label_y
+    if state.preview_visible == true and is_finite_number(state.preview_time) then
+        preview_label = fmt_time(state.preview_time)
+        local preview_width = is_finite_number(state.preview_width)
+            and math.max(0, state.preview_width) or 0
+        local preview_height = is_finite_number(state.preview_height)
+            and math.max(0, state.preview_height) or 0
+        if preview_width > 0 and preview_height > 0 then
+            local preview_x = is_finite_number(state.preview_x) and state.preview_x or 0
+            local preview_y = is_finite_number(state.preview_y) and state.preview_y or 0
+            preview_label_x = math.max(40, math.min(width - 40,
+                preview_x + preview_width / 2))
+            preview_label_y = preview_y + preview_height + 8
+            if preview_label_y + 18 > height then
+                preview_label_y = preview_y - 18
+            end
+            preview_label_y = math.max(8, math.min(height - 8, preview_label_y))
+        else
+            preview_label = ""
+        end
+    end
+
     local colors = Theme.to_ass(state.palette)
     local volume_label_color = (state.mute or volume_value <= 20)
         and colors.accent or colors.muted
@@ -179,6 +202,7 @@ function Renderer:render()
 {\an7\pos(%d,%d)\bord0\shad0\1c%s\alpha&H18&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
 {\an7\pos(%d,%d)\fnSans\fs22\b1\1c%s}%s
 {\an9\pos(%d,%d)\fnSans\fs13\b1\1c%s}%s
+{\an8\pos(%d,%d)\fnSans\fs13\b1\1c%s}%s
 {\an7\pos(%d,%d)\fnSans\fs14\1c%s}%s
 {\an7\pos(%d,%d)\fnSans\fs14\1c%s}%s
 {\an7\pos(%d,%d)\bord0\shad0\1c%s\p1}m 0 0 l %d 0 %d 6 0 6{\p0}
@@ -190,6 +214,7 @@ function Renderer:render()
         panel.x, panel.y, colors.background, panel.width, panel.width, panel.height, panel.height,
         title_pos.x, title_pos.y, colors.text, title,
         title_pos.x + title_pos.width, title_pos.y, colors.accent, buffering_label,
+        preview_label_x or 0, preview_label_y or 0, colors.accent, preview_label,
         playback.x, playback.y, colors.muted, pause_label,
         volume.x, volume.y, volume_label_color, volume_label,
         timeline.x, timeline.y, colors.muted, timeline.width, timeline.width,

@@ -468,6 +468,10 @@ assert_equal(commands[#commands][3], "thumb", "preview should use thumbfast thum
 assert_equal(commands[#commands][4], 30, "timeline midpoint should preview midpoint time")
 assert_true(type(commands[#commands][5]) == "number", "preview should provide x coordinate")
 assert_true(type(commands[#commands][6]) == "number", "preview should provide y coordinate")
+assert_true(overlays[1].data:find("0:30", 1, true) ~= nil,
+    "timeline hover should show the preview timestamp")
+assert_true(overlays[1].data:find("\\an8\\pos(", 1, true) ~= nil,
+    "preview timestamp should use its own positioned label")
 
 -- Repeated motion within the same 100ms preview bucket should not resend a request.
 local preview_command_count = #commands
@@ -482,6 +486,8 @@ assert_equal(commands[#commands][1], "script-message-to",
     "leaving timeline should send a thumbfast clear message")
 assert_equal(commands[#commands][2], "thumbfast", "clear should target thumbfast")
 assert_equal(commands[#commands][3], "clear", "leaving timeline should clear preview")
+assert_true(overlays[1].data:find("0:30", 1, true) == nil,
+    "leaving the timeline should hide the preview timestamp")
 
 -- A new drag replaces the previous drag instead of activating both.
 mouse_x = volume_track.x + volume_track.width * 0.25

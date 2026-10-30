@@ -15,7 +15,7 @@ Adwisp is an experimental mpv script exploring a cohesive desktop-player interfa
 - Event-driven updates from mpv properties, with duplicate-render suppression.
 - A theme-aware buffering indicator driven by mpv's cache-pause and buffering-progress properties.
 - Semantic theme palette with a built-in fallback and explicit reload message.
-- Optional seek-preview requests through [thumbfast](https://github.com/po5/thumbfast); Adwisp does not generate thumbnails itself.
+- Optional seek-preview requests through [thumbfast](https://github.com/po5/thumbfast), with a timestamp label beside the preview; Adwisp does not generate thumbnails itself.
 
 These features are still under active development. Automated tests and CI checks are useful safeguards, but do not replace testing in a real mpv session.
 
