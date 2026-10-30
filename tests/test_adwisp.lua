@@ -63,7 +63,8 @@ package.loaded["mp.utils"] = {
     format_json = function(value)
         return '{"visible":' .. tostring(value.visible)
             .. ',"paused":' .. tostring(value.paused)
-            .. ',"volume":' .. tostring(value.volume) .. '}'
+            .. ',"volume":' .. tostring(value.volume)
+            .. ',"speed":' .. tostring(value.speed) .. '}'
     end,
 }
 package.loaded["mp.options"] = {
