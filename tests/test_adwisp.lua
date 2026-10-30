@@ -273,6 +273,9 @@ option_fixture.osd_position = "top"
 option_fixture.osd_margin = 24
 local top_layout = Layout.compute(1280, 720, option_fixture)
 assert_equal(top_layout.panel.y, 24, "top OSD should use its configured margin")
+observers["media-title"].callback("media-title", "Top OSD")
+assert_true(overlays[1].data:find("\\pos(360,24)", 1, true) ~= nil,
+    "renderer should place the panel at the configured top offset")
 local commands_before_top_click = #commands
 mouse_x = top_layout.playback.x + 5
 mouse_y = top_layout.playback.y + 5
@@ -283,6 +286,7 @@ assert_equal(#commands, commands_before_top_click + 1,
     "clicking the repositioned control should issue exactly one command")
 option_fixture.osd_position = "bottom"
 option_fixture.osd_margin = -1
+observers["media-title"].callback("media-title", "Test video")
 mouse_x = layout.playback.x + 5
 mouse_y = layout.playback.y + 5
 
