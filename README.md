@@ -104,7 +104,7 @@ accent=#d0bcff
 on_accent=#381e72
 ```
 
-Supported roles are `background`, `surface`, `text`, `muted`, `accent`, and `on_accent`; values must be six-digit `#RRGGBB` colors. Keys are case-sensitive; unknown keys and malformed lines are ignored. Missing or invalid entries fall back to the built-in palette. See [Theming and Matugen](docs/THEMING.md) for details.
+Supported roles are `background`, `surface`, `text`, `muted`, `accent`, and `on_accent`; values must be six-digit `#RRGGBB` colors. Keys are case-sensitive. Unknown keys, malformed entries, and invalid colors produce line-specific warnings; valid entries still load while missing roles use the fallback. If a file cannot be read or contains no valid entries, the last successfully loaded palette remains active. See [Theming and Matugen](docs/THEMING.md) for details.
 
 After regenerating the palette, ask mpv to reload it without restarting:
 
@@ -120,7 +120,7 @@ Install [thumbfast](https://github.com/po5/thumbfast) as an mpv script and leave
 
 The project is modular Lua. See [Architecture](docs/ARCHITECTURE.md) for design boundaries and performance principles.
 
-Before opening a pull request, run the repository's CI checks locally where the required tools are installed. CI checks Lua syntax, runs Luacheck, and executes the automated tests. Keep changes event-driven: avoid idle polling, unnecessary redraws, and unbounded caches.
+Before opening a pull request, run the repository's CI checks locally where the required tools are installed. CI checks Lua syntax, runs Luacheck, and executes the automated tests. Keep changes event-driven: avoid idle polling, unnecessary redraws, and unbounded caches. Before a release, also complete the [real-mpv integration checklist](docs/MPV_TESTING.md) and record the environment and results.
 
 Please include the mpv version, operating system, steps to reproduce, and relevant logs in bug reports. Commit messages should follow [Conventional Commits](https://www.conventionalcommits.org/), for example `feat(controls): add playback controls` or `docs(readme): refresh setup guide`.
 
