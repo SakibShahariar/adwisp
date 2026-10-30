@@ -125,7 +125,6 @@ local function test_layout_rectangles()
     assert_volume_geometry(Layout.compute(640, 180), "compact")
 end
 
-local function 
 local function test_configurable_vertical_position()
     local default = Layout.compute(1280, 720)
     assert_equal(default.panel.y, 522, "default bottom placement should remain unchanged")
@@ -167,7 +166,7 @@ local function test_configurable_vertical_position()
         "invalid margin should retain the default responsive margin")
 end
 
-test_dense_compact_layout_stays_inside_panel()
+local function test_dense_compact_layout_stays_inside_panel()
     for _, height in ipairs({ 120, 128, 140, 152, 159 }) do
         for _, width in ipairs({ 200, 320, 640 }) do
             local candidate = Layout.compute(width, height)
