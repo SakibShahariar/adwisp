@@ -155,26 +155,29 @@ function Renderer:render()
         end
     end
 
+    local colors = Theme.to_ass(state.palette)
+    local volume_label_color = (state.mute or volume_value <= 20)
+        and colors.accent or colors.muted
     local ass = string.format([[
-{\an7\pos(%d,%d)\bord0\shad0\1c&H30251E&\alpha&H18&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
-{\an7\pos(%d,%d)\fnSans\fs22\b1\1c&HFAF7F3&}%s
-{\an7\pos(%d,%d)\fnSans\fs14\1c&HDBD2C8&}%s
-{\an7\pos(%d,%d)\fnSans\fs14\1c&HDBD2C8&}%s
-{\an7\pos(%d,%d)\bord0\shad0\1c&H6D6259&\p1}m 0 0 l %d 0 %d 6 0 6{\p0}
-{\an7\pos(%d,%d)\bord0\shad0\1c&H9B7653&\p1}m 0 0 l %d 0 %d 6 0 6{\p0}
-{\an7\pos(%d,%d)\fnSans\fs13\1c&HDBD2C8&}%s
-{\an7\pos(%d,%d)\fnSans\fs%d\b1\1c&HFAF7F3&}%s
-{\an7\pos(%d,%d)\fnSans\fs15\1c&HFAF7F3&}%s
+{\an7\pos(%d,%d)\bord0\shad0\1c%s\alpha&H18&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
+{\an7\pos(%d,%d)\fnSans\fs22\b1\1c%s}%s
+{\an7\pos(%d,%d)\fnSans\fs14\1c%s}%s
+{\an7\pos(%d,%d)\fnSans\fs14\1c%s}%s
+{\an7\pos(%d,%d)\bord0\shad0\1c%s\p1}m 0 0 l %d 0 %d 6 0 6{\p0}
+{\an7\pos(%d,%d)\bord0\shad0\1c%s\p1}m 0 0 l %d 0 %d 6 0 6{\p0}
+{\an7\pos(%d,%d)\fnSans\fs13\1c%s}%s
+{\an7\pos(%d,%d)\fnSans\fs%d\b1\1c%s}%s
+{\an7\pos(%d,%d)\fnSans\fs15\1c%s}%s
 ]],
-        panel.x, panel.y, panel.width, panel.width, panel.height, panel.height,
-        title_pos.x, title_pos.y, title,
-        playback.x, playback.y, pause_label,
-        volume.x, volume.y, volume_label,
-        timeline.x, timeline.y, timeline.width, timeline.width,
-        timeline.x, timeline.y, filled, filled,
-        progress_label.x, progress_label.y, progress_text,
-        time_label.x, time_label.y, time_label.font_size, time_text,
-        playlist.x, playlist.y, playlist_label
+        panel.x, panel.y, colors.background, panel.width, panel.width, panel.height, panel.height,
+        title_pos.x, title_pos.y, colors.text, title,
+        playback.x, playback.y, colors.muted, pause_label,
+        volume.x, volume.y, volume_label_color, volume_label,
+        timeline.x, timeline.y, colors.muted, timeline.width, timeline.width,
+        timeline.x, timeline.y, colors.accent, filled, filled,
+        progress_label.x, progress_label.y, colors.muted, progress_text,
+        time_label.x, time_label.y, time_label.font_size, colors.text, time_text,
+        playlist.x, playlist.y, colors.text, playlist_label
     )
 
     if layout.compact then
@@ -188,24 +191,14 @@ function Renderer:render()
     local volume_fraction = volume_value / 100
     local volume_fill = math.floor(volume_track_geometry.width * volume_fraction)
     local volume_track_ass = string.format([[
-{\an7\pos(%d,%d)\bord0\shad0\1c&H6D6259&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
-{\an7\pos(%d,%d)\bord0\shad0\1c&H9B7653&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
-]], volume_track_geometry.x, volume_track_geometry.y,
+{\an7\pos(%d,%d)\bord0\shad0\1c%s\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
+{\an7\pos(%d,%d)\bord0\shad0\1c%s\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
+]], volume_track_geometry.x, volume_track_geometry.y, colors.muted,
         volume_track_geometry.width, volume_track_geometry.width,
         volume_track_geometry.height, volume_track_geometry.height,
-        volume_track_geometry.x, volume_track_geometry.y,
+        volume_track_geometry.x, volume_track_geometry.y, colors.accent,
         volume_fill, volume_fill, volume_track_geometry.height, volume_track_geometry.height)
     ass = ass .. volume_track_ass
-
-    local colors = Theme.to_ass(state.palette)
-    local volume_label_color = (state.mute or volume_value <= 20)
-        and colors.accent or colors.muted
-    ass = ass:gsub("&H30251E&", colors.background)
-        :gsub("&HFAF7F3&", colors.text)
-        :gsub("&HDBD2C8&", colors.muted)
-        :gsub("&H0A0B0C&", volume_label_color)
-        :gsub("&H6D6259&", colors.muted)
-        :gsub("&H9B7653&", colors.accent)
 
     if state.hover_target == "playback" or state.hover_target == "volume"
         or state.hover_target == "playlist" or state.hover_target == "timeline" then

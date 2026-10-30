@@ -96,9 +96,10 @@ state.volume = 15
 renderer:render()
 assert_true(overlay.data:find("Low volume 15%", 1, true) ~= nil,
     "low volume should have an explicit label")
-assert_true(overlay.data:find("\\1c&H00EFCDAB&", 1, true) ~= nil
-    or overlay.data:find("\\1c&HEFCDAB&", 1, true) ~= nil,
-    "low-volume label should use the active theme accent color")
+local low_label_index = assert(overlay.data:find("Low volume 15%", 1, true))
+local low_label_prefix = overlay.data:sub(math.max(1, low_label_index - 90), low_label_index)
+assert_true(low_label_prefix:find("\\1c&H9B7653&", 1, true) ~= nil,
+    "low-volume label itself should use the fallback theme accent color")
 state.volume = 50
 renderer:render()
 assert_true(overlay.data:find("Volume 50%", 1, true) ~= nil,
@@ -109,8 +110,10 @@ state.mute = true
 renderer:render()
 assert_true(overlay.data:find("Muted", 1, true) ~= nil,
     "muted state should remain immediately recognizable")
-assert_true(overlay.data:find("\\1c&HEFCDAB&", 1, true) ~= nil,
-    "muted label should use the active theme accent color")
+local muted_label_index = assert(overlay.data:find("Muted", 1, true))
+local muted_label_prefix = overlay.data:sub(math.max(1, muted_label_index - 90), muted_label_index)
+assert_true(muted_label_prefix:find("\\1c&H9B7653&", 1, true) ~= nil,
+    "muted label itself should use the fallback theme accent color")
 state.mute = false
 state.volume = 50.5
 
