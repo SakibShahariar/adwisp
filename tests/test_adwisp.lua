@@ -438,6 +438,32 @@ assert_equal(volume_sets_after_move, volume_sets_after_hide,
     "mouse movement after hide/show should not continue a stale volume drag")
 key_bindings["adwisp-mouse-click"].callback({ event = "up" })
 
+-- Failed theme reloads must preserve the last successfully loaded palette.
+local valid_theme_path = os.tmpname()
+local valid_theme_file = assert(io.open(valid_theme_path, "w"))
+valid_theme_file:write("accent=#010203\n")
+valid_theme_file:close()
+option_fixture.theme_file = valid_theme_path
+script_messages["adwisp-reload-theme"]()
+assert_true(overlays[1].data:find("&H030201&", 1, true) ~= nil,
+    "valid theme reload should apply the new accent color")
+
+local invalid_theme_path = os.tmpname()
+local invalid_theme_file = assert(io.open(invalid_theme_path, "w"))
+invalid_theme_file:write("accent=not-a-color\n")
+invalid_theme_file:close()
+option_fixture.theme_file = invalid_theme_path
+script_messages["adwisp-reload-theme"]()
+assert_true(overlays[1].data:find("&H030201&", 1, true) ~= nil,
+    "invalid theme reload should preserve the last valid palette")
+
+option_fixture.theme_file = valid_theme_path .. ".missing"
+script_messages["adwisp-reload-theme"]()
+assert_true(overlays[1].data:find("&H030201&", 1, true) ~= nil,
+    "missing theme file should preserve the last valid palette")
+os.remove(valid_theme_path)
+os.remove(invalid_theme_path)
+
 local updates_before_escape = overlays[1].update_count
 key_bindings["adwisp-dismiss-escape"].callback()
 assert_equal(overlays[1].data, "", "Escape should dismiss and clear OSD data")

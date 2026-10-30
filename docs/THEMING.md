@@ -33,7 +33,9 @@ Run this mpv command after regenerating the palette:
 /script-message adwisp-reload-theme
 ```
 
-Or send the script message from another mpv script. Adwisp reparses the file and redraws using the new palette; it does not poll the file or run Matugen on redraw. If the file cannot be opened, the fallback palette remains active.
+Or send the script message from another mpv script. Adwisp reparses the file and redraws using the new palette; it does not poll the file or run Matugen on redraw.
+
+Malformed entries, unknown keys, and invalid colors produce line-specific warnings in mpv's console. Valid entries still load, while missing palette roles use the built-in fallback. If a file cannot be read or contains no valid color entries, Adwisp keeps the last successfully loaded palette (or the built-in fallback if no file has loaded successfully).
 
 ## Design principles
 

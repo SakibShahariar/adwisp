@@ -47,14 +47,30 @@ local function render()
     renderer:render()
 end
 
+local active_palette
+
 local function reload_theme()
-    local palette, source, err = Theme.load(opts.theme_file)
-    renderer:set_palette(palette)
+    local palette, source, err, diagnostics = Theme.load(opts.theme_file)
+    if palette then
+        active_palette = palette
+    elseif not active_palette then
+        active_palette = Theme.load("")
+    end
+
+    renderer:set_palette(active_palette)
     render()
-    if source == "fallback" and err then
-        mp.msg.warn("Adwisp: couldn't load theme_file; using fallback palette: " .. tostring(err))
+
+    for _, diagnostic in ipairs(diagnostics or {}) do
+        mp.msg.warn("Adwisp: theme " .. diagnostic)
+    end
+
+    if source == "file" then
+        mp.msg.info("Adwisp: theme reloaded from file.")
+    elseif source == "fallback" then
+        mp.msg.info("Adwisp: using the built-in fallback theme.")
     else
-        mp.msg.info("Adwisp: theme reloaded (" .. source .. ").")
+        mp.msg.warn("Adwisp: theme reload failed; keeping the previous palette: "
+            .. tostring(err))
     end
 end
 
