@@ -171,5 +171,6 @@ end
 
 test_layout_rectangles()
 test_timeline_labels_do_not_overlap()
+test_dense_compact_layout_stays_inside_panel()
 
 print("All layout tests passed.")

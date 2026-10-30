@@ -20,6 +20,8 @@ function Layout.compute(width, height)
     local panel_width = math.min(560, math.max(1, width - 32))
     local compact = height < 240
     local panel_height = math.min(156, math.max(1, height - (compact and 16 or 32)))
+    -- Very short windows need a denser row arrangement, not merely a shorter panel.
+    local dense_compact = compact and panel_height < 144
     local x = math.floor((width - panel_width) / 2)
     local bottom_margin = compact and 8 or 42
     local y = math.max(compact and 8 or 16,
@@ -34,11 +36,11 @@ function Layout.compute(width, height)
         math.max(1, math.floor((inner_width - control_gap) * 0.45)))
     local volume_width = math.min(120,
         math.max(1, inner_width - playback_width - control_gap))
-    local control_y = y + (compact and 34 or 51)
-    local bar_y = y + (compact and 78 or math.min(104, math.floor(panel_height * 0.67)))
+    local control_y = y + (dense_compact and 22 or (compact and 34 or 51))
+    local bar_y = y + (dense_compact and 59 or (compact and 78 or math.min(104, math.floor(panel_height * 0.67))))
     local bar_x = inner_x
     local bar_width = inner_width
-    local label_y = bar_y + (compact and 14 or 22)
+    local label_y = bar_y + (dense_compact and 8 or (compact and 14 or 22))
     local labels_have_room = bar_width >= 164
     local progress_label = {
         x = bar_x, y = label_y, width = 36, visible = labels_have_room,
@@ -55,7 +57,8 @@ function Layout.compute(width, height)
 
     local volume_x = inner_x + playback_width + control_gap
     local volume_track = {
-        x = volume_x, y = control_y + 25, width = volume_width, height = 4,
+        x = volume_x, y = control_y + (dense_compact and 17 or 25),
+        width = volume_width, height = 4,
     }
     local volume_hit = {
         x = volume_x, y = volume_track.y - 2, width = volume_width, height = 8,
@@ -66,13 +69,14 @@ function Layout.compute(width, height)
         height = height,
         compact = compact,
         panel = { x = x, y = y, width = panel_width, height = panel_height },
-        title = { x = inner_x, y = y + (compact and 10 or 18), width = inner_width },
-        playback = { x = inner_x, y = control_y, width = playback_width, height = compact and 24 or 32 },
+        title = { x = inner_x, y = y + (dense_compact and 5 or (compact and 10 or 18)), width = inner_width },
+        playback = { x = inner_x, y = control_y, width = playback_width,
+            height = dense_compact and 18 or (compact and 24 or 32) },
         volume = {
             x = volume_x,
             y = control_y,
             width = volume_width,
-            height = 32,
+            height = dense_compact and 24 or 32,
             track = volume_track,
             hit = volume_hit,
         },
@@ -82,7 +86,8 @@ function Layout.compute(width, height)
         },
         progress_label = progress_label,
         time_label = time_label,
-        playlist = { x = inner_x, y = y + (compact and 116 or 132), width = inner_width, height = 20 },
+        playlist = { x = inner_x, y = y + (dense_compact and 80 or (compact and 116 or 132)),
+            width = inner_width, height = dense_compact and 14 or 20 },
     }
 end
 
