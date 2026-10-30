@@ -173,25 +173,25 @@ assert_equal(overlays[1].update_count, 1,
 -- Playback speed controls clamp values and always use mpv's speed property.
 local commands_before_speed = #commands
 key_bindings["adwisp-speed-up"].callback()
-assert_equal(commands[#commands - 1][1], "set",
+assert_equal(commands[#commands][1], "set",
     "speed increase should set the mpv speed property")
-assert_equal(commands[#commands - 1][2], "speed",
+assert_equal(commands[#commands][2], "speed",
     "speed increase should target speed")
-assert_equal(commands[#commands - 1][3], 1.1,
+assert_equal(commands[#commands][3], 1.1,
     "speed increase should use the configured step")
 key_bindings["adwisp-speed-down"].callback()
-assert_equal(commands[#commands - 1][3], 1,
+assert_equal(commands[#commands][3], 1,
     "speed decrease should return to normal speed")
 key_bindings["adwisp-speed-reset"].callback()
-assert_equal(commands[#commands - 1][3], 1,
+assert_equal(commands[#commands][3], 1,
     "speed reset should restore normal playback")
 observed_state.speed = 99.95
 key_bindings["adwisp-speed-up"].callback()
-assert_equal(commands[#commands - 1][3], 100,
+assert_equal(commands[#commands][3], 100,
     "speed increase should respect mpv's upper speed bound")
 observed_state.speed = 0.02
 key_bindings["adwisp-speed-down"].callback()
-assert_equal(commands[#commands - 1][3], 0.01,
+assert_equal(commands[#commands][3], 0.01,
     "speed decrease should respect mpv's lower speed bound")
 assert_true(#commands > commands_before_speed,
     "speed actions should send commands to mpv")
