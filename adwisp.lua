@@ -229,7 +229,7 @@ local function handle_mouse_click(event)
     if not finite_number(mouse_x) or not finite_number(mouse_y) then return end
 
     local width, height = mp.get_osd_size()
-    local layout = Layout.compute(width, height)
+    local layout = get_layout(width, height)
     if not layout then return end
 
     local volume = layout.volume

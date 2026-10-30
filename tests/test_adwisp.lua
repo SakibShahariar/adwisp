@@ -202,9 +202,21 @@ mouse_x, mouse_y = original_mouse_x, original_mouse_y
 -- Mouse clicks should seek proportionally along the shared timeline geometry.
 local Layout = require "core.layout"
 local layout = Layout.compute(1280, 720)
+-- Mouse movement warms the OSD-size layout cache; clicks should reuse it.
+mouse_x, mouse_y = 10, 10
+key_bindings["adwisp-mouse-move"].callback()
+local original_layout_compute = Layout.compute
+local layout_compute_calls = 0
+Layout.compute = function(...)
+    layout_compute_calls = layout_compute_calls + 1
+    return original_layout_compute(...)
+end
 mouse_x = layout.timeline.x + layout.timeline.width / 2
 mouse_y = layout.timeline.y
 key_bindings["adwisp-mouse-click"].callback()
+assert_equal(layout_compute_calls, 0,
+    "mouse clicks should reuse the cached layout for unchanged OSD dimensions")
+Layout.compute = original_layout_compute
 assert_equal(commands[#commands][1], "seek", "timeline click should issue seek")
 assert_equal(commands[#commands][2], 50, "timeline midpoint should seek to 50 percent")
 assert_equal(commands[#commands][3], "absolute-percent",
