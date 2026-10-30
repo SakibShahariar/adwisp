@@ -3,7 +3,7 @@
 
 local Layout = {}
 
-function Layout.compute(width, height)
+function Layout.compute(width, height, options)
     if type(width) ~= "number" or type(height) ~= "number"
         or width ~= width or height ~= height
         or width == math.huge or width == -math.huge

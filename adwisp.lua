@@ -15,6 +15,9 @@ local opts = {
     theme_file = "",
     thumbnail_preview = true,
     time_pos_render_interval = 0.15,
+    osd_position = "bottom",
+    osd_margin = -1,
+    osd_custom_offset = 120,
 }
 options.read_options(opts, "adwisp")
 
