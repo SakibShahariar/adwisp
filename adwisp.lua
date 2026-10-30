@@ -83,11 +83,9 @@ local cached_layout = nil
 local cached_layout_width, cached_layout_height
 local cached_layout_position, cached_layout_margin, cached_layout_custom_offset
 local active_drag = nil
-local last_mouse_x, last_mouse_y
 
 local function clear_interaction_state()
     active_drag = nil
-    last_mouse_x, last_mouse_y = nil, nil
     state.hover_target = nil
     state.focus_target = nil
 end
@@ -484,14 +482,9 @@ end
 
 local function handle_mouse_move()
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
+    note_activity()
     local mouse_x, mouse_y = mp.get_mouse_pos()
     if not finite_number(mouse_x) or not finite_number(mouse_y) then return end
-    -- mpv may emit repeated mouse_move callbacks at an unchanged position.
-    -- They cannot change hover, preview, or drag state, so avoid the rest of
-    -- the layout/hit-test work (and avoid resetting the idle timer).
-    if mouse_x == last_mouse_x and mouse_y == last_mouse_y then return end
-    last_mouse_x, last_mouse_y = mouse_x, mouse_y
-    note_activity()
     local width, height = mp.get_osd_size()
     local layout = get_layout(width, height)
     if not layout then return end
@@ -659,8 +652,6 @@ for _, observer in ipairs(observers) do
     local property, property_type, apply = observer[1], observer[2], observer[3]
     mp.observe_property(property, property_type, function(_, value)
         apply(value)
-        -- Property changes can alter hit-test visibility without pointer motion.
-        last_mouse_x, last_mouse_y = nil, nil
         if property ~= "time-pos" then
             log_debug("property " .. property .. " updated")
         end
@@ -687,14 +678,8 @@ end)
 -- mpv emits shutdown before terminating Lua script event loops.
 mp.register_event("shutdown", cleanup_on_shutdown)
 
-mp.register_event("video-reconfig", function()
-    last_mouse_x, last_mouse_y = nil, nil
-    render()
-end)
-mp.observe_property("osd-dimensions", "native", function()
-    last_mouse_x, last_mouse_y = nil, nil
-    render()
-end)
+mp.register_event("video-reconfig", render)
+mp.observe_property("osd-dimensions", "native", render)
 
 mp.add_key_binding("g", "adwisp-toggle", toggle)
 mp.add_key_binding("LEFT", "adwisp-seek-back", handle_left)
@@ -809,7 +794,6 @@ register_no_argument_message("adwisp-query", function()
     mp.msg.info("Adwisp state: " .. json)
 end)
 mp.register_script_message("thumbfast-info", function(json)
-    last_mouse_x, last_mouse_y = nil, nil
     local data = utils.parse_json(json)
     local function positive_finite(value)
         return type(value) == "number" and value == value

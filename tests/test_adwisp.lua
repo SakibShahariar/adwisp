@@ -412,22 +412,6 @@ mouse_x, mouse_y = original_mouse_x, original_mouse_y
 -- Mouse clicks should seek proportionally along the shared timeline geometry.
 local Layout = require "core.layout"
 local layout = Layout.compute(1280, 720)
--- Repeated mouse_move callbacks at an identical position must skip layout
--- lookup and hit-testing rather than repeating work for an unchanged pointer.
-local original_get_osd_size = mp.get_osd_size
-local osd_size_calls = 0
-mp.get_osd_size = function()
-    osd_size_calls = osd_size_calls + 1
-    return original_get_osd_size()
-end
-mouse_x, mouse_y = 12, 12
-key_bindings["adwisp-mouse-move"].callback()
-local osd_calls_after_pointer_move = osd_size_calls
-key_bindings["adwisp-mouse-move"].callback()
-assert_equal(osd_size_calls, osd_calls_after_pointer_move,
-    "unchanged mouse coordinates should skip OSD geometry and hit-testing")
-mp.get_osd_size = original_get_osd_size
-
 -- Mouse movement warms the OSD-size layout cache; clicks should reuse it.
 mouse_x, mouse_y = 10, 10
 key_bindings["adwisp-mouse-move"].callback()
