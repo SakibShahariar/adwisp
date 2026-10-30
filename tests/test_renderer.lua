@@ -98,7 +98,7 @@ assert_true(overlay.data:find("Low volume 15%", 1, true) ~= nil,
     "low volume should have an explicit label")
 local low_label_index = assert(overlay.data:find("Low volume 15%", 1, true))
 local low_label_prefix = overlay.data:sub(math.max(1, low_label_index - 90), low_label_index)
-assert_true(low_label_prefix:find("\\1c&H9B7653&", 1, true) ~= nil,
+assert_true(low_label_prefix:find("\\1c&H53769B&", 1, true) ~= nil,
     "low-volume label itself should use the fallback theme accent color")
 state.volume = 50
 renderer:render()
@@ -112,7 +112,7 @@ assert_true(overlay.data:find("Muted", 1, true) ~= nil,
     "muted state should remain immediately recognizable")
 local muted_label_index = assert(overlay.data:find("Muted", 1, true))
 local muted_label_prefix = overlay.data:sub(math.max(1, muted_label_index - 90), muted_label_index)
-assert_true(muted_label_prefix:find("\\1c&H9B7653&", 1, true) ~= nil,
+assert_true(muted_label_prefix:find("\\1c&H53769B&", 1, true) ~= nil,
     "muted label itself should use the fallback theme accent color")
 state.mute = false
 state.volume = 50.5
@@ -156,7 +156,7 @@ assert_true(overlay.data:find("&H332211&", 1, true) ~= nil,
 assert_true(overlay.data:find("&HEFCDAB&", 1, true) ~= nil,
     "volume track should use the palette accent color")
 assert_true(overlay.data:find("&H6D6259&", 1, true) == nil
-    and overlay.data:find("&H9B7653&", 1, true) == nil,
+    and overlay.data:find("&H53769B&", 1, true) == nil,
     "volume track should not retain hard-coded fallback colors")
 
 -- Hover highlighting should follow the active palette surface color.
