@@ -38,6 +38,20 @@ function Layout.compute(width, height)
     local bar_y = y + (compact and 78 or math.min(104, math.floor(panel_height * 0.67)))
     local bar_x = inner_x
     local bar_width = inner_width
+    local label_y = bar_y + (compact and 14 or 22)
+    local labels_have_room = bar_width >= 164
+    local progress_label = {
+        x = bar_x, y = label_y, width = 36, visible = labels_have_room,
+    }
+    local time_label = {
+        x = labels_have_room and (bar_x + bar_width - 120) or bar_x,
+        y = label_y,
+        width = labels_have_room and 120 or bar_width,
+        visible = bar_width >= 40,
+        compact = not labels_have_room,
+        current_only = bar_width < 120,
+        font_size = labels_have_room and 15 or 11,
+    }
 
     local volume_x = inner_x + playback_width + control_gap
     local volume_track = {
@@ -66,8 +80,8 @@ function Layout.compute(width, height)
             x = bar_x, y = bar_y, width = bar_width, height = 6,
             hit_x = bar_x, hit_y = bar_y - 10, hit_width = bar_width, hit_height = 26,
         },
-        progress_label = { x = bar_x, y = bar_y + (compact and 14 or 22) },
-        time_label = { x = bar_x + bar_width - 100, y = bar_y + (compact and 14 or 22) },
+        progress_label = progress_label,
+        time_label = time_label,
         playlist = { x = inner_x, y = y + (compact and 116 or 132), width = inner_width, height = 20 },
     }
 end

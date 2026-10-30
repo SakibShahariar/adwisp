@@ -131,6 +131,44 @@ test_narrow_layout_controls_stay_inside_panel()
 test_compact_layout_fits_short_windows()
 test_invalid_dimensions()
 test_fractional_dimensions_are_normalized()
+local function test_timeline_labels_do_not_overlap()
+    for _, width in ipairs({ 120, 160, 200, 240, 320, 640 }) do
+        local candidate = Layout.compute(width, 720)
+        local timeline = candidate.timeline
+        local progress = candidate.progress_label
+        local time = candidate.time_label
+
+        if timeline.width >= 164 then
+            assert_true(progress.visible and time.visible,
+                "wide timelines should show both time labels at width " .. width)
+            assert_true(progress.x + progress.width + 8 <= time.x,
+                "wide timeline labels should have a reserved gap at width " .. width)
+        else
+            assert_true(not progress.visible,
+                "narrow timelines should hide the progress label at width " .. width)
+            assert_true(time.x == timeline.x,
+                "narrow timeline time should start at the timeline edge at width " .. width)
+            assert_true(time.visible == (timeline.width >= 40),
+                "time should only be shown when its minimum width is available at width " .. width)
+        end
+
+        if timeline.width >= 120 and timeline.width < 164 then
+            assert_true(time.compact and not time.current_only,
+                "medium timelines should use compact elapsed/total text at width " .. width)
+        elseif timeline.width < 120 then
+            assert_true(time.current_only,
+                "very narrow timelines should retain elapsed time only at width " .. width)
+        end
+    end
+
+    local compact = Layout.compute(200, 180)
+    assert_true(compact.compact and not compact.progress_label.visible,
+        "compact narrow windows should hide the progress label")
+    assert_true(compact.time_label.visible and compact.time_label.current_only,
+        "compact narrow windows should retain elapsed time where it fits")
+end
+
 test_layout_rectangles()
+test_timeline_labels_do_not_overlap()
 
 print("All layout tests passed.")

@@ -204,4 +204,22 @@ renderer:render()
 assert_true(overlay.data:find("9 / 5", 1, true) == nil,
     "out-of-range playlist position should not be displayed")
 
+-- Narrow timelines should hide/reflow labels instead of drawing them on top of each other.
+state.visible = true
+state.time_pos = 15
+state.duration = 60
+width, height = 200, 360
+renderer:render()
+assert_true(overlay.data:find("0:15/1:00", 1, true) ~= nil,
+    "medium-width timelines should use compact elapsed/total text")
+assert_true(overlay.data:find("25%", 1, true) == nil,
+    "medium-width timelines should hide the progress label to prevent overlap")
+
+width, height = 140, 360
+renderer:render()
+assert_true(overlay.data:find("0:15", 1, true) ~= nil,
+    "very narrow timelines should retain the elapsed time")
+assert_true(overlay.data:find("/1:00", 1, true) == nil,
+    "very narrow timelines should omit total time when it cannot fit")
+
 print("All renderer tests passed.")

@@ -140,6 +140,18 @@ function Renderer:render()
     local filled = math.floor(timeline.width * progress)
     local pause_label = state.paused and "Play" or "Pause"
     local volume_label = state.mute and "Muted" or string.format("Volume %d%%", math.floor(volume_value + 0.5))
+    local progress_text = progress_label.visible
+        and string.format("%d%%", math.floor(progress * 100 + 0.5)) or ""
+    local time_text = ""
+    if time_label.visible then
+        if time_label.current_only then
+            time_text = now
+        elseif time_label.compact then
+            time_text = now .. "/" .. total
+        else
+            time_text = now .. " / " .. total
+        end
+    end
 
     local ass = string.format([[
 {\an7\pos(%d,%d)\bord0\shad0\1c&H30251E&\alpha&H18&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
@@ -149,7 +161,7 @@ function Renderer:render()
 {\an7\pos(%d,%d)\bord0\shad0\1c&H6D6259&\p1}m 0 0 l %d 0 %d 6 0 6{\p0}
 {\an7\pos(%d,%d)\bord0\shad0\1c&H9B7653&\p1}m 0 0 l %d 0 %d 6 0 6{\p0}
 {\an7\pos(%d,%d)\fnSans\fs13\1c&HDBD2C8&}%s
-{\an7\pos(%d,%d)\fnSans\fs15\b1\1c&HFAF7F3&}%s
+{\an7\pos(%d,%d)\fnSans\fs%d\b1\1c&HFAF7F3&}%s
 {\an7\pos(%d,%d)\fnSans\fs15\1c&HFAF7F3&}%s
 ]],
         panel.x, panel.y, panel.width, panel.width, panel.height, panel.height,
@@ -158,8 +170,8 @@ function Renderer:render()
         volume.x, volume.y, volume_label,
         timeline.x, timeline.y, timeline.width, timeline.width,
         timeline.x, timeline.y, filled, filled,
-        progress_label.x, progress_label.y, string.format("%d%%", math.floor(progress * 100 + 0.5)),
-        time_label.x, time_label.y, now .. " / " .. total,
+        progress_label.x, progress_label.y, progress_text,
+        time_label.x, time_label.y, time_label.font_size, time_text,
         playlist.x, playlist.y, playlist_label
     )
 
