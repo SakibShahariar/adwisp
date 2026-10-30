@@ -74,6 +74,39 @@ Typical mpv configuration directories:
 
 Mouse and OSD behavior can vary with mpv configuration and platform; please report issues with your mpv version and relevant logs.
 
+## Script-message API
+
+Other mpv scripts and external controllers can send these messages to Adwisp.
+Each message takes **no arguments**; unexpected arguments are rejected with a
+warning and do not change the interface state.
+
+| Message | Action |
+| --- | --- |
+| `adwisp-show` | Show the OSD |
+| `adwisp-hide` | Hide the OSD and clear active interaction/preview state |
+| `adwisp-toggle` | Toggle OSD visibility |
+| `adwisp-reload-theme` | Reload the configured theme |
+| `adwisp-query` | Print a JSON snapshot of the current UI/playback state to mpv's log |
+
+From another mpv Lua script, target Adwisp directly:
+
+```lua
+mp.commandv("script-message-to", "adwisp", "adwisp-show")
+mp.commandv("script-message-to", "adwisp", "adwisp-query")
+```
+
+From mpv's command line, broadcast a message to scripts:
+
+```sh
+mpv --script-message adwisp-show
+```
+
+The query response includes visibility, pause state, playback position and
+duration, volume and mute state, playlist position/count, and cache-buffering
+state/progress. It is an explicit response and is printed even when
+`log_level=quiet`. Other informational and debug messages still follow the
+configured logging level.
+
 ## Configuration
 
 Adwisp uses mpv's standard script options. Edit `script-opts/adwisp.conf` in your mpv configuration directory:
