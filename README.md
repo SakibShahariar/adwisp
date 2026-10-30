@@ -13,6 +13,7 @@ Adwisp is an experimental mpv script exploring a cohesive desktop-player interfa
 - Mouse clicks and dragging for timeline seeking and volume adjustment, plus play/pause and previous/next playlist navigation.
 - Hover feedback for interactive controls; active drag state is cancelled when the UI is dismissed or a file ends.
 - Event-driven updates from mpv properties, with duplicate-render suppression.
+- A theme-aware buffering indicator driven by mpv's cache-pause and buffering-progress properties.
 - Semantic theme palette with a built-in fallback and explicit reload message.
 - Optional seek-preview requests through [thumbfast](https://github.com/po5/thumbfast); Adwisp does not generate thumbnails itself.
 
