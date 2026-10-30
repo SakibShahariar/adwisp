@@ -121,6 +121,9 @@ assert_true(key_bindings["adwisp-volume-down"] ~= nil, "volume-down shortcut sho
 assert_true(key_bindings["adwisp-speed-up"] ~= nil, "speed-up shortcut should be registered")
 assert_true(key_bindings["adwisp-speed-down"] ~= nil, "speed-down shortcut should be registered")
 assert_true(key_bindings["adwisp-speed-reset"] ~= nil, "speed-reset shortcut should be registered")
+assert_true(key_bindings["adwisp-focus-next"] ~= nil, "Tab should focus the next control")
+assert_true(key_bindings["adwisp-focus-previous"] ~= nil, "Shift+Tab should focus the previous control")
+assert_true(key_bindings["adwisp-focus-activate"] ~= nil, "Enter should activate the focused control")
 assert_true(key_bindings["adwisp-playlist-prev"] ~= nil, "playlist-prev shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-next"] ~= nil, "playlist-next shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
@@ -249,6 +252,45 @@ observers["playlist-count"].callback("playlist-count", 5)
 observers["playlist-pos"].callback("playlist-pos", 1)
 assert_true(overlays[1].data:find("2 / 5", 1, true) ~= nil,
     "playlist row should show the current item position and total")
+
+-- Keyboard focus cycles through interactive controls and activates the selection.
+key_bindings["adwisp-focus-next"].callback()
+assert_equal(observed_state.focus_target, "playback",
+    "Tab should focus playback first")
+key_bindings["adwisp-focus-activate"].callback()
+assert_equal(commands[#commands][1], "cycle",
+    "Enter should activate the focused playback control")
+assert_equal(commands[#commands][2], "pause",
+    "playback activation should toggle pause")
+key_bindings["adwisp-focus-next"].callback()
+assert_equal(observed_state.focus_target, "volume",
+    "Tab should advance focus to volume")
+local volume_before_focus = observed_state.volume
+key_bindings["adwisp-seek-forward"].callback()
+assert_equal(observed_state.volume, volume_before_focus + 5,
+    "right arrow should adjust volume when volume has focus")
+key_bindings["adwisp-focus-activate"].callback()
+assert_equal(commands[#commands][1], "cycle",
+    "Enter should activate the focused volume control")
+assert_equal(commands[#commands][2], "mute",
+    "volume activation should toggle mute")
+key_bindings["adwisp-focus-previous"].callback()
+assert_equal(observed_state.focus_target, "playback",
+    "Shift+Tab should move focus backwards")
+key_bindings["adwisp-focus-next"].callback()
+key_bindings["adwisp-focus-next"].callback()
+assert_equal(observed_state.focus_target, "playlist",
+    "Tab should include playlist when multiple items are available")
+key_bindings["adwisp-seek-forward"].callback()
+assert_equal(commands[#commands][1], "playlist-next",
+    "right arrow should advance the playlist when playlist has focus")
+key_bindings["adwisp-focus-activate"].callback()
+assert_equal(commands[#commands][1], "playlist-next",
+    "Enter should activate the focused playlist control")
+key_bindings["adwisp-focus-next"].callback()
+assert_equal(observed_state.focus_target, "playback",
+    "focus should wrap to the first control")
+
 
 local option_fixture = package.loaded["mp.options"].last_options
 option_fixture.seek_step = math.huge

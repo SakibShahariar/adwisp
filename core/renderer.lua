@@ -215,10 +215,43 @@ function Renderer:render()
     font_scale = math.max(0.75, math.min(1.25, font_scale))
 
     local colors = Theme.to_ass(state.palette)
+    local focus_geometry
+    if state.focus_target == "playback" then
+        focus_geometry = layout.playback
+    elseif state.focus_target == "volume" then
+        focus_geometry = layout.volume
+    elseif state.focus_target == "playlist" and playlist_count >= 2 then
+        focus_geometry = layout.playlist
+    end
+    local focus_ass = ""
+    if focus_geometry then
+        local focus_x = math.max(panel.x, focus_geometry.x - 4)
+        local focus_y = math.max(panel.y, focus_geometry.y - 4)
+        local focus_right = math.min(panel.x + panel.width,
+            focus_geometry.x + focus_geometry.width + 4)
+        local focus_bottom = math.min(panel.y + panel.height,
+            focus_geometry.y + focus_geometry.height + 4)
+        local focus_width = focus_right - focus_x
+        local focus_height = focus_bottom - focus_y
+        if focus_width > 4 and focus_height > 4 then
+            focus_ass = string.format(
+                "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\alpha&H40&\\p1}"
+                    .. "m 0 0 l %d 0 %d %d 0 %d{\\p0}\\n"
+                    .. "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\alpha&H18&\\p1}"
+                    .. "m 0 0 l %d 0 %d %d 0 %d{\\p0}\\n",
+                focus_x, focus_y, colors.accent, focus_width, focus_width,
+                focus_height, focus_height,
+                focus_x + 2, focus_y + 2, colors.background,
+                focus_width - 4, focus_width - 4,
+                focus_height - 4, focus_height - 4
+            )
+        end
+    end
     local volume_label_color = (state.mute or volume_value <= 20)
         and colors.accent or colors.muted
     local ass = string.format([[
 {\an7\pos(%d,%d)\bord0\shad0\1c%s\alpha&H18&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
+%s
 {\an7\pos(%d,%d)\fnSans\fs22\b1\1c%s}%s
 {\an9\pos(%d,%d)\fnSans\fs13\b1\1c%s}%s
 {\an8\pos(%d,%d)\fnSans\fs13\b1\1c%s}%s
@@ -231,6 +264,7 @@ function Renderer:render()
 {\an7\pos(%d,%d)\fnSans\fs15\1c%s}%s
 ]],
         panel.x, panel.y, colors.background, panel.width, panel.width, panel.height, panel.height,
+        focus_ass,
         title_pos.x, title_pos.y, colors.text, title,
         title_pos.x + title_pos.width, title_pos.y, colors.accent, buffering_label,
         preview_label_x or 0, preview_label_y or 0, colors.accent, preview_label,

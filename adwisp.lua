@@ -70,6 +70,7 @@ local active_drag = nil
 local function clear_interaction_state()
     active_drag = nil
     state.hover_target = nil
+    state.focus_target = nil
 end
 
 local function clear_thumbnail()
@@ -212,6 +213,70 @@ local function has_playlist_navigation()
     local count = state.playlist_count
     return type(count) == "number" and count == count
         and count ~= math.huge and count ~= -math.huge and math.floor(count) >= 2
+end
+
+local function set_focus(target)
+    if state.focus_target ~= target then
+        state.focus_target = target
+        render()
+    end
+end
+
+local function focus_targets()
+    local targets = { "playback", "volume" }
+    if has_playlist_navigation() then
+        targets[#targets + 1] = "playlist"
+    end
+    return targets
+end
+
+local function cycle_focus(reverse)
+    if not state.visible then return end
+    local targets = focus_targets()
+    local current = 0
+    for index, target in ipairs(targets) do
+        if target == state.focus_target then
+            current = index
+            break
+        end
+    end
+    if reverse then
+        current = current <= 1 and #targets or current - 1
+    else
+        current = current >= #targets and 1 or current + 1
+    end
+    set_focus(targets[current])
+end
+
+local function activate_focus()
+    if not state.visible then return end
+    if state.focus_target == "playback" then
+        mp.commandv("cycle", "pause")
+    elseif state.focus_target == "volume" then
+        mp.commandv("cycle", "mute")
+    elseif state.focus_target == "playlist" and has_playlist_navigation() then
+        mp.commandv("playlist-next", "weak")
+    end
+end
+
+local function handle_left()
+    if state.focus_target == "volume" then
+        change_volume(-1)
+    elseif state.focus_target == "playlist" and has_playlist_navigation() then
+        mp.commandv("playlist-prev", "weak")
+    else
+        seek(-option_step(opts.seek_step, 5))
+    end
+end
+
+local function handle_right()
+    if state.focus_target == "volume" then
+        change_volume(1)
+    elseif state.focus_target == "playlist" and has_playlist_navigation() then
+        mp.commandv("playlist-next", "weak")
+    else
+        seek(option_step(opts.seek_step, 5))
+    end
 end
 
 local function request_time_pos_render()
@@ -462,12 +527,15 @@ mp.register_event("video-reconfig", render)
 mp.observe_property("osd-dimensions", "native", render)
 
 mp.add_key_binding("g", "adwisp-toggle", toggle)
-mp.add_key_binding("LEFT", "adwisp-seek-back", function()
-    seek(-option_step(opts.seek_step, 5))
+mp.add_key_binding("LEFT", "adwisp-seek-back", handle_left)
+mp.add_key_binding("RIGHT", "adwisp-seek-forward", handle_right)
+mp.add_key_binding("TAB", "adwisp-focus-next", function()
+    cycle_focus(false)
 end)
-mp.add_key_binding("RIGHT", "adwisp-seek-forward", function()
-    seek(option_step(opts.seek_step, 5))
+mp.add_key_binding("SHIFT+TAB", "adwisp-focus-previous", function()
+    cycle_focus(true)
 end)
+mp.add_key_binding("ENTER", "adwisp-focus-activate", activate_focus)
 mp.add_key_binding("q", "adwisp-dismiss", function()
     state.visible = false
     clear_interaction_state()

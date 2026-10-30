@@ -290,4 +290,12 @@ assert_true(overlay.data:find("\\fnNoto Sans\\evil", 1, true) == nil,
 assert_true(overlay.data:find("\\fs28", 1, true) ~= nil,
     "font scale should clamp to its documented maximum")
 
+-- Keyboard focus draws an accent outline around the focused control.
+state.focus_target = "playback"
+renderer:render()
+assert_true(overlay.data:find("\\alpha&H40&", 1, true) ~= nil,
+    "focused controls should have a visible accent focus ring")
+state.focus_target = nil
+renderer:render()
+
 print("All renderer tests passed.")

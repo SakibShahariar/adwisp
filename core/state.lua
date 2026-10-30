@@ -3,6 +3,7 @@
 
 return {
     visible = false,
+    focus_target = nil,
     paused = false,
     time_pos = 0,
     duration = 0,

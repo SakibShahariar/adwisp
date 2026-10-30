@@ -65,6 +65,9 @@ Typical mpv configuration directories:
 | `Ctrl` + `Up` / `Ctrl` + `Down` | Increase / decrease volume by `volume_step`; volume changes also unmute |
 | `Ctrl` + `Alt` + `Up` / `Ctrl` + `Alt` + `Down` | Increase / decrease playback speed by `speed_step` |
 | `Ctrl` + `Alt` + `Backspace` | Reset playback speed to 1× |
+| `Tab` / `Shift+Tab` | Move keyboard focus between playback, volume, and playlist controls |
+| `Enter` | Activate the focused control |
+| `Left` / `Right` while volume or playlist is focused | Adjust volume or move through the playlist |
 | `q` | Dismiss the interface |
 | `Escape` | Dismiss the interface |
 | Mouse click on timeline | Seek to the clicked position |
@@ -73,6 +76,8 @@ Typical mpv configuration directories:
 | Drag volume bar | Adjust volume continuously while dragging |
 | Drag timeline | Seek continuously while dragging |
 | Mouse click on left/right playlist control | Previous / next playlist item |
+
+Keyboard focus is visible with the active theme accent. With no control focused, Left/Right retain their normal seek behavior. Mouse clicks on playback, volume, and playlist controls also move keyboard focus.
 
 Mouse and OSD behavior can vary with mpv configuration and platform; please report issues with your mpv version and relevant logs.
 
