@@ -166,6 +166,7 @@ assert_true(key_bindings["adwisp-playlist-prev"] ~= nil, "playlist-prev shortcut
 assert_true(key_bindings["adwisp-playlist-next"] ~= nil, "playlist-next shortcut should be registered")
 assert_true(key_bindings["adwisp-chapter-prev"] ~= nil, "chapter-prev shortcut should be registered")
 assert_true(key_bindings["adwisp-chapter-next"] ~= nil, "chapter-next shortcut should be registered")
+assert_true(key_bindings["adwisp-chapter-list"] ~= nil, "chapter-list shortcut should be registered")
 assert_true(key_bindings["adwisp-audio-cycle"] ~= nil, "audio-cycle shortcut should be registered")
 assert_true(key_bindings["adwisp-subtitle-cycle"] ~= nil, "subtitle-cycle shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
@@ -216,6 +217,12 @@ observers["chapter-list"].callback("chapter-list", {
 observers.chapter.callback("chapter", 1)
 assert_equal(observed_state.chapter_title, "The Journey",
     "current chapter title should follow mpv chapter metadata")
+key_bindings["adwisp-chapter-list"].callback()
+assert_equal(commands[#commands][1], "show-text", "chapter list should use mpv OSD text")
+assert_true(commands[#commands][2]:find("Opening", 1, true) ~= nil
+    and commands[#commands][2]:find("00:42", 1, true) ~= nil
+    and commands[#commands][2]:find("The Journey", 1, true) ~= nil,
+    "chapter list should include chapter titles and timestamps")
 observers["track-list"].callback("track-list", {
     { type = "audio", id = 1, lang = "eng", title = "English", codec = "aac", selected = true },
     { type = "audio", id = 2, lang = "jpn", title = "Japanese", codec = "flac", selected = false },
@@ -259,6 +266,9 @@ key_bindings["adwisp-chapter-prev"].callback()
 key_bindings["adwisp-chapter-next"].callback()
 assert_equal(#commands, commands_without_chapters,
     "chapter shortcuts should be no-ops when media has no chapters")
+key_bindings["adwisp-chapter-list"].callback()
+assert_true(commands[#commands][2]:find("no chapters", 1, true) ~= nil,
+    "chapter list should report when media has no chapters")
 observers["chapter-list"].callback("chapter-list", {
     { title = "Opening", time = 0 },
     { title = "The Journey", time = 42 },

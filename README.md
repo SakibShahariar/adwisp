@@ -68,6 +68,7 @@ Typical mpv configuration directories:
 | `m` | Toggle mute |
 | `Ctrl` + `Left` / `Ctrl` + `Right` | Previous / next playlist item |
 | `Ctrl` + `Page Up` / `Ctrl` + `Page Down` | Previous / next chapter when available |
+| `Ctrl` + `Alt` + `F8` | Show chapter titles and timestamps |
 | `Ctrl` + `Alt` + `F5` | Cycle audio tracks |
 | `Ctrl` + `Alt` + `F6` | Cycle subtitle tracks (including Off) |
 | `Ctrl` + `Up` / `Ctrl` + `Down` | Increase / decrease volume by `volume_step`; volume changes also unmute |

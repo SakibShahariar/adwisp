@@ -894,6 +894,46 @@ mp.observe_property("osd-dimensions", "native", function()
     render()
 end)
 
+local function chapter_timestamp(value)
+    local seconds = math.max(0, math.floor(finite_property(value, 0)))
+    local hours = math.floor(seconds / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local remainder = seconds % 60
+    if hours > 0 then
+        return string.format("%d:%02d:%02d", hours, minutes, remainder)
+    end
+    return string.format("%02d:%02d", minutes, remainder)
+end
+
+local function show_chapter_list()
+    local chapters = type(state.chapter_list) == "table" and state.chapter_list or {}
+    if #chapters == 0 then
+        mp.commandv("show-text", "Adwisp: this media has no chapters.", 2500)
+        return
+    end
+
+    local lines = { "Chapters" }
+    local limit = math.min(#chapters, 20)
+    local current = math.floor(finite_property(state.chapter, -1)) + 1
+    for index = 1, limit do
+        local chapter = chapters[index]
+        local title = type(chapter.title) == "string" and chapter.title or ""
+        title = title:gsub("[%c{}]", " "):gsub("\\", " "):gsub("%s+", " ")
+            :match("^%s*(.-)%s*$")
+        if title == "" then title = "Chapter " .. index end
+        title = title:sub(1, 100)
+        local marker = index == current and ">" or " "
+        lines[#lines + 1] = string.format("%s %02d  %s  %s",
+            marker, index, chapter_timestamp(chapter.time), title)
+    end
+    if #chapters > limit then
+        lines[#lines + 1] = "... and " .. (#chapters - limit)
+            .. " more (use Ctrl+Page Up/Down to navigate)"
+    end
+    note_activity()
+    mp.commandv("show-text", table.concat(lines, "\\n"), 8000)
+end
+
 mp.add_key_binding("g", "adwisp-toggle", toggle)
 mp.add_key_binding("LEFT", "adwisp-seek-back", handle_left)
 mp.add_key_binding("RIGHT", "adwisp-seek-forward", handle_right)
@@ -938,6 +978,7 @@ mp.add_key_binding("CTRL+PGDWN", "adwisp-chapter-next", function()
         mp.commandv("add", "chapter", 1)
     end
 end)
+mp.add_key_binding("CTRL+ALT+F8", "adwisp-chapter-list", show_chapter_list)
 mp.add_key_binding("CTRL+ALT+F5", "adwisp-audio-cycle", function()
     if state.audio_track_count > 1 then
         note_activity()
