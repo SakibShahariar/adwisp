@@ -27,6 +27,7 @@ local state = {
     volume = 50.5,
     speed = 1.25,
     mute = false,
+    chapter_title = "Opening Scene",
 }
 
 local function assert_equal(actual, expected, message)
@@ -77,6 +78,8 @@ assert_true(overlay.data:find("Pause  1.2×", 1, true) ~= nil,
     "playback control should show the current playback speed")
 assert_true(overlay.data:find("Pause", 1, true) ~= nil,
     "playing state should offer Pause")
+assert_true(overlay.data:find("Chapter: Opening Scene", 1, true) ~= nil,
+    "current chapter title should appear in the OSD status area")
 
 renderer:render()
 assert_equal(overlay.update_count, 4, "restored title should redraw and then cache")

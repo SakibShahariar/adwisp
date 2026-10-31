@@ -25,4 +25,7 @@ return {
     preview_height = 0,
     playlist_pos = -1,
     playlist_count = 0,
+    chapter = -1,
+    chapter_list = {},
+    chapter_title = "",
 }

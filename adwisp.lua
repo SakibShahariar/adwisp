@@ -635,6 +635,15 @@ local function finite_property(value, fallback)
     return value
 end
 
+-- Keep the chapter title in sync with mpv's zero-based chapter index and metadata.
+local function update_chapter_title()
+    local index = finite_property(state.chapter, -1)
+    local chapters = state.chapter_list
+    local chapter = type(chapters) == "table" and chapters[math.floor(index) + 1] or nil
+    state.chapter_title = type(chapter) == "table" and type(chapter.title) == "string"
+        and chapter.title or ""
+end
+
 -- Playback properties update the shared state and invalidate the renderer.
 local observers = {
     { "pause", "bool", function(value) state.paused = value == true end },
@@ -653,6 +662,25 @@ local observers = {
     end },
     { "playlist-pos", "number", function(value) state.playlist_pos = finite_property(value, -1) end },
     { "playlist-count", "number", function(value) state.playlist_count = math.max(0, finite_property(value, 0)) end },
+    { "chapter", "number", function(value)
+        state.chapter = finite_property(value, -1)
+        update_chapter_title()
+    end },
+    { "chapter-list", "native", function(value)
+        local chapters = {}
+        if type(value) == "table" then
+            for _, item in ipairs(value) do
+                if type(item) == "table" then
+                    chapters[#chapters + 1] = {
+                        title = type(item.title) == "string" and item.title or "",
+                        time = finite_property(item.time, 0),
+                    }
+                end
+            end
+        end
+        state.chapter_list = chapters
+        update_chapter_title()
+    end },
 }
 
 for _, observer in ipairs(observers) do
@@ -728,6 +756,18 @@ mp.add_key_binding("CTRL+RIGHT", "adwisp-playlist-next", function()
         mp.commandv("playlist-next", "weak")
     end
 end)
+mp.add_key_binding("CTRL+PGUP", "adwisp-chapter-prev", function()
+    if #state.chapter_list > 0 then
+        note_activity()
+        mp.commandv("add", "chapter", -1)
+    end
+end)
+mp.add_key_binding("CTRL+PGDWN", "adwisp-chapter-next", function()
+    if #state.chapter_list > 0 then
+        note_activity()
+        mp.commandv("add", "chapter", 1)
+    end
+end)
 mp.add_key_binding("CTRL+UP", "adwisp-volume-up", function()
     change_volume(1)
 end)
@@ -797,6 +837,8 @@ register_no_argument_message("adwisp-query", function()
         mute = state.mute == true,
         playlist_pos = finite_property(state.playlist_pos, -1),
         playlist_count = finite_property(state.playlist_count, 0),
+        chapter = finite_property(state.chapter, -1),
+        chapter_title = type(state.chapter_title) == "string" and state.chapter_title or "",
         buffering = state.buffering == true,
         buffering_progress = finite_property(state.buffering_progress, 0),
     }

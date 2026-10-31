@@ -123,6 +123,10 @@ assert_true(observers["paused-for-cache"] ~= nil,
     "cache pause state should be observed")
 assert_true(observers["cache-buffering-state"] ~= nil,
     "cache buffering progress should be observed")
+assert_true(observers.chapter ~= nil and observers.chapter.type == "number",
+    "current chapter index should be observed")
+assert_true(observers["chapter-list"] ~= nil and observers["chapter-list"].type == "native",
+    "chapter metadata should be observed")
 assert_true(observers["osd-dimensions"] ~= nil, "OSD dimensions should be observed")
 assert_true(events["file-loaded"] ~= nil, "file-loaded event should be registered")
 assert_true(events["end-file"] ~= nil, "end-file event should be registered")
@@ -144,6 +148,8 @@ assert_true(key_bindings["adwisp-ab-loop"] ~= nil, "A-B loop shortcut should be 
 assert_true(key_bindings["adwisp-screenshot"] ~= nil, "screenshot shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-prev"] ~= nil, "playlist-prev shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-next"] ~= nil, "playlist-next shortcut should be registered")
+assert_true(key_bindings["adwisp-chapter-prev"] ~= nil, "chapter-prev shortcut should be registered")
+assert_true(key_bindings["adwisp-chapter-next"] ~= nil, "chapter-next shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
 assert_true(script_messages["adwisp-hide"] ~= nil, "hide message should be registered")
@@ -179,11 +185,39 @@ observers["ab-loop-b"].callback("ab-loop-b", 24)
 assert_equal(observed_state.loop_file, "inf", "loop-file state should be observed")
 assert_equal(observed_state.ab_loop_a, 12, "A-B start should be observed")
 assert_equal(observed_state.ab_loop_b, 24, "A-B end should be observed")
+observers["chapter-list"].callback("chapter-list", {
+    { title = "Opening", time = 0 },
+    { title = "The Journey", time = 42 },
+})
+observers.chapter.callback("chapter", 1)
+assert_equal(observed_state.chapter_title, "The Journey",
+    "current chapter title should follow mpv chapter metadata")
+local commands_before_chapters = #commands
+key_bindings["adwisp-chapter-prev"].callback()
+assert_equal(commands[#commands][1], "add", "previous chapter should use mpv chapter command")
+assert_equal(commands[#commands][2], "chapter", "previous chapter should target chapter index")
+assert_equal(commands[#commands][3], -1, "previous chapter should decrement chapter index")
+key_bindings["adwisp-chapter-next"].callback()
+assert_equal(commands[#commands][3], 1, "next chapter should increment chapter index")
+assert_true(#commands >= commands_before_chapters + 2,
+    "chapter shortcuts should send navigation commands when chapters exist")
+observers["chapter-list"].callback("chapter-list", nil)
+local commands_without_chapters = #commands
+key_bindings["adwisp-chapter-prev"].callback()
+key_bindings["adwisp-chapter-next"].callback()
+assert_equal(#commands, commands_without_chapters,
+    "chapter shortcuts should be no-ops when media has no chapters")
+observers["chapter-list"].callback("chapter-list", {
+    { title = "Opening", time = 0 },
+    { title = "The Journey", time = 42 },
+})
+observers.chapter.callback("chapter", 1)
 observers["loop-file"].callback("loop-file", "no")
 observers["ab-loop-a"].callback("ab-loop-a", nil)
 observers["ab-loop-b"].callback("ab-loop-b", nil)
 assert_equal(observed_state.playlist_count, 0, "non-finite playlist count should fall back to zero")
 assert_equal(observed_state.playlist_pos, -1, "non-finite playlist position should fall back to no selection")
+assert_equal(observed_state.chapter, -1, "invalid chapter index should fall back to no selection")
 observers["cache-buffering-state"].callback("cache-buffering-state", 45)
 observers["paused-for-cache"].callback("paused-for-cache", true)
 assert_equal(observed_state.buffering, true,

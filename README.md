@@ -14,6 +14,7 @@ Adwisp is an experimental mpv script exploring a cohesive desktop-player interfa
 - Hover feedback for interactive controls; active drag state is cancelled when the UI is dismissed or a file ends.
 - Event-driven updates from mpv properties, with duplicate-render suppression.
 - A theme-aware buffering indicator driven by mpv's cache-pause and buffering-progress properties.
+- Chapter navigation shortcuts and the current chapter title when the media provides chapter metadata.
 - Optional event-driven idle hiding with a short ASS opacity fade; disabled by default.
 - Semantic theme palette with a built-in fallback and explicit reload message.
 - Optional seek-preview requests through [thumbfast](https://github.com/po5/thumbfast), with a timestamp label beside the preview; Adwisp does not generate thumbnails itself.
@@ -65,6 +66,7 @@ Typical mpv configuration directories:
 | `Space` | Toggle playback pause |
 | `m` | Toggle mute |
 | `Ctrl` + `Left` / `Ctrl` + `Right` | Previous / next playlist item |
+| `Ctrl` + `Page Up` / `Ctrl` + `Page Down` | Previous / next chapter when available |
 | `Ctrl` + `Up` / `Ctrl` + `Down` | Increase / decrease volume by `volume_step`; volume changes also unmute |
 | `Ctrl` + `Alt` + `Up` / `Ctrl` + `Alt` + `Down` | Increase / decrease playback speed by `speed_step` |
 | `Ctrl` + `Alt` + `Backspace` | Reset playback speed to 1× |

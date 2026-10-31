@@ -144,6 +144,9 @@ function Renderer:render()
     elseif loop_b >= 0 then
         status_labels[#status_labels + 1] = "B"
     end
+    if type(state.chapter_title) == "string" and state.chapter_title ~= "" then
+        status_labels[#status_labels + 1] = "Chapter: " .. truncate_title(state.chapter_title, 18)
+    end
     local buffering_label = table.concat(status_labels, " · ")
     local buffering_status_width = 0
     if buffering_label ~= "" and title_pos.width >= 140 then
