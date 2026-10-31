@@ -22,6 +22,9 @@ local mp = {
     add_key_binding = function(key, name, callback)
         key_bindings[name] = { key = key, callback = callback }
     end,
+    remove_key_binding = function(name)
+        key_bindings[name] = nil
+    end,
     register_script_message = function(name, callback)
         script_messages[name] = callback
     end,
@@ -169,6 +172,8 @@ assert_true(key_bindings["adwisp-chapter-next"] ~= nil, "chapter-next shortcut s
 assert_true(key_bindings["adwisp-chapter-list"] ~= nil, "chapter-list shortcut should be registered")
 assert_true(key_bindings["adwisp-audio-cycle"] ~= nil, "audio-cycle shortcut should be registered")
 assert_true(key_bindings["adwisp-subtitle-cycle"] ~= nil, "subtitle-cycle shortcut should be registered")
+assert_true(key_bindings["adwisp-audio-menu"] ~= nil, "audio-menu shortcut should be registered")
+assert_true(key_bindings["adwisp-subtitle-menu"] ~= nil, "subtitle-menu shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
 assert_true(script_messages["adwisp-hide"] ~= nil, "hide message should be registered")
@@ -236,6 +241,26 @@ assert_true(observed_state.audio_track_label:find("eng", 1, true) ~= nil
 assert_equal(observed_state.subtitle_track_count, 1, "subtitle track count should be read from mpv metadata")
 assert_true(observed_state.subtitle_track_label:find("English", 1, true) ~= nil,
     "active subtitle label should include its title")
+key_bindings["adwisp-audio-menu"].callback()
+assert_true(commands[#commands][2]:find("Audio tracks", 1, true) ~= nil
+    and commands[#commands][2]:find("Japanese", 1, true) ~= nil,
+    "audio menu should list available tracks")
+assert_true(key_bindings["adwisp-track-menu-select-2"] ~= nil,
+    "audio menu should register number shortcuts for selection")
+key_bindings["adwisp-track-menu-select-2"].callback()
+assert_equal(commands[#commands - 1][1], "set", "audio menu selection should set mpv track property")
+assert_equal(commands[#commands - 1][2], "aid", "audio menu should select the audio id")
+assert_equal(commands[#commands - 1][3], 2, "audio menu should pass the selected track id")
+assert_true(key_bindings["adwisp-track-menu-select-2"] == nil,
+    "selecting an audio track should remove temporary menu shortcuts")
+key_bindings["adwisp-subtitle-menu"].callback()
+assert_true(commands[#commands][2]:find("Off", 1, true) ~= nil
+    and commands[#commands][2]:find("English", 1, true) ~= nil,
+    "subtitle menu should include Off and available subtitle tracks")
+key_bindings["adwisp-track-menu-select-1"].callback()
+assert_equal(commands[#commands - 1][1], "set", "subtitle Off selection should set mpv property")
+assert_equal(commands[#commands - 1][2], "sid", "subtitle menu should target sid")
+assert_equal(commands[#commands - 1][3], "no", "subtitle menu should expose an Off selection")
 local commands_before_tracks = #commands
 key_bindings["adwisp-audio-cycle"].callback()
 assert_equal(commands[#commands][1], "cycle", "audio cycling should use mpv cycle command")
@@ -251,6 +276,12 @@ key_bindings["adwisp-audio-cycle"].callback()
 key_bindings["adwisp-subtitle-cycle"].callback()
 assert_equal(#commands, commands_without_tracks,
     "track cycling should be a no-op when media has no tracks")
+key_bindings["adwisp-audio-menu"].callback()
+assert_true(commands[#commands][2]:find("no audio tracks", 1, true) ~= nil,
+    "audio menu should explain when no audio tracks are available")
+key_bindings["adwisp-subtitle-menu"].callback()
+assert_true(commands[#commands][2]:find("no subtitle tracks", 1, true) ~= nil,
+    "subtitle menu should explain when no subtitle tracks are available")
 local commands_before_chapters = #commands
 key_bindings["adwisp-chapter-prev"].callback()
 assert_equal(commands[#commands][1], "add", "previous chapter should use mpv chapter command")

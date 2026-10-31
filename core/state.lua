@@ -30,6 +30,8 @@ return {
     chapter_title = "",
     audio_track_count = 0,
     audio_track_label = "",
+    audio_tracks = {},
     subtitle_track_count = 0,
     subtitle_track_label = "Off",
+    subtitle_tracks = {},
 }

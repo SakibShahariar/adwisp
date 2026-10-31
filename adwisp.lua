@@ -102,12 +102,30 @@ local cached_layout_width, cached_layout_height
 local cached_layout_position, cached_layout_margin, cached_layout_custom_offset
 local active_drag = nil
 local last_mouse_x, last_mouse_y
+local active_track_menu
+local track_menu_binding_names = {}
+local track_menu_timer
+
+local function clear_track_menu()
+    for _, name in ipairs(track_menu_binding_names) do
+        if type(mp.remove_key_binding) == "function" then
+            mp.remove_key_binding(name)
+        end
+    end
+    track_menu_binding_names = {}
+    if track_menu_timer and type(track_menu_timer.kill) == "function" then
+        track_menu_timer:kill()
+    end
+    track_menu_timer = nil
+    active_track_menu = nil
+end
 
 local function clear_interaction_state()
     active_drag = nil
     last_mouse_x, last_mouse_y = nil, nil
     state.hover_target = nil
     state.focus_target = nil
+    clear_track_menu()
 end
 
 local function clear_thumbnail()
@@ -794,24 +812,34 @@ local function describe_track(track)
 end
 
 local function update_track_state(value)
-    local audio_count, subtitle_count = 0, 0
+    clear_track_menu()
+    local audio_tracks, subtitle_tracks = {}, {}
     local audio_label, subtitle_label = "", "Off"
     if type(value) == "table" then
         for _, track in ipairs(value) do
-            if type(track) == "table" and track.type == "audio" then
-                audio_count = audio_count + 1
-                if track.selected == true then audio_label = describe_track(track) end
-            elseif type(track) == "table" and track.type == "sub" then
-                subtitle_count = subtitle_count + 1
-                if track.selected == true then subtitle_label = describe_track(track) end
+            if type(track) == "table" and track.id ~= nil then
+                local entry = {
+                    id = track.id,
+                    label = describe_track(track),
+                    selected = track.selected == true,
+                }
+                if track.type == "audio" then
+                    audio_tracks[#audio_tracks + 1] = entry
+                    if entry.selected then audio_label = entry.label end
+                elseif track.type == "sub" then
+                    subtitle_tracks[#subtitle_tracks + 1] = entry
+                    if entry.selected then subtitle_label = entry.label end
+                end
             end
         end
     end
-    state.audio_track_count = audio_count
+    state.audio_tracks = audio_tracks
+    state.audio_track_count = #audio_tracks
     state.audio_track_label = audio_label
-    state.subtitle_track_count = subtitle_count
+    state.subtitle_tracks = subtitle_tracks
+    state.subtitle_track_count = #subtitle_tracks
     state.subtitle_track_label = subtitle_label
-end
+}
 
 -- Playback properties update the shared state and invalidate the renderer.
 local observers = {
@@ -893,6 +921,54 @@ mp.observe_property("osd-dimensions", "native", function()
     last_mouse_x, last_mouse_y = nil, nil
     render()
 end)
+
+local function open_track_menu(kind)
+    clear_track_menu()
+    local tracks = kind == "audio" and state.audio_tracks or state.subtitle_tracks
+    if type(tracks) ~= "table" or #tracks == 0 then
+        mp.commandv("show-text", "Adwisp: no " .. kind .. " tracks are available.", 2500)
+        return
+    end
+
+    local items = {}
+    if kind == "subtitle" then
+        items[#items + 1] = {
+            id = "no",
+            label = "Off",
+            selected = state.subtitle_track_label == "Off",
+        }
+    end
+    for _, track in ipairs(tracks) do
+        items[#items + 1] = track
+    end
+
+    local lines = { kind == "audio" and "Audio tracks" or "Subtitle tracks" }
+    local property = kind == "audio" and "aid" or "sid"
+    active_track_menu = { property = property, items = items }
+    for index, item in ipairs(items) do
+        local marker = item.selected and ">" or " "
+        lines[#lines + 1] = string.format("%d. %s %s", index, marker, item.label)
+        if index <= 9 then
+            local binding_name = "adwisp-track-menu-select-" .. index
+            track_menu_binding_names[#track_menu_binding_names + 1] = binding_name
+            mp.add_key_binding("CTRL+ALT+" .. index, binding_name, function()
+                local menu = active_track_menu
+                local selected = menu and menu.items[index]
+                if not selected then return end
+                note_activity()
+                mp.commandv("set", menu.property, selected.id)
+                clear_track_menu()
+                mp.commandv("show-text", "Adwisp: selected " .. selected.label, 2500)
+            end)
+        end
+    end
+    if #items > 9 then
+        lines[#lines + 1] = "Use the cycle shortcut for additional tracks."
+    end
+    track_menu_timer = mp.add_timeout(8, clear_track_menu)
+    note_activity()
+    mp.commandv("show-text", table.concat(lines, "\n"), 8000)
+end
 
 local function chapter_timestamp(value)
     local seconds = math.max(0, math.floor(finite_property(value, 0)))
@@ -990,6 +1066,12 @@ mp.add_key_binding("CTRL+ALT+F6", "adwisp-subtitle-cycle", function()
         note_activity()
         mp.commandv("cycle", "sub")
     end
+end)
+mp.add_key_binding("CTRL+ALT+F10", "adwisp-audio-menu", function()
+    open_track_menu("audio")
+end)
+mp.add_key_binding("CTRL+ALT+F11", "adwisp-subtitle-menu", function()
+    open_track_menu("subtitle")
 end)
 mp.add_key_binding("CTRL+UP", "adwisp-volume-up", function()
     change_volume(1)

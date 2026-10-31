@@ -71,6 +71,8 @@ Typical mpv configuration directories:
 | `Ctrl` + `Alt` + `F8` | Show chapter titles and timestamps |
 | `Ctrl` + `Alt` + `F5` | Cycle audio tracks |
 | `Ctrl` + `Alt` + `F6` | Cycle subtitle tracks (including Off) |
+| `Ctrl` + `Alt` + `F10` | Open the audio track menu; select with `Ctrl+Alt+1–9` |
+| `Ctrl` + `Alt` + `F11` | Open the subtitle track menu; select with `Ctrl+Alt+1–9` |
 | `Ctrl` + `Up` / `Ctrl` + `Down` | Increase / decrease volume by `volume_step`; volume changes also unmute |
 | `Ctrl` + `Alt` + `Up` / `Ctrl` + `Alt` + `Down` | Increase / decrease playback speed by `speed_step` |
 | `Ctrl` + `Alt` + `Backspace` | Reset playback speed to 1× |
