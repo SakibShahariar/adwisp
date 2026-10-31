@@ -134,7 +134,7 @@ configured logging level.
 
 ## Configuration
 
-Adwisp uses mpv's standard script options. Edit `script-opts/adwisp.conf` in your mpv configuration directory:
+Adwisp uses mpv's standard script options. Edit `script-opts/adwisp.conf` in your mpv configuration directory. Core bindings can be remapped independently; duplicate Adwisp bindings are detected and the later action falls back to its default.
 
 ```ini
 # Seek distance in seconds for Left / Right
@@ -144,6 +144,18 @@ seek_step=5
 volume_step=5
 # Playback-speed change per Ctrl+Alt+Up / Ctrl+Alt+Down press
 speed_step=0.1
+
+# Core keyboard bindings
+toggle_key=g
+dismiss_key=q
+dismiss_escape_key=ESC
+seek_back_key=LEFT
+seek_forward_key=RIGHT
+volume_up_key=CTRL+UP
+volume_down_key=CTRL+DOWN
+mute_toggle_key=m
+playlist_prev_key=CTRL+LEFT
+playlist_next_key=CTRL+RIGHT
 
 # Loop, A-B repeat, and screenshot key bindings
 loop_toggle_key=CTRL+ALT+L

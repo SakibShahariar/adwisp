@@ -109,6 +109,18 @@ package.loaded["mp.options"] = {
             "A-B loop shortcut should have a safe default")
         assert(options.screenshot_key == "CTRL+ALT+S",
             "screenshot shortcut should have a safe default")
+        assert(options.toggle_key == "g", "toggle shortcut should default to g")
+        assert(options.dismiss_key == "q", "dismiss shortcut should default to q")
+        assert(options.dismiss_escape_key == "ESC", "escape dismiss shortcut should default to Escape")
+        assert(options.seek_back_key == "LEFT", "seek-back shortcut should default to Left")
+        assert(options.seek_forward_key == "RIGHT", "seek-forward shortcut should default to Right")
+        assert(options.volume_up_key == "CTRL+UP", "volume-up shortcut should have a safe default")
+        assert(options.volume_down_key == "CTRL+DOWN", "volume-down shortcut should have a safe default")
+        assert(options.mute_toggle_key == "m", "mute shortcut should default to m")
+        assert(options.playlist_prev_key == "CTRL+LEFT", "playlist-prev shortcut should have a safe default")
+        assert(options.playlist_next_key == "CTRL+RIGHT", "playlist-next shortcut should have a safe default")
+        options.seek_back_key = "ALT+LEFT"
+        options.seek_forward_key = "ALT+LEFT"
         assert(options.idle_hide_timeout == 0,
             "idle hide should be disabled by default")
         assert(options.fade_duration == 0.25,
@@ -132,6 +144,16 @@ end
 
 assert_equal(#overlays, 1, "entry point should create one OSD overlay")
 assert_equal(overlays[1].kind, "ass-events", "renderer should use ASS events")
+assert_equal(key_bindings["adwisp-toggle"].key, "g", "toggle should keep its default binding")
+assert_equal(key_bindings["adwisp-seek-back"].key, "ALT+LEFT",
+    "seek-back should accept a custom binding")
+assert_equal(key_bindings["adwisp-seek-forward"].key, "RIGHT",
+    "conflicting seek-forward binding should fall back to its default")
+local saw_binding_conflict = false
+for _, message in ipairs(logs.warn) do
+    if message:find("seek_forward_key", 1, true) then saw_binding_conflict = true end
+end
+assert_true(saw_binding_conflict, "conflicting bindings should be reported")
 assert_true(observers.pause ~= nil, "pause property should be observed")
 assert_true(observers["time-pos"] ~= nil, "playback position should be observed")
 assert_true(observers["paused-for-cache"] ~= nil,

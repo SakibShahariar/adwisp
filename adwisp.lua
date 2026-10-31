@@ -16,6 +16,16 @@ local opts = {
     loop_toggle_key = "CTRL+ALT+L",
     ab_loop_key = "CTRL+ALT+A",
     screenshot_key = "CTRL+ALT+S",
+    toggle_key = "g",
+    dismiss_key = "q",
+    dismiss_escape_key = "ESC",
+    seek_back_key = "LEFT",
+    seek_forward_key = "RIGHT",
+    volume_up_key = "CTRL+UP",
+    volume_down_key = "CTRL+DOWN",
+    mute_toggle_key = "m",
+    playlist_prev_key = "CTRL+LEFT",
+    playlist_next_key = "CTRL+RIGHT",
     idle_hide_timeout = 0,
     fade_duration = 0.25,
     theme_file = "",
@@ -1106,9 +1116,9 @@ local function show_chapter_list()
     mp.commandv("show-text", table.concat(lines, "\n"), 8000)
 end
 
-mp.add_key_binding("g", "adwisp-toggle", toggle)
-mp.add_key_binding("LEFT", "adwisp-seek-back", handle_left)
-mp.add_key_binding("RIGHT", "adwisp-seek-forward", handle_right)
+{helper}register_configurable_key_binding("toggle_key", "adwisp-toggle", toggle, "g")
+register_configurable_key_binding("seek_back_key", "adwisp-seek-back", handle_left, "LEFT")
+register_configurable_key_binding("seek_forward_key", "adwisp-seek-forward", handle_right, "RIGHT")
 mp.add_key_binding("TAB", "adwisp-focus-next", function()
     cycle_focus(false)
 end)
@@ -1116,28 +1126,28 @@ mp.add_key_binding("SHIFT+TAB", "adwisp-focus-previous", function()
     cycle_focus(true)
 end)
 mp.add_key_binding("ENTER", "adwisp-focus-activate", activate_focus)
-mp.add_key_binding("q", "adwisp-dismiss", hide_osd)
-mp.add_key_binding("ESC", "adwisp-dismiss-escape", hide_osd)
+register_configurable_key_binding("dismiss_key", "adwisp-dismiss", hide_osd, "q")
+register_configurable_key_binding("dismiss_escape_key", "adwisp-dismiss-escape", hide_osd, "ESC")
 mp.add_key_binding("SPACE", "adwisp-play-pause", function()
     note_activity()
     mp.commandv("cycle", "pause")
 end)
-mp.add_key_binding("m", "adwisp-mute-toggle", function()
+register_configurable_key_binding("mute_toggle_key", "adwisp-mute-toggle", function()
     note_activity()
     mp.commandv("cycle", "mute")
-end)
-mp.add_key_binding("CTRL+LEFT", "adwisp-playlist-prev", function()
+end, "m")
+register_configurable_key_binding("playlist_prev_key", "adwisp-playlist-prev", function()
     if has_playlist_navigation() then
         note_activity()
         mp.commandv("playlist-prev", "weak")
     end
-end)
-mp.add_key_binding("CTRL+RIGHT", "adwisp-playlist-next", function()
+end, "CTRL+LEFT")
+register_configurable_key_binding("playlist_next_key", "adwisp-playlist-next", function()
     if has_playlist_navigation() then
         note_activity()
         mp.commandv("playlist-next", "weak")
     end
-end)
+end, "CTRL+RIGHT")
 mp.add_key_binding("CTRL+PGUP", "adwisp-chapter-prev", function()
     if #state.chapter_list > 0 then
         note_activity()
@@ -1172,12 +1182,12 @@ end)
 mp.add_key_binding("CTRL+ALT+F12", "adwisp-playlist-menu", function()
     open_playlist_menu(0)
 end)
-mp.add_key_binding("CTRL+UP", "adwisp-volume-up", function()
+register_configurable_key_binding("volume_up_key", "adwisp-volume-up", function()
     change_volume(1)
-end)
-mp.add_key_binding("CTRL+DOWN", "adwisp-volume-down", function()
+end, "CTRL+UP")
+register_configurable_key_binding("volume_down_key", "adwisp-volume-down", function()
     change_volume(-1)
-end)
+end, "CTRL+DOWN")
 mp.add_key_binding("CTRL+ALT+UP", "adwisp-speed-up", function()
     change_speed(1)
 end)
@@ -1186,18 +1196,6 @@ mp.add_key_binding("CTRL+ALT+DOWN", "adwisp-speed-down", function()
 end)
 mp.add_key_binding("CTRL+ALT+BACKSPACE", "adwisp-speed-reset", reset_speed)
 mp.add_key_binding("CTRL+ALT+F7", "adwisp-thumbnail-export", export_thumbnail)
-
-local function register_configurable_key_binding(option_name, binding_name, callback, fallback)
-    local key = opts[option_name]
-    if type(key) ~= "string" or key:match("^%s*$") or #key > 64 then
-        key = fallback
-    end
-    local ok = pcall(mp.add_key_binding, key, binding_name, callback)
-    if not ok then
-        mp.msg.warn("Adwisp: invalid " .. option_name .. "; using " .. fallback .. ".")
-        mp.add_key_binding(fallback, binding_name, callback)
-    end
-end
 
 register_configurable_key_binding("loop_toggle_key", "adwisp-loop-toggle", function()
     note_activity()
