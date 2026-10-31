@@ -1116,7 +1116,30 @@ local function show_chapter_list()
     mp.commandv("show-text", table.concat(lines, "\n"), 8000)
 end
 
-local registered_key_bindings = {}
+local registered_key_bindings = {
+    ["TAB"] = "adwisp-focus-next",
+    ["SHIFT+TAB"] = "adwisp-focus-previous",
+    ["ENTER"] = "adwisp-focus-activate",
+    ["SPACE"] = "adwisp-play-pause",
+    ["CTRL+ALT+UP"] = "adwisp-speed-up",
+    ["CTRL+ALT+DOWN"] = "adwisp-speed-down",
+    ["CTRL+ALT+BACKSPACE"] = "adwisp-speed-reset",
+    ["CTRL+PGUP"] = "adwisp-chapter-prev",
+    ["CTRL+PGDWN"] = "adwisp-chapter-next",
+    ["CTRL+ALT+F5"] = "adwisp-audio-cycle",
+    ["CTRL+ALT+F6"] = "adwisp-subtitle-cycle",
+    ["CTRL+ALT+F7"] = "adwisp-thumbnail-export",
+    ["CTRL+ALT+F8"] = "adwisp-chapter-list",
+    ["CTRL+ALT+F10"] = "adwisp-audio-menu",
+    ["CTRL+ALT+F11"] = "adwisp-subtitle-menu",
+    ["CTRL+ALT+F12"] = "adwisp-playlist-menu",
+    ["CTRL+ALT+PGUP"] = "temporary playlist page-up",
+    ["CTRL+ALT+PGDWN"] = "temporary playlist page-down",
+}
+for index = 1, 9 do
+    registered_key_bindings["CTRL+ALT+" .. index] = "temporary menu selection"
+    registered_key_bindings["CTRL+ALT+SHIFT+" .. index] = "temporary playlist removal"
+end
 
 local function register_configurable_key_binding(option_name, binding_name, callback, fallback)
     local key = opts[option_name]

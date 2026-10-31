@@ -20,6 +20,7 @@ local mp = {
         events[name] = callback
     end,
     add_key_binding = function(key, name, callback)
+        if key == "INVALID" then error("invalid test key") end
         key_bindings[name] = { key = key, callback = callback }
     end,
     remove_key_binding = function(name)
@@ -121,6 +122,8 @@ package.loaded["mp.options"] = {
         assert(options.playlist_next_key == "CTRL+RIGHT", "playlist-next shortcut should have a safe default")
         options.seek_back_key = "ALT+LEFT"
         options.seek_forward_key = "ALT+LEFT"
+        options.volume_up_key = "CTRL+ALT+F5"
+        options.mute_toggle_key = "INVALID"
         assert(options.idle_hide_timeout == 0,
             "idle hide should be disabled by default")
         assert(options.fade_duration == 0.25,
@@ -149,11 +152,19 @@ assert_equal(key_bindings["adwisp-seek-back"].key, "ALT+LEFT",
     "seek-back should accept a custom binding")
 assert_equal(key_bindings["adwisp-seek-forward"].key, "RIGHT",
     "conflicting seek-forward binding should fall back to its default")
-local saw_binding_conflict = false
+assert_equal(key_bindings["adwisp-volume-up"].key, "CTRL+UP",
+    "bindings that conflict with fixed Adwisp actions should fall back")
+assert_equal(key_bindings["adwisp-mute-toggle"].key, "m",
+    "invalid key names should fall back to the documented default")
+local reported_binding_issues = {}
 for _, message in ipairs(logs.warn) do
-    if message:find("seek_forward_key", 1, true) then saw_binding_conflict = true end
+    for _, option in ipairs({ "seek_forward_key", "volume_up_key", "mute_toggle_key" }) do
+        if message:find(option, 1, true) then reported_binding_issues[option] = true end
+    end
 end
-assert_true(saw_binding_conflict, "conflicting bindings should be reported")
+assert_true(reported_binding_issues.seek_forward_key
+    and reported_binding_issues.volume_up_key and reported_binding_issues.mute_toggle_key,
+    "conflicting and invalid bindings should be reported")
 assert_true(observers.pause ~= nil, "pause property should be observed")
 assert_true(observers["time-pos"] ~= nil, "playback position should be observed")
 assert_true(observers["paused-for-cache"] ~= nil,
