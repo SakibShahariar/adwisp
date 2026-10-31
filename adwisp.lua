@@ -1056,7 +1056,7 @@ mp.register_script_message("thumbfast-info", function(json)
         if not positive_finite(source_height) or source_height > 4096 then source_height = 0
         else source_height = math.floor(source_height + 0.5) end
         local thumbnail_path = type(data.thumbnail) == "string"
-            and #data.thumbnail <= 1024 and not data.thumbnail:find("\\0", 1, true)
+            and #data.thumbnail <= 1024 and not data.thumbnail:find("\0", 1, true)
             and data.thumbnail ~= "" and data.thumbnail or nil
         local dimensions_changed = math.floor(data.width) ~= thumbfast.width
             or math.floor(data.height) ~= thumbfast.height
