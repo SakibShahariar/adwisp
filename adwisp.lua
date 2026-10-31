@@ -1116,7 +1116,44 @@ local function show_chapter_list()
     mp.commandv("show-text", table.concat(lines, "\n"), 8000)
 end
 
-{helper}register_configurable_key_binding("toggle_key", "adwisp-toggle", toggle, "g")
+local registered_key_bindings = {}
+
+local function register_configurable_key_binding(option_name, binding_name, callback, fallback)
+    local key = opts[option_name]
+    local invalid = type(key) ~= "string" or key:match("^%s*$") or #key > 64
+    if invalid then key = fallback end
+
+    local function try_register(candidate)
+        if registered_key_bindings[candidate] then
+            return false, "conflicts with " .. registered_key_bindings[candidate]
+        end
+        local ok, err = pcall(mp.add_key_binding, candidate, binding_name, callback)
+        if not ok then return false, err end
+        registered_key_bindings[candidate] = binding_name
+        return true
+    end
+
+    local ok, reason = try_register(key)
+    if not ok and key ~= fallback then
+        local fallback_ok, fallback_reason = try_register(fallback)
+        if fallback_ok then
+            mp.msg.warn("Adwisp: " .. option_name .. " is invalid or conflicts ("
+                .. tostring(reason) .. "); using " .. fallback .. ".")
+            return
+        end
+        reason = tostring(reason) .. "; fallback failed: " .. tostring(fallback_reason)
+    elseif not ok and invalid then
+        mp.msg.warn("Adwisp: invalid " .. option_name .. "; fallback " .. fallback .. " is unavailable.")
+        return
+    end
+    if not ok then
+        mp.msg.warn("Adwisp: could not register " .. option_name .. ": " .. tostring(reason))
+    elseif invalid then
+        mp.msg.warn("Adwisp: invalid " .. option_name .. "; using " .. fallback .. ".")
+    end
+end
+
+register_configurable_key_binding("toggle_key", "adwisp-toggle", toggle, "g")
 register_configurable_key_binding("seek_back_key", "adwisp-seek-back", handle_left, "LEFT")
 register_configurable_key_binding("seek_forward_key", "adwisp-seek-forward", handle_right, "RIGHT")
 mp.add_key_binding("TAB", "adwisp-focus-next", function()
