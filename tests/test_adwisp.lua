@@ -680,6 +680,11 @@ mouse_y = layout.timeline.y
 key_bindings["adwisp-mouse-move"].callback()
 assert_true(commands[#commands][3] ~= "thumb",
     "infinite thumbnail dimensions must not trigger a preview")
+thumbfast_payload = { width = 10000, height = 90, disabled = false, available = true }
+script_messages["thumbfast-info"]("{}")
+key_bindings["adwisp-mouse-move"].callback()
+assert_true(commands[#commands][3] ~= "thumb",
+    "excessive thumbnail dimensions must not trigger a preview")
 thumbfast_payload = { width = 160, height = 90, available = true }
 script_messages["thumbfast-info"]("{}")
 key_bindings["adwisp-mouse-move"].callback()
@@ -718,6 +723,26 @@ script_messages["thumbfast-info"]("{}")
 key_bindings["adwisp-mouse-move"].callback()
 assert_true(overlays[1].data:find("0:30", 1, true) ~= nil,
     "re-enabled thumbfast previews should restore the timestamp")
+
+-- A thumbfast restart/path change must clear the old preview before accepting new frames.
+thumbfast_payload = {
+    width = 160, height = 90, disabled = false, available = true,
+    thumbnail = "/tmp/adwisp-preview-a",
+}
+script_messages["thumbfast-info"]("{}")
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(observed_state.preview_visible, true,
+    "a valid thumbfast adapter should restore the active preview")
+thumbfast_payload = {
+    width = 160, height = 90, disabled = false, available = true,
+    thumbnail = "/tmp/adwisp-preview-b",
+}
+script_messages["thumbfast-info"]("{}")
+assert_equal(observed_state.preview_visible, false,
+    "changing thumbfast's backing path should clear the old preview")
+assert_equal(commands[#commands][3], "clear",
+    "thumbfast path changes should clear the previous adapter preview")
+key_bindings["adwisp-mouse-move"].callback()
 
 -- Repeated motion within the same 100ms preview bucket should not resend a request.
 local preview_command_count = #commands

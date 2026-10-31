@@ -133,6 +133,11 @@ local function export_thumbnail()
         mp.commandv("show-text", "Adwisp: no thumbfast preview is ready to export.", 3000)
         return
     end
+    if thumbfast.source_width < 1 or thumbfast.source_width > 4096
+        or thumbfast.source_height < 1 or thumbfast.source_height > 4096 then
+        mp.commandv("show-text", "Adwisp: thumbfast preview dimensions are unsupported.", 3000)
+        return
+    end
 
     local source_path = thumbfast.thumbnail_path .. ".bgra"
     local source_info = utils.file_info(source_path)
@@ -1040,23 +1045,35 @@ mp.register_script_message("thumbfast-info", function(json)
             and value ~= math.huge and value ~= -math.huge and value > 0
     end
     if type(data) == "table" and positive_finite(data.width)
-        and positive_finite(data.height) and type(data.disabled) == "boolean"
-        and type(data.available) == "boolean" then
+        and positive_finite(data.height) and data.width <= 8192 and data.height <= 8192
+        and type(data.disabled) == "boolean" and type(data.available) == "boolean" then
         local preview_cleared = false
-        if data.disabled or not data.available then
+        local scale_factor = positive_finite(data.scale_factor) and data.scale_factor or 1
+        local source_width = data.width / scale_factor
+        local source_height = data.height / scale_factor
+        if not positive_finite(source_width) or source_width > 4096 then source_width = 0
+        else source_width = math.floor(source_width + 0.5) end
+        if not positive_finite(source_height) or source_height > 4096 then source_height = 0
+        else source_height = math.floor(source_height + 0.5) end
+        local thumbnail_path = type(data.thumbnail) == "string"
+            and #data.thumbnail <= 1024 and not data.thumbnail:find("\\0", 1, true)
+            and data.thumbnail ~= "" and data.thumbnail or nil
+        local dimensions_changed = math.floor(data.width) ~= thumbfast.width
+            or math.floor(data.height) ~= thumbfast.height
+        local path_changed = thumbnail_path ~= thumbfast.thumbnail_path
+        if data.disabled or not data.available
+            or (thumbnail_active and (dimensions_changed or path_changed)) then
             preview_cleared = clear_thumbnail()
         end
         last_thumbnail_request = nil
-        local scale_factor = positive_finite(data.scale_factor) and data.scale_factor or 1
         thumbfast = {
             width = math.floor(data.width),
             height = math.floor(data.height),
-            source_width = math.floor(data.width / scale_factor + 0.5),
-            source_height = math.floor(data.height / scale_factor + 0.5),
+            source_width = source_width,
+            source_height = source_height,
             disabled = data.disabled,
             available = data.available,
-            thumbnail_path = type(data.thumbnail) == "string"
-                and data.thumbnail:sub(1, 1024) or nil,
+            thumbnail_path = thumbnail_path,
         }
         if preview_cleared then render() end
         if thumbfast.width < 1 or thumbfast.height < 1 then
