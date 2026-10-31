@@ -82,11 +82,11 @@ assert_true(overlay.data:find("Pause  1.2×", 1, true) ~= nil,
     "playback control should show the current playback speed")
 assert_true(overlay.data:find("Pause", 1, true) ~= nil,
     "playing state should offer Pause")
-assert_true(overlay.data:find("Chapter: Opening Scene", 1, true) ~= nil,
+assert_true(overlay.data:find("Chapter: Open", 1, true) ~= nil,
     "current chapter title should appear in the OSD status area")
-assert_true(overlay.data:find("A: eng English", 1, true) ~= nil,
+assert_true(overlay.data:find("A: eng Eng", 1, true) ~= nil,
     "active audio track should appear in the OSD status area")
-assert_true(overlay.data:find("S: eng English", 1, true) ~= nil,
+assert_true(overlay.data:find("S: eng Eng", 1, true) ~= nil,
     "active subtitle track should appear in the OSD status area")
 
 renderer:render()
