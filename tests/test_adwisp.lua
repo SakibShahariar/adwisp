@@ -144,6 +144,8 @@ assert_true(observers["chapter-list"] ~= nil and observers["chapter-list"].type 
     "chapter metadata should be observed")
 assert_true(observers["track-list"] ~= nil and observers["track-list"].type == "native",
     "audio and subtitle track metadata should be observed")
+assert_true(observers.playlist ~= nil and observers.playlist.type == "native",
+    "playlist metadata should be observed")
 assert_true(observers["osd-dimensions"] ~= nil, "OSD dimensions should be observed")
 assert_true(events["file-loaded"] ~= nil, "file-loaded event should be registered")
 assert_true(events["end-file"] ~= nil, "end-file event should be registered")
@@ -174,6 +176,7 @@ assert_true(key_bindings["adwisp-audio-cycle"] ~= nil, "audio-cycle shortcut sho
 assert_true(key_bindings["adwisp-subtitle-cycle"] ~= nil, "subtitle-cycle shortcut should be registered")
 assert_true(key_bindings["adwisp-audio-menu"] ~= nil, "audio-menu shortcut should be registered")
 assert_true(key_bindings["adwisp-subtitle-menu"] ~= nil, "subtitle-menu shortcut should be registered")
+assert_true(key_bindings["adwisp-playlist-menu"] ~= nil, "playlist-menu shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
 assert_true(script_messages["adwisp-hide"] ~= nil, "hide message should be registered")
@@ -205,6 +208,52 @@ observers.speed.callback("speed", math.huge)
 observers["playlist-count"].callback("playlist-count", 0 / 0)
 observers["playlist-pos"].callback("playlist-pos", -math.huge)
 local observed_state = require("core.state")
+observers.playlist.callback("playlist", {
+    { filename = "/videos/one.mkv", title = "One", current = true },
+    { filename = "/videos/two.mkv", title = "Two", current = false },
+})
+assert_equal(observed_state.playlist_count, 2, "playlist metadata should populate playlist count")
+assert_equal(observed_state.playlist_items[1].title, "One",
+    "playlist view should prefer the entry title")
+key_bindings["adwisp-playlist-menu"].callback()
+assert_true(commands[#commands][2]:find("One", 1, true) ~= nil
+    and commands[#commands][2]:find("Two", 1, true) ~= nil,
+    "playlist view should list its entries")
+key_bindings["adwisp-playlist-menu-select-2"].callback()
+assert_equal(commands[#commands - 1][1], "set", "playlist selection should set playlist-pos")
+assert_equal(commands[#commands - 1][2], "playlist-pos", "playlist selection should target playlist-pos")
+assert_equal(commands[#commands - 1][3], 1, "playlist selection should use zero-based index")
+key_bindings["adwisp-playlist-menu"].callback()
+key_bindings["adwisp-playlist-menu-remove-1"].callback()
+assert_equal(commands[#commands - 1][1], "playlist-remove",
+    "playlist removal should use mpv playlist-remove command")
+assert_equal(commands[#commands - 1][2], 0, "playlist removal should use zero-based index")
+observers.playlist.callback("playlist", {})
+key_bindings["adwisp-playlist-menu"].callback()
+assert_true(commands[#commands][2]:find("playlist is empty", 1, true) ~= nil,
+    "empty playlist should be reported gracefully")
+observers.playlist.callback("playlist", {
+    { title = "Entry 1", current = true },
+    { title = "Entry 2" },
+    { title = "Entry 3" },
+    { title = "Entry 4" },
+    { title = "Entry 5" },
+    { title = "Entry 6" },
+    { title = "Entry 7" },
+    { title = "Entry 8" },
+    { title = "Entry 9" },
+    { title = "Entry 10" },
+})
+key_bindings["adwisp-playlist-menu"].callback()
+assert_true(key_bindings["adwisp-playlist-menu-next"] ~= nil,
+    "long playlists should expose a next-page shortcut")
+key_bindings["adwisp-playlist-menu-next"].callback()
+assert_true(commands[#commands][2]:find("Entry 10", 1, true) ~= nil,
+    "playlist next-page should display later entries")
+key_bindings["adwisp-playlist-menu-select-1"].callback()
+assert_equal(commands[#commands - 1][3], 9,
+    "playlist page selection should retain the absolute playlist index")
+observers.playlist.callback("playlist", nil)
 assert_equal(observed_state.time_pos, 0, "non-finite playback position should fall back to zero")
 assert_equal(observed_state.duration, 0, "negative duration should clamp to zero")
 assert_equal(observed_state.volume, 100, "non-finite volume should fall back to a safe default")

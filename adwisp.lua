@@ -103,6 +103,7 @@ local cached_layout_position, cached_layout_margin, cached_layout_custom_offset
 local active_drag = nil
 local last_mouse_x, last_mouse_y
 local active_track_menu
+local active_playlist_menu
 local track_menu_binding_names = {}
 local track_menu_timer
 
@@ -118,6 +119,7 @@ local function clear_track_menu()
     end
     track_menu_timer = nil
     active_track_menu = nil
+    active_playlist_menu = nil
 end
 
 local function clear_interaction_state()
@@ -811,6 +813,30 @@ local function describe_track(track)
     return table.concat(parts, " ")
 end
 
+local function update_playlist_state(value)
+    clear_track_menu()
+    local items = {}
+    if type(value) == "table" then
+        for index, item in ipairs(value) do
+            if type(item) == "table" then
+                local title = type(item.title) == "string" and item.title or ""
+                if title == "" and type(item.filename) == "string" then
+                    title = item.filename:match("([^/\\]+)$") or item.filename
+                end
+                title = title:gsub("[%c{}]", " "):gsub("\\", " "):gsub("%s+", " ")
+                    :match("^%s*(.-)%s*$")
+                if title == "" then title = "Playlist item " .. index end
+                items[#items + 1] = {
+                    title = title:sub(1, 120),
+                    current = item.current == true or item.playing == true,
+                }
+            end
+        end
+    end
+    state.playlist_items = items
+    state.playlist_count = #items
+end
+
 local function update_track_state(value)
     clear_track_menu()
     local audio_tracks, subtitle_tracks = {}, {}
@@ -858,7 +884,12 @@ local observers = {
         state.buffering_progress = math.max(0, math.min(100, finite_property(value, 0)))
     end },
     { "playlist-pos", "number", function(value) state.playlist_pos = finite_property(value, -1) end },
-    { "playlist-count", "number", function(value) state.playlist_count = math.max(0, finite_property(value, 0)) end },
+    { "playlist", "native", update_playlist_state },
+    { "playlist-count", "number", function(value)
+        if type(state.playlist_items) ~= "table" or #state.playlist_items == 0 then
+            state.playlist_count = math.max(0, finite_property(value, 0))
+        end
+    end },
     { "chapter", "number", function(value)
         state.chapter = finite_property(value, -1)
         update_chapter_title()
@@ -921,6 +952,71 @@ mp.observe_property("osd-dimensions", "native", function()
     last_mouse_x, last_mouse_y = nil, nil
     render()
 end)
+
+local function open_playlist_menu(offset)
+    clear_track_menu()
+    local items = type(state.playlist_items) == "table" and state.playlist_items or {}
+    if #items == 0 then
+        mp.commandv("show-text", "Adwisp: the playlist is empty.", 2500)
+        return
+    end
+
+    local page_size = 9
+    local max_offset = math.max(0, math.floor((#items - 1) / page_size) * page_size)
+    offset = math.max(0, math.min(max_offset, math.floor(finite_property(offset, 0))))
+    local first = offset + 1
+    local last = math.min(#items, first + page_size - 1)
+    local lines = { string.format("Playlist  %d–%d / %d", first, last, #items) }
+    active_playlist_menu = { items = items, offset = offset }
+    for index = first, last do
+        local item = items[index]
+        local local_index = index - offset
+        local marker = (item.current or index - 1 == state.playlist_pos) and ">" or " "
+        lines[#lines + 1] = string.format("%d. %s %s", local_index, marker, item.title)
+
+        local select_name = "adwisp-playlist-menu-select-" .. local_index
+        track_menu_binding_names[#track_menu_binding_names + 1] = select_name
+        mp.add_key_binding("CTRL+ALT+" .. local_index, select_name, function()
+            local menu = active_playlist_menu
+            local selected = menu and menu.items[index]
+            if not selected then return end
+            note_activity()
+            mp.commandv("set", "playlist-pos", index - 1)
+            clear_track_menu()
+            mp.commandv("show-text", "Adwisp: playing " .. selected.title, 2500)
+        end)
+
+        local remove_name = "adwisp-playlist-menu-remove-" .. local_index
+        track_menu_binding_names[#track_menu_binding_names + 1] = remove_name
+        mp.add_key_binding("CTRL+ALT+SHIFT+" .. local_index, remove_name, function()
+            local menu = active_playlist_menu
+            local selected = menu and menu.items[index]
+            if not selected then return end
+            note_activity()
+            mp.commandv("playlist-remove", index - 1)
+            clear_track_menu()
+            mp.commandv("show-text", "Adwisp: removed " .. selected.title, 2500)
+        end)
+    end
+
+    if offset > 0 then
+        local previous_name = "adwisp-playlist-menu-previous"
+        track_menu_binding_names[#track_menu_binding_names + 1] = previous_name
+        mp.add_key_binding("CTRL+ALT+PGUP", previous_name, function()
+            open_playlist_menu(offset - page_size)
+        end)
+    end
+    if last < #items then
+        local next_name = "adwisp-playlist-menu-next"
+        track_menu_binding_names[#track_menu_binding_names + 1] = next_name
+        mp.add_key_binding("CTRL+ALT+PGDWN", next_name, function()
+            open_playlist_menu(offset + page_size)
+        end)
+    end
+    track_menu_timer = mp.add_timeout(8, clear_track_menu)
+    note_activity()
+    mp.commandv("show-text", table.concat(lines, "\n"), 8000)
+end
 
 local function open_track_menu(kind)
     clear_track_menu()
@@ -1072,6 +1168,9 @@ mp.add_key_binding("CTRL+ALT+F10", "adwisp-audio-menu", function()
 end)
 mp.add_key_binding("CTRL+ALT+F11", "adwisp-subtitle-menu", function()
     open_track_menu("subtitle")
+end)
+mp.add_key_binding("CTRL+ALT+F12", "adwisp-playlist-menu", function()
+    open_playlist_menu(0)
 end)
 mp.add_key_binding("CTRL+UP", "adwisp-volume-up", function()
     change_volume(1)
