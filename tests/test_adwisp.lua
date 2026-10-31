@@ -28,6 +28,10 @@ local mp = {
     commandv = function(...)
         commands[#commands + 1] = { ... }
     end,
+    command_native = function(args)
+        if args[1] == "expand-path" then return "." end
+        return nil
+    end,
     add_timeout = function(seconds, callback)
         local timer = { timeout = seconds, callback = callback, killed = false }
         function timer:kill() self.killed = true end
@@ -69,6 +73,14 @@ package.loaded["mp.utils"] = {
             .. ',"loop_file":"' .. tostring(value.loop_file)
             .. '","ab_loop_a":' .. tostring(value.ab_loop_a)
             .. ',"ab_loop_b":' .. tostring(value.ab_loop_b) .. '}'
+    end,
+    file_info = function(path)
+        if path == "." then return { is_dir = true } end
+        local file = io.open(path, "rb")
+        if not file then return nil end
+        local data = file:read("*a")
+        file:close()
+        return { is_file = true, size = #data }
     end,
 }
 package.loaded["mp.options"] = {
@@ -759,6 +771,39 @@ assert_equal(commands[#commands][2], "thumbfast", "clear should target thumbfast
 assert_equal(commands[#commands][3], "clear", "leaving timeline should clear preview")
 assert_true(overlays[1].data:find("0:30", 1, true) == nil,
     "leaving the timeline should hide the preview timestamp")
+
+-- Export a real one-pixel thumbfast BGRA fixture through the public shortcut.
+local fixture_path = "tests/adwisp-thumbfast-fixture"
+local fixture = assert(io.open(fixture_path .. ".bgra", "wb"))
+local fixture_pixel = string.char(0x11, 0x22, 0x33, 0x44)
+assert(fixture:write(fixture_pixel))
+assert(fixture:close())
+thumbfast_payload = {
+    width = 1, height = 1, scale_factor = 1,
+    disabled = false, available = true, thumbnail = fixture_path,
+}
+script_messages["thumbfast-info"]("{}")
+mouse_x = hover_layout.timeline.x + hover_layout.timeline.width / 2
+mouse_y = hover_layout.timeline.y
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(observed_state.preview_visible, true,
+    "valid thumbfast metadata should activate the preview before export")
+key_bindings["adwisp-thumbnail-export"].callback()
+assert_equal(commands[#commands][1], "show-text",
+    "successful thumbnail export should show confirmation")
+local exported_filename = commands[#commands][2]:match("exported (.+)$")
+assert_true(type(exported_filename) == "string",
+    "successful thumbnail export should report its filename")
+local exported = assert(io.open(exported_filename, "rb"))
+local bitmap = exported:read("*a")
+exported:close()
+assert_equal(bitmap:sub(1, 2), "BM", "export shortcut should write a BMP file")
+assert_equal(#bitmap, 58, "one-pixel BMP should contain its header and pixel")
+assert_equal(bitmap:sub(55), fixture_pixel, "exported BMP should preserve BGRA pixels")
+os.remove(exported_filename)
+os.remove(fixture_path .. ".bgra")
+mouse_x, mouse_y = 10, 10
+key_bindings["adwisp-mouse-move"].callback()
 
 -- A new drag replaces the previous drag instead of activating both.
 mouse_x = volume_track.x + volume_track.width * 0.25
