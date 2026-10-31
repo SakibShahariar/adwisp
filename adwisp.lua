@@ -931,7 +931,7 @@ local function show_chapter_list()
             .. " more (use Ctrl+Page Up/Down to navigate)"
     end
     note_activity()
-    mp.commandv("show-text", table.concat(lines, "\\n"), 8000)
+    mp.commandv("show-text", table.concat(lines, "\n"), 8000)
 end
 
 mp.add_key_binding("g", "adwisp-toggle", toggle)
