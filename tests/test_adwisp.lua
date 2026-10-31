@@ -515,6 +515,15 @@ assert_equal(commands[#commands][2], 50, "timeline midpoint should seek to 50 pe
 assert_equal(commands[#commands][3], "absolute-percent",
     "timeline click should use absolute-percent mode")
 
+-- Clicking near a chapter marker seeks to the exact chapter timestamp.
+mouse_x = layout.timeline.x + layout.timeline.width * 0.7
+mouse_y = layout.timeline.y
+key_bindings["adwisp-mouse-click"].callback()
+assert_equal(commands[#commands][1], "seek", "chapter marker click should issue a seek")
+assert_equal(commands[#commands][2], 42, "chapter marker click should seek to its exact timestamp")
+assert_equal(commands[#commands][3], "absolute",
+    "chapter marker click should use absolute time rather than approximate percent")
+
 -- Configured OSD placement must be shared by rendering and hit testing.
 option_fixture.osd_position = "top"
 option_fixture.osd_margin = 24

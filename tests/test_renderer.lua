@@ -32,6 +32,11 @@ local state = {
     audio_track_label = "eng English AAC",
     subtitle_track_count = 1,
     subtitle_track_label = "eng English ASS",
+    chapter_list = {
+        { title = "Opening", time = 0 },
+        { title = "Middle", time = 30 },
+        { title = "Ending", time = 60 },
+    },
 }
 
 local function assert_equal(actual, expected, message)
@@ -88,6 +93,13 @@ assert_true(overlay.data:find("A: eng Eng", 1, true) ~= nil,
     "active audio track should appear in the OSD status area")
 assert_true(overlay.data:find("S: eng Eng", 1, true) ~= nil,
     "active subtitle track should appear in the OSD status area")
+local Layout = require "core.layout"
+local marker_layout = Layout.compute(width, height)
+local marker_x = math.floor(marker_layout.timeline.x + marker_layout.timeline.width / 2 + 0.5)
+local marker_y = marker_layout.timeline.y - 1
+assert_true(overlay.data:find(string.format("\\pos(%d,%d)\\bord0\\shad0\\1c",
+    marker_x, marker_y), 1, true) ~= nil,
+    "chapter metadata should draw a marker at the corresponding timeline position")
 
 renderer:render()
 assert_equal(overlay.update_count, 4, "restored title should redraw and then cache")

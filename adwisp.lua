@@ -357,6 +357,32 @@ local function seek_at(mouse_x, timeline)
     mp.commandv("seek", fraction * 100, "absolute-percent")
 end
 
+local function seek_chapter_marker(mouse_x, timeline)
+    if not finite_number(state.duration) or state.duration <= 0
+        or type(timeline.width) ~= "number" or timeline.width <= 0 then
+        return false
+    end
+    local closest_time
+    local closest_distance = 6
+    for _, chapter in ipairs(state.chapter_list) do
+        local chapter_time = type(chapter) == "table" and chapter.time or nil
+        if finite_number(chapter_time) and chapter_time > 0
+            and chapter_time < state.duration then
+            local marker_x = timeline.x + chapter_time / state.duration * timeline.width
+            local distance = math.abs(mouse_x - marker_x)
+            if distance <= closest_distance then
+                closest_distance = distance
+                closest_time = chapter_time
+            end
+        end
+    end
+    if closest_time ~= nil then
+        mp.commandv("seek", closest_time, "absolute")
+        return true
+    end
+    return false
+end
+
 local function has_playlist_navigation()
     local count = state.playlist_count
     return type(count) == "number" and count == count
@@ -588,14 +614,16 @@ local function handle_mouse_click(event)
         if contains_timeline(timeline, mouse_x, mouse_y) then
             if state.duration > 0 then
                 active_drag = "timeline"
-                seek_at(mouse_x, timeline)
+                if not seek_chapter_marker(mouse_x, timeline) then
+                    seek_at(mouse_x, timeline)
+                end
             end
             return
         end
     end
 
     if contains_timeline(timeline, mouse_x, mouse_y) then
-        if state.duration > 0 then
+        if state.duration > 0 and not seek_chapter_marker(mouse_x, timeline) then
             seek_at(mouse_x, timeline)
         end
         return

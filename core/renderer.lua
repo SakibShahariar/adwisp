@@ -333,6 +333,29 @@ function Renderer:render()
         volume_fill, volume_fill, volume_track_geometry.height, volume_track_geometry.height)
     ass = ass .. volume_track_ass
 
+    local chapter_markers = {}
+    local chapters = type(state.chapter_list) == "table" and state.chapter_list or {}
+    if is_finite_number(duration) and duration > 0 then
+        local seen_markers = {}
+        for _, chapter in ipairs(chapters) do
+            local chapter_time = type(chapter) == "table" and chapter.time or nil
+            if is_finite_number(chapter_time) and chapter_time > 0
+                and chapter_time < duration then
+                local marker_x = math.floor(timeline.x
+                    + chapter_time / duration * timeline.width + 0.5)
+                if marker_x > timeline.x and marker_x < timeline.x + timeline.width
+                    and not seen_markers[marker_x] then
+                    seen_markers[marker_x] = true
+                    chapter_markers[#chapter_markers + 1] = string.format(
+                        "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\p1}"
+                            .. "m 0 0 l 2 0 2 8 0 8{\\p0}",
+                        marker_x, timeline.y - 1, colors.accent)
+                end
+            end
+        end
+    end
+    ass = ass .. table.concat(chapter_markers, "\\n")
+
     if state.hover_target == "playback" or state.hover_target == "volume"
         or state.hover_target == "playlist" or state.hover_target == "timeline" then
         local target

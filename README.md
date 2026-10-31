@@ -14,7 +14,7 @@ Adwisp is an experimental mpv script exploring a cohesive desktop-player interfa
 - Hover feedback for interactive controls; active drag state is cancelled when the UI is dismissed or a file ends.
 - Event-driven updates from mpv properties, with duplicate-render suppression.
 - A theme-aware buffering indicator driven by mpv's cache-pause and buffering-progress properties.
-- Chapter navigation shortcuts and the current chapter title when the media provides chapter metadata.
+- Chapter navigation shortcuts, clickable timeline chapter markers, and the current chapter title when the media provides chapter metadata.
 - Audio/subtitle track cycling with the active track's language, title, and codec shown when available.
 - Optional event-driven idle hiding with a short ASS opacity fade; disabled by default.
 - Semantic theme palette with a built-in fallback and explicit reload message.
