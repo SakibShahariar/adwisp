@@ -839,7 +839,7 @@ local function update_track_state(value)
     state.subtitle_tracks = subtitle_tracks
     state.subtitle_track_count = #subtitle_tracks
     state.subtitle_track_label = subtitle_label
-}
+end
 
 -- Playback properties update the shared state and invalidate the renderer.
 local observers = {
