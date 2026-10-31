@@ -145,9 +145,19 @@ function Renderer:render()
         status_labels[#status_labels + 1] = "B"
     end
     if type(state.chapter_title) == "string" and state.chapter_title ~= "" then
-        status_labels[#status_labels + 1] = "Chapter: " .. truncate_title(state.chapter_title, 18)
+        status_labels[#status_labels + 1] = "Chapter: " .. truncate_title(state.chapter_title, 14)
     end
-    local buffering_label = table.concat(status_labels, " · ")
+    if (tonumber(state.audio_track_count) or 0) > 0 then
+        local audio_label = type(state.audio_track_label) == "string"
+            and state.audio_track_label ~= "" and state.audio_track_label or "—"
+        status_labels[#status_labels + 1] = "A: " .. truncate_title(audio_label, 10)
+    end
+    if (tonumber(state.subtitle_track_count) or 0) > 0 then
+        local subtitle_label = type(state.subtitle_track_label) == "string"
+            and state.subtitle_track_label ~= "" and state.subtitle_track_label or "Off"
+        status_labels[#status_labels + 1] = "S: " .. truncate_title(subtitle_label, 10)
+    end
+    local buffering_label = truncate_title(table.concat(status_labels, " · "), 54)
     local buffering_status_width = 0
     if buffering_label ~= "" and title_pos.width >= 140 then
         buffering_status_width = math.min(140,

@@ -28,6 +28,10 @@ local state = {
     speed = 1.25,
     mute = false,
     chapter_title = "Opening Scene",
+    audio_track_count = 2,
+    audio_track_label = "eng English AAC",
+    subtitle_track_count = 1,
+    subtitle_track_label = "eng English ASS",
 }
 
 local function assert_equal(actual, expected, message)
@@ -80,6 +84,10 @@ assert_true(overlay.data:find("Pause", 1, true) ~= nil,
     "playing state should offer Pause")
 assert_true(overlay.data:find("Chapter: Opening Scene", 1, true) ~= nil,
     "current chapter title should appear in the OSD status area")
+assert_true(overlay.data:find("A: eng English", 1, true) ~= nil,
+    "active audio track should appear in the OSD status area")
+assert_true(overlay.data:find("S: eng English", 1, true) ~= nil,
+    "active subtitle track should appear in the OSD status area")
 
 renderer:render()
 assert_equal(overlay.update_count, 4, "restored title should redraw and then cache")

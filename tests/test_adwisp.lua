@@ -127,6 +127,8 @@ assert_true(observers.chapter ~= nil and observers.chapter.type == "number",
     "current chapter index should be observed")
 assert_true(observers["chapter-list"] ~= nil and observers["chapter-list"].type == "native",
     "chapter metadata should be observed")
+assert_true(observers["track-list"] ~= nil and observers["track-list"].type == "native",
+    "audio and subtitle track metadata should be observed")
 assert_true(observers["osd-dimensions"] ~= nil, "OSD dimensions should be observed")
 assert_true(events["file-loaded"] ~= nil, "file-loaded event should be registered")
 assert_true(events["end-file"] ~= nil, "end-file event should be registered")
@@ -150,6 +152,8 @@ assert_true(key_bindings["adwisp-playlist-prev"] ~= nil, "playlist-prev shortcut
 assert_true(key_bindings["adwisp-playlist-next"] ~= nil, "playlist-next shortcut should be registered")
 assert_true(key_bindings["adwisp-chapter-prev"] ~= nil, "chapter-prev shortcut should be registered")
 assert_true(key_bindings["adwisp-chapter-next"] ~= nil, "chapter-next shortcut should be registered")
+assert_true(key_bindings["adwisp-audio-cycle"] ~= nil, "audio-cycle shortcut should be registered")
+assert_true(key_bindings["adwisp-subtitle-cycle"] ~= nil, "subtitle-cycle shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
 assert_true(script_messages["adwisp-hide"] ~= nil, "hide message should be registered")
@@ -192,6 +196,34 @@ observers["chapter-list"].callback("chapter-list", {
 observers.chapter.callback("chapter", 1)
 assert_equal(observed_state.chapter_title, "The Journey",
     "current chapter title should follow mpv chapter metadata")
+observers["track-list"].callback("track-list", {
+    { type = "audio", id = 1, lang = "eng", title = "English", codec = "aac", selected = true },
+    { type = "audio", id = 2, lang = "jpn", title = "Japanese", codec = "flac", selected = false },
+    { type = "sub", id = 3, lang = "eng", title = "English", codec = "ass", selected = true },
+})
+assert_equal(observed_state.audio_track_count, 2, "audio track count should be read from mpv metadata")
+assert_true(observed_state.audio_track_label:find("eng", 1, true) ~= nil
+    and observed_state.audio_track_label:find("English", 1, true) ~= nil
+    and observed_state.audio_track_label:find("aac", 1, true) ~= nil,
+    "active audio label should include language, title, and codec")
+assert_equal(observed_state.subtitle_track_count, 1, "subtitle track count should be read from mpv metadata")
+assert_true(observed_state.subtitle_track_label:find("English", 1, true) ~= nil,
+    "active subtitle label should include its title")
+local commands_before_tracks = #commands
+key_bindings["adwisp-audio-cycle"].callback()
+assert_equal(commands[#commands][1], "cycle", "audio cycling should use mpv cycle command")
+assert_equal(commands[#commands][2], "audio", "audio cycling should target audio tracks")
+key_bindings["adwisp-subtitle-cycle"].callback()
+assert_equal(commands[#commands][1], "cycle", "subtitle cycling should use mpv cycle command")
+assert_equal(commands[#commands][2], "sub", "subtitle cycling should target subtitle tracks")
+assert_true(#commands >= commands_before_tracks + 2,
+    "track cycling should issue commands when tracks are available")
+observers["track-list"].callback("track-list", nil)
+local commands_without_tracks = #commands
+key_bindings["adwisp-audio-cycle"].callback()
+key_bindings["adwisp-subtitle-cycle"].callback()
+assert_equal(#commands, commands_without_tracks,
+    "track cycling should be a no-op when media has no tracks")
 local commands_before_chapters = #commands
 key_bindings["adwisp-chapter-prev"].callback()
 assert_equal(commands[#commands][1], "add", "previous chapter should use mpv chapter command")

@@ -644,6 +644,41 @@ local function update_chapter_title()
         and chapter.title or ""
 end
 
+local function describe_track(track)
+    local parts = {}
+    for _, field in ipairs({ "lang", "title", "codec" }) do
+        local value = track[field]
+        if type(value) == "string" then
+            value = value:match("^%s*(.-)%s*$")
+            if value ~= "" then parts[#parts + 1] = value end
+        end
+    end
+    if #parts == 0 and track.id ~= nil then
+        parts[#parts + 1] = "Track " .. tostring(track.id)
+    end
+    return table.concat(parts, " ")
+end
+
+local function update_track_state(value)
+    local audio_count, subtitle_count = 0, 0
+    local audio_label, subtitle_label = "", "Off"
+    if type(value) == "table" then
+        for _, track in ipairs(value) do
+            if type(track) == "table" and track.type == "audio" then
+                audio_count = audio_count + 1
+                if track.selected == true then audio_label = describe_track(track) end
+            elseif type(track) == "table" and track.type == "sub" then
+                subtitle_count = subtitle_count + 1
+                if track.selected == true then subtitle_label = describe_track(track) end
+            end
+        end
+    end
+    state.audio_track_count = audio_count
+    state.audio_track_label = audio_label
+    state.subtitle_track_count = subtitle_count
+    state.subtitle_track_label = subtitle_label
+end
+
 -- Playback properties update the shared state and invalidate the renderer.
 local observers = {
     { "pause", "bool", function(value) state.paused = value == true end },
@@ -681,6 +716,7 @@ local observers = {
         state.chapter_list = chapters
         update_chapter_title()
     end },
+    { "track-list", "native", update_track_state },
 }
 
 for _, observer in ipairs(observers) do
@@ -768,6 +804,18 @@ mp.add_key_binding("CTRL+PGDWN", "adwisp-chapter-next", function()
         mp.commandv("add", "chapter", 1)
     end
 end)
+mp.add_key_binding("CTRL+ALT+F5", "adwisp-audio-cycle", function()
+    if state.audio_track_count > 1 then
+        note_activity()
+        mp.commandv("cycle", "audio")
+    end
+end)
+mp.add_key_binding("CTRL+ALT+F6", "adwisp-subtitle-cycle", function()
+    if state.subtitle_track_count > 0 then
+        note_activity()
+        mp.commandv("cycle", "sub")
+    end
+end)
 mp.add_key_binding("CTRL+UP", "adwisp-volume-up", function()
     change_volume(1)
 end)
@@ -839,6 +887,10 @@ register_no_argument_message("adwisp-query", function()
         playlist_count = finite_property(state.playlist_count, 0),
         chapter = finite_property(state.chapter, -1),
         chapter_title = type(state.chapter_title) == "string" and state.chapter_title or "",
+        audio_track_count = state.audio_track_count,
+        audio_track_label = state.audio_track_label,
+        subtitle_track_count = state.subtitle_track_count,
+        subtitle_track_label = state.subtitle_track_label,
         buffering = state.buffering == true,
         buffering_progress = finite_property(state.buffering_progress, 0),
     }

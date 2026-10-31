@@ -28,4 +28,8 @@ return {
     chapter = -1,
     chapter_list = {},
     chapter_title = "",
+    audio_track_count = 0,
+    audio_track_label = "",
+    subtitle_track_count = 0,
+    subtitle_track_label = "Off",
 }
