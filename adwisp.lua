@@ -20,6 +20,8 @@ local opts = {
     fade_duration = 0.25,
     theme_file = "",
     thumbnail_preview = true,
+    thumbnail_export_directory = "~~/",
+    thumbnail_export_prefix = "adwisp-thumbnail",
     time_pos_render_interval = 0.15,
     osd_position = "bottom",
     osd_margin = -1,
@@ -54,6 +56,18 @@ opts.fade_duration = math.max(0.05, math.min(1, fade_duration))
 if opts.log_level ~= "quiet" and opts.log_level ~= "debug" then
     opts.log_level = "info"
 end
+if type(opts.thumbnail_export_directory) ~= "string"
+    or opts.thumbnail_export_directory:match("^%s*$") then
+    opts.thumbnail_export_directory = "~~/"
+end
+opts.thumbnail_export_directory = opts.thumbnail_export_directory:sub(1, 512)
+if type(opts.thumbnail_export_prefix) ~= "string" then
+    opts.thumbnail_export_prefix = "adwisp-thumbnail"
+end
+opts.thumbnail_export_prefix = opts.thumbnail_export_prefix:gsub("[^%w_.%-]", ""):sub(1, 48)
+if opts.thumbnail_export_prefix == "" then
+    opts.thumbnail_export_prefix = "adwisp-thumbnail"
+end
 
 local state = require "core.state"
 state.layout_options = opts
@@ -61,6 +75,7 @@ local Renderer = require "core.renderer"
 local Layout = require "core.layout"
 local Theme = require "core.theme"
 local utils = require "mp.utils"
+local BMP = require "core.bmp"
 local renderer = Renderer.new(mp, state)
 
 local function log_info(message)
@@ -76,7 +91,10 @@ local function log_debug(message)
 end
 
 -- thumbfast owns thumbnail generation and display. Adwisp only requests previews.
-local thumbfast = { width = 0, height = 0, disabled = true, available = false }
+local thumbfast = {
+    width = 0, height = 0, source_width = 0, source_height = 0,
+    disabled = true, available = false, thumbnail_path = nil,
+}
 local thumbnail_active = false
 local last_thumbnail_request = nil
 local cached_layout = nil
@@ -104,6 +122,89 @@ local function clear_thumbnail()
     thumbnail_active = false
     last_thumbnail_request = nil
     return was_visible
+end
+
+local thumbnail_export_sequence = 0
+
+local function export_thumbnail()
+    if not thumbnail_active or not thumbfast.available
+        or type(thumbfast.thumbnail_path) ~= "string"
+        or thumbfast.thumbnail_path == "" then
+        mp.commandv("show-text", "Adwisp: no thumbfast preview is ready to export.", 3000)
+        return
+    end
+
+    local source_path = thumbfast.thumbnail_path .. ".bgra"
+    local source_info = utils.file_info(source_path)
+    local expected_size = thumbfast.source_width * thumbfast.source_height * 4
+    if not source_info or source_info.size ~= expected_size then
+        mp.commandv("show-text", "Adwisp: thumbnail preview is not ready; try again.", 3000)
+        return
+    end
+
+    local source = io.open(source_path, "rb")
+    if not source then
+        mp.commandv("show-text", "Adwisp: could not read the thumbfast preview.", 3000)
+        return
+    end
+    local pixels = source:read("*a")
+    source:close()
+    local bitmap, encode_error = BMP.encode_bgra(
+        thumbfast.source_width, thumbfast.source_height, pixels)
+    if not bitmap then
+        mp.msg.warn("Adwisp: thumbnail export failed: " .. tostring(encode_error))
+        mp.commandv("show-text", "Adwisp: thumbnail export failed.", 3000)
+        return
+    end
+
+    local directory = mp.command_native({ "expand-path", opts.thumbnail_export_directory })
+    if type(directory) ~= "string" or directory == "" then
+        mp.commandv("show-text", "Adwisp: thumbnail export directory is invalid.", 3000)
+        return
+    end
+    local directory_info = utils.file_info(directory)
+    if not directory_info or not directory_info.is_dir then
+        mp.commandv("show-text", "Adwisp: export directory does not exist.", 3000)
+        return
+    end
+
+    local separator = package.config:sub(1, 1)
+    directory = directory:gsub("[/\\]+$", "")
+    if directory == "" then directory = separator end
+    local filename
+    local output_path
+    for _ = 1, 100 do
+        thumbnail_export_sequence = thumbnail_export_sequence + 1
+        filename = opts.thumbnail_export_prefix .. "-"
+            .. os.date("%Y%m%d-%H%M%S") .. "-" .. thumbnail_export_sequence .. ".bmp"
+        output_path = directory
+            .. (directory:sub(-1) == separator and "" or separator) .. filename
+        if not utils.file_info(output_path) then break end
+        output_path = nil
+    end
+    if not output_path then
+        mp.commandv("show-text", "Adwisp: could not choose a unique thumbnail filename.", 3000)
+        return
+    end
+
+    local output, open_error = io.open(output_path, "wb")
+    if not output then
+        mp.msg.warn("Adwisp: could not write thumbnail: " .. tostring(open_error))
+        mp.commandv("show-text", "Adwisp: could not write the thumbnail file.", 3000)
+        return
+    end
+    local wrote, write_error = output:write(bitmap)
+    local closed, close_error = output:close()
+    if not wrote or not closed then
+        os.remove(output_path)
+        mp.msg.warn("Adwisp: thumbnail write failed: "
+            .. tostring(write_error or close_error))
+        mp.commandv("show-text", "Adwisp: thumbnail export failed while writing.", 3000)
+        return
+    end
+
+    log_info("thumbnail exported to " .. output_path)
+    mp.commandv("show-text", "Adwisp: exported " .. filename, 4000)
 end
 
 local time_pos_render_pending = false
@@ -857,6 +958,7 @@ mp.add_key_binding("CTRL+ALT+DOWN", "adwisp-speed-down", function()
     change_speed(-1)
 end)
 mp.add_key_binding("CTRL+ALT+BACKSPACE", "adwisp-speed-reset", reset_speed)
+mp.add_key_binding("CTRL+ALT+F7", "adwisp-thumbnail-export", export_thumbnail)
 
 local function register_configurable_key_binding(option_name, binding_name, callback, fallback)
     local key = opts[option_name]
@@ -945,15 +1047,23 @@ mp.register_script_message("thumbfast-info", function(json)
             preview_cleared = clear_thumbnail()
         end
         last_thumbnail_request = nil
+        local scale_factor = positive_finite(data.scale_factor) and data.scale_factor or 1
         thumbfast = {
             width = math.floor(data.width),
             height = math.floor(data.height),
+            source_width = math.floor(data.width / scale_factor + 0.5),
+            source_height = math.floor(data.height / scale_factor + 0.5),
             disabled = data.disabled,
             available = data.available,
+            thumbnail_path = type(data.thumbnail) == "string"
+                and data.thumbnail:sub(1, 1024) or nil,
         }
         if preview_cleared then render() end
         if thumbfast.width < 1 or thumbfast.height < 1 then
-            thumbfast = { width = 0, height = 0, disabled = true, available = false }
+            thumbfast = {
+                width = 0, height = 0, source_width = 0, source_height = 0,
+                disabled = true, available = false, thumbnail_path = nil,
+            }
         end
         log_debug("thumbfast info: available=" .. tostring(thumbfast.available)
             .. ", disabled=" .. tostring(thumbfast.disabled)
@@ -961,7 +1071,10 @@ mp.register_script_message("thumbfast-info", function(json)
     else
         mp.msg.warn("Adwisp: received invalid thumbfast info; previews disabled.")
         local preview_cleared = clear_thumbnail()
-        thumbfast = { width = 0, height = 0, disabled = true, available = false }
+        thumbfast = {
+                width = 0, height = 0, source_width = 0, source_height = 0,
+                disabled = true, available = false, thumbnail_path = nil,
+            }
         if preview_cleared then render() end
     end
 end)

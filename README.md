@@ -18,7 +18,7 @@ Adwisp is an experimental mpv script exploring a cohesive desktop-player interfa
 - Audio/subtitle track cycling with the active track's language, title, and codec shown when available.
 - Optional event-driven idle hiding with a short ASS opacity fade; disabled by default.
 - Semantic theme palette with a built-in fallback and explicit reload message.
-- Optional seek-preview requests through [thumbfast](https://github.com/po5/thumbfast), with a timestamp label beside the preview; Adwisp does not generate thumbnails itself.
+- Optional seek-preview requests through [thumbfast](https://github.com/po5/thumbfast), with a timestamp label beside the preview; Adwisp can export the active preview as a BMP image.
 
 These features are still under active development. Automated tests and CI checks are useful safeguards, but do not replace testing in a real mpv session.
 
@@ -76,6 +76,7 @@ Typical mpv configuration directories:
 | `Ctrl` + `Alt` + `L` | Toggle infinite looping of the current file |
 | `Ctrl` + `Alt` + `A` | Cycle A-B loop points: set A, set B, clear |
 | `Ctrl` + `Alt` + `S` | Take a screenshot using mpv |
+| `Ctrl` + `Alt` + `F7` | Export the current thumbfast preview as a BMP image |
 
 | `Tab` / `Shift+Tab` | Move keyboard focus between playback, volume, and playlist controls |
 | `Enter` | Activate the focused control |
@@ -147,6 +148,10 @@ screenshot_key=CTRL+ALT+S
 # Set to no to disable the optional thumbfast preview adapter
 thumbnail_preview=yes
 
+# Existing directory and filename prefix for exported BMP previews
+thumbnail_export_directory=~~/
+thumbnail_export_prefix=adwisp-thumbnail
+
 # Playback-position OSD rebuild interval in seconds (0.05–0.5)
 time_pos_render_interval=0.15
 
@@ -202,7 +207,7 @@ See the [Script-message API](#script-message-api) section for the complete messa
 
 ### Thumbnail previews
 
-Install [thumbfast](https://github.com/po5/thumbfast) as an mpv script and leave `thumbnail_preview=yes`. Adwisp sends preview requests while the pointer is over the timeline and asks thumbfast to clear the preview when appropriate. If thumbfast is absent or unavailable, previews are not provided. This integration still needs manual validation in a real mpv session.
+Install [thumbfast](https://github.com/po5/thumbfast) as an mpv script and leave `thumbnail_preview=yes`. Adwisp sends preview requests while the pointer is over the timeline and asks thumbfast to clear the preview when appropriate. Press `Ctrl+Alt+F7` while a preview is visible to export it as a BMP file. The configured export directory must already exist. If thumbfast is absent or unavailable, previews and export are unavailable. This integration still needs manual validation in a real mpv session.
 
 ## Development
 

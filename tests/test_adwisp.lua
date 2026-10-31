@@ -148,6 +148,8 @@ assert_true(key_bindings["adwisp-focus-activate"] ~= nil, "Enter should activate
 assert_true(key_bindings["adwisp-loop-toggle"] ~= nil, "file-loop shortcut should be registered")
 assert_true(key_bindings["adwisp-ab-loop"] ~= nil, "A-B loop shortcut should be registered")
 assert_true(key_bindings["adwisp-screenshot"] ~= nil, "screenshot shortcut should be registered")
+assert_true(key_bindings["adwisp-thumbnail-export"] ~= nil,
+    "thumbfast thumbnail export shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-prev"] ~= nil, "playlist-prev shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-next"] ~= nil, "playlist-next shortcut should be registered")
 assert_true(key_bindings["adwisp-chapter-prev"] ~= nil, "chapter-prev shortcut should be registered")
@@ -161,6 +163,12 @@ assert_true(script_messages["adwisp-toggle"] ~= nil, "toggle message should be r
 assert_true(script_messages["adwisp-reload-theme"] ~= nil, "theme reload message should be registered")
 assert_true(script_messages["adwisp-query"] ~= nil, "state query message should be registered")
 assert_true(script_messages["thumbfast-info"] ~= nil, "thumbfast info message should be registered")
+local commands_before_empty_export = #commands
+key_bindings["adwisp-thumbnail-export"].callback()
+assert_equal(#commands, commands_before_empty_export + 1,
+    "thumbnail export without an active preview should show feedback")
+assert_equal(commands[#commands][1], "show-text",
+    "thumbnail export without a preview should explain why it cannot proceed")
 local saw_version = false
 for _, message in ipairs(logs.info) do
     if message:find("mpv test-version", 1, true) then saw_version = true end
