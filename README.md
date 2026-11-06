@@ -76,7 +76,7 @@ Typical mpv configuration directories:
 | `Ctrl` + `Alt` + `F11` | Open the subtitle track menu; select with `Ctrl+Alt+1–9` |
 | `Ctrl` + `Alt` + `F12` | Open the playlist view; select with `Ctrl+Alt+1–9`, remove with `Ctrl+Alt+Shift+1–9` |
 
-When the playlist menu is open, type to filter by title or filename; use Up/Down and Enter to select, Ctrl+Backspace to clear the search, and Esc to close. If text input is unsupported by the mpv build, the existing numbered controls remain available. Audio and subtitle track menus also accept search over their displayed language, title, and codec labels.
+When the playlist menu is open, type to filter by title or filename; use Up/Down and Enter to select, Ctrl+Backspace to clear the search, and Esc to close. If text input is unsupported by the mpv build, the existing numbered controls remain available. Audio and subtitle track menus also accept search over their displayed language, title, and codec labels. The chapter list (F8) can also be filtered by title or timestamp; use Up/Down and Enter to select a chapter.
 | `Ctrl` + `Alt` + `Page Up/Down` | Previous / next playlist page |
 | `Ctrl` + `Up` / `Ctrl` + `Down` | Increase / decrease volume by `volume_step`; volume changes also unmute |
 | `Ctrl` + `Alt` + `Up` / `Ctrl` + `Alt` + `Down` | Increase / decrease playback speed by `speed_step` |

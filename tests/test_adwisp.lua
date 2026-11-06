@@ -511,6 +511,50 @@ assert_true(commands[#commands][2]:find("No matching subtitle tracks", 1, true) 
 key_bindings["adwisp-track-menu-search-escape"].callback({ event = "down" })
 observers["track-list"].callback("track-list", {})
 
+-- Chapter search preserves the original chapter index and supports time metadata.
+observers["chapter-list"].callback("chapter-list", {
+    { title = "Opening", time = 0 },
+    { title = "Middle", time = 60 },
+    { title = "Final", time = 120 },
+})
+observers.chapter.callback("chapter", 1)
+key_bindings["adwisp-chapter-list"].callback()
+local function type_chapter_query(value)
+    for index = 1, #value do
+        local character = value:sub(index, index)
+        key_bindings["adwisp-chapter-menu-search-input"].callback({
+            event = "down",
+            key_name = character,
+            key_text = character,
+        })
+    end
+end
+type_chapter_query("final")
+assert_true(commands[#commands][2]:find("Final", 1, true) ~= nil
+    and commands[#commands][2]:find("Opening", 1, true) == nil,
+    "chapter menu should filter chapter titles")
+key_bindings["adwisp-chapter-menu-search-enter"].callback({ event = "down" })
+assert_equal(commands[#commands - 1][2], "chapter",
+    "Enter should select a filtered chapter")
+assert_equal(commands[#commands - 1][3], 2,
+    "chapter filtering should map to the original chapter index")
+
+key_bindings["adwisp-chapter-list"].callback()
+type_chapter_query("60")
+assert_true(commands[#commands][2]:find("Middle", 1, true) ~= nil,
+    "chapter timestamps should be searchable")
+key_bindings["adwisp-chapter-menu-search-clear"].callback({ event = "down" })
+assert_true(commands[#commands][2]:find("Opening", 1, true) ~= nil
+    and commands[#commands][2]:find("Final", 1, true) ~= nil
+    and commands[#commands][2]:find(">* 00:01:00  Middle", 1, true) ~= nil,
+    "clearing chapter search should restore the full list and current chapter")
+type_chapter_query("missing")
+assert_true(commands[#commands][2]:find("No matching chapters", 1, true) ~= nil,
+    "chapter menu should display an empty-results state")
+key_bindings["adwisp-chapter-menu-search-escape"].callback({ event = "down" })
+observers["chapter-list"].callback("chapter-list", {})
+observers.chapter.callback("chapter", -1)
+
 local original_forced_binding = mp.add_forced_key_binding
 mp.add_forced_key_binding = function(key, name, callback, flags)
     if key == "ANY_UNICODE" then error("unsupported pseudo-key") end

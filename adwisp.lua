@@ -1520,33 +1520,206 @@ local function chapter_timestamp(value)
     return string.format("%02d:%02d", minutes, remainder)
 end
 
-local function show_chapter_list()
+local function open_chapter_menu(offset, query, selected_source_index)
+    clear_track_menu()
     local chapters = type(state.chapter_list) == "table" and state.chapter_list or {}
     if #chapters == 0 then
         mp.commandv("show-text", "Adwisp: this media has no chapters.", 2500)
         return
     end
 
-    local lines = { "Chapters" }
-    local limit = math.min(#chapters, 20)
-    local current = math.floor(finite_property(state.chapter, -1)) + 1
-    for index = 1, limit do
-        local chapter = chapters[index]
+    query = type(query) == "string" and query or ""
+    local results = MenuFilter.filter(chapters, query, { "title", "time" })
+    local page_size = 9
+    local current_index = math.floor(finite_property(state.chapter, -1)) + 1
+    local selected_index = 0
+    if #results > 0 then
+        if type(selected_source_index) == "number" then
+            for index, result in ipairs(results) do
+                if result.index == selected_source_index then
+                    selected_index = index
+                    break
+                end
+            end
+        end
+        if selected_index == 0 then
+            for index, result in ipairs(results) do
+                if result.index == current_index then
+                    selected_index = index
+                    break
+                end
+            end
+        end
+        if selected_index == 0 then selected_index = 1 end
+    end
+
+    local max_offset = math.max(0, math.floor((#results - 1) / page_size) * page_size)
+    offset = math.max(0, math.min(max_offset, math.floor(finite_property(offset, 0))))
+    if selected_index > 0 and (selected_index <= offset or selected_index > offset + page_size) then
+        offset = math.floor((selected_index - 1) / page_size) * page_size
+    end
+    local first = #results > 0 and offset + 1 or 1
+    local last = #results > 0 and math.min(#results, first + page_size - 1) or 0
+    local safe_query = query:gsub("[%c{}]", " "):gsub("\\", " ")
+        :gsub("%s+", " "):match("^%s*(.-)%s*$") or ""
+    local search_line = safe_query == "" and "Search: type to filter"
+        or "Search: " .. safe_query
+    local lines = {
+        string.format("Chapters  %d / %d", #results, #chapters),
+        search_line,
+    }
+    if #results == 0 then
+        lines[#lines + 1] = "No matching chapters"
+        lines[#lines + 1] = "Ctrl+Backspace clears search; Esc closes"
+    else
+        lines[#lines + 1] = "Up/Down move; Enter selects; Ctrl+Backspace clears"
+    end
+
+    active_track_menu = {
+        kind = "chapter",
+        property = "chapter",
+        items = chapters,
+        results = results,
+        query = query,
+        selected_index = selected_index,
+        offset = offset,
+    }
+
+    for index = first, last do
+        local result = results[index]
+        local chapter = result.item
         local title = type(chapter.title) == "string" and chapter.title or ""
         title = title:gsub("[%c{}]", " "):gsub("\\", " "):gsub("%s+", " ")
             :match("^%s*(.-)%s*$")
-        if title == "" then title = "Chapter " .. index end
+        if title == "" then title = "Chapter " .. result.index end
         title = title:sub(1, 100)
-        local marker = index == current and ">" or " "
-        lines[#lines + 1] = string.format("%s %02d  %s  %s",
-            marker, index, chapter_timestamp(chapter.time), title)
+        local local_index = index - offset
+        local current_marker = result.index == current_index and ">" or " "
+        local focus_marker = index == selected_index and "*" or " "
+        lines[#lines + 1] = string.format("%d. %s%s %s  %s",
+            local_index, current_marker, focus_marker,
+            chapter_timestamp(chapter.time), title)
+
+        local filtered_index = index
+        local binding_name = "adwisp-chapter-menu-select-" .. local_index
+        track_menu_binding_names[#track_menu_binding_names + 1] = binding_name
+        mp.add_key_binding("CTRL+ALT+" .. local_index, binding_name, function()
+            local menu = active_track_menu
+            local selected = menu and menu.kind == "chapter" and menu.results[filtered_index]
+            if not selected then return end
+            note_activity()
+            mp.commandv("set", "chapter", selected.index - 1)
+            clear_track_menu()
+            mp.commandv("show-text", "Adwisp: selected chapter " .. selected.index, 2500)
+        end)
     end
-    if #chapters > limit then
-        lines[#lines + 1] = "... and " .. (#chapters - limit)
-            .. " more (use Ctrl+Page Up/Down to navigate)"
+
+    if offset > 0 then
+        local previous_name = "adwisp-chapter-menu-previous"
+        track_menu_binding_names[#track_menu_binding_names + 1] = previous_name
+        mp.add_key_binding("CTRL+ALT+PGUP", previous_name, function()
+            local target = results[math.max(1, first - page_size)]
+            open_chapter_menu(0, query, target and target.index)
+        end)
     end
+    if last < #results then
+        local next_name = "adwisp-chapter-menu-next"
+        track_menu_binding_names[#track_menu_binding_names + 1] = next_name
+        mp.add_key_binding("CTRL+ALT+PGDWN", next_name, function()
+            local target = results[last + 1]
+            open_chapter_menu(0, query, target and target.index)
+        end)
+    end
+
+    local function add_search_binding(key, name, callback)
+        if type(mp.add_forced_key_binding) ~= "function" then return false end
+        local ok, err = pcall(mp.add_forced_key_binding, key, name, callback, { complex = true })
+        if not ok then
+            mp.msg.warn("Adwisp: unable to register chapter menu key " .. key .. ": " .. tostring(err))
+            return false
+        end
+        track_menu_binding_names[#track_menu_binding_names + 1] = name
+        return true
+    end
+    local function current_source_index()
+        local menu = active_track_menu
+        local selected = menu and menu.kind == "chapter" and menu.results[menu.selected_index]
+        return selected and selected.index or nil
+    end
+    local function update_search(next_query)
+        local source_index
+        if next_query ~= "" then source_index = current_source_index() end
+        open_chapter_menu(0, next_query, source_index)
+    end
+    local function is_key_down(event)
+        return type(event) == "table" and event.event == "down"
+    end
+
+    local text_input_available = add_search_binding(
+        "ANY_UNICODE", "adwisp-chapter-menu-search-input", function(event)
+            if not is_key_down(event) then return end
+            local key_name = type(event.key_name) == "string" and event.key_name:upper() or ""
+            if key_name:find("CTRL", 1, true) or key_name:find("ALT", 1, true)
+                or key_name:find("META", 1, true) then
+                return
+            end
+            if type(event.key_text) == "string" and event.key_text ~= "" then
+                local menu = active_track_menu
+                if menu and menu.kind == "chapter" then
+                    update_search(menu.query .. event.key_text)
+                end
+            end
+        end)
+    add_search_binding("BS", "adwisp-chapter-menu-search-backspace", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_track_menu
+        if menu and menu.kind == "chapter" then
+            update_search(remove_last_utf8_character(menu.query))
+        end
+    end)
+    add_search_binding("CTRL+BACKSPACE", "adwisp-chapter-menu-search-clear", function(event)
+        if is_key_down(event) then open_chapter_menu(0, "", nil) end
+    end)
+    add_search_binding("ESC", "adwisp-chapter-menu-search-escape", function(event)
+        if not is_key_down(event) then return end
+        clear_track_menu()
+        mp.commandv("show-text", "", 0)
+    end)
+    add_search_binding("ENTER", "adwisp-chapter-menu-search-enter", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_track_menu
+        local selected = menu and menu.kind == "chapter" and menu.results[menu.selected_index]
+        if not selected then return end
+        note_activity()
+        mp.commandv("set", "chapter", selected.index - 1)
+        clear_track_menu()
+        mp.commandv("show-text", "Adwisp: selected chapter " .. selected.index, 2500)
+    end)
+    add_search_binding("UP", "adwisp-chapter-menu-search-up", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_track_menu
+        if not menu or menu.kind ~= "chapter" or #menu.results == 0 then return end
+        local index = math.max(1, menu.selected_index - 1)
+        open_chapter_menu(0, menu.query, menu.results[index].index)
+    end)
+    add_search_binding("DOWN", "adwisp-chapter-menu-search-down", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_track_menu
+        if not menu or menu.kind ~= "chapter" or #menu.results == 0 then return end
+        local index = math.min(#menu.results, menu.selected_index + 1)
+        open_chapter_menu(0, menu.query, menu.results[index].index)
+    end)
+    if not text_input_available then
+        lines[#lines + 1] = "Text filtering is unavailable on this mpv build"
+    end
+
+    track_menu_timer = mp.add_timeout(8, clear_track_menu)
     note_activity()
     mp.commandv("show-text", table.concat(lines, "\n"), 8000)
+end
+
+local function show_chapter_list()
+    open_chapter_menu(0, "", nil)
 end
 
 local registered_key_bindings = {
