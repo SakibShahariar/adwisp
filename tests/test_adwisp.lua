@@ -244,6 +244,7 @@ assert_true(saw_version, "startup diagnostics should include the mpv version")
 
 -- Property callbacks should update state and safely render while the UI is hidden.
 observers.pause.callback("pause", true)
+local hidden_overlay_updates = overlays[1].update_count
 observers["time-pos"].callback("time-pos", 12)
 observers.duration.callback("duration", 60)
 observers["media-title"].callback("media-title", "Test video")
@@ -790,8 +791,8 @@ observers.volume.callback("volume", 100)
 observers.speed.callback("speed", 1)
 observers["playlist-count"].callback("playlist-count", 0)
 observers["playlist-pos"].callback("playlist-pos", -1)
-assert_equal(overlays[1].update_count, 1,
-    "hidden OSD should clear its initial empty overlay only once")
+assert_equal(overlays[1].update_count, hidden_overlay_updates,
+    "hidden OSD should not redraw after playback state changes")
 
 -- Loop, A-B repeat, and screenshot shortcuts use mpv's documented commands.
 key_bindings["adwisp-loop-toggle"].callback()
