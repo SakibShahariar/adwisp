@@ -861,8 +861,10 @@ assert_true(overlays[1].data:find("Play", 1, true) ~= nil,
     "paused playback should show a Play action")
 
 -- Re-rendering unchanged state should use the renderer cache.
+local updates_before_unchanged_render = overlays[1].update_count
 observers.pause.callback("pause", true)
-assert_equal(overlays[1].update_count, 2, "unchanged render should be cached")
+assert_equal(overlays[1].update_count, updates_before_unchanged_render,
+    "unchanged render should be cached")
 
 -- Playback-position updates are coalesced, but the latest value is rendered.
 local timer_count_before_position = #timers
