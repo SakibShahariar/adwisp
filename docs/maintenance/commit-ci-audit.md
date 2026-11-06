@@ -24,9 +24,9 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `180e2380a9cc246b00b35e382a160d0b47a7d5a3`
+- Reviewed checkpoint SHA: `d075bf7dc70f23083ad42c06fa9c404a57b1df1e`
 - Reviewed: 2026-11-06
-- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `180e2380a9cc246b00b35e382a160d0b47a7d5a3`
+- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `d075bf7dc70f23083ad42c06fa9c404a57b1df1e`
 - Result: all commits through the checkpoint have terminal CI results. The follow-up range contains five green commits and eleven red attempts, all diagnosed and corrected by later commits; the final timeline commit is green.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: review this ledger update commit and any newer exact-SHA runs; retain all red history.
@@ -98,6 +98,29 @@ All commits below were reviewed against their exact-SHA workflow run. Failed att
 | `ef98986b0b0936a1beb56b76deb7261ebf8dcfab` | docs(ci): record menu, image, and README verification | green | [42271309768](https://github.com/SakibShahariar/adwisp/actions/runs/42271309768) | Updated the audit ledger with the final menu, README, and image-control CI outcomes. |
 | `180e2380a9cc246b00b35e382a160d0b47a7d5a3` | test(input): cover pointer cache invalidation events (#10) | green | [42271481971](https://github.com/SakibShahariar/adwisp/actions/runs/42271481971) | Added mocked invalidation checks for playlist content/count, OSD dimensions, video reconfiguration, and thumbfast metadata; full suite passed. |
 
+## Follow-up review through the persistent playlist panel checkpoint
+
+| Commit SHA | Subject | CI result | Run | Diagnosis / resolution |
+|---|---|---|---|---|
+| `fb6d0dfc545719ce1361d80d2e7424af866efb48` | docs(ci): record mouse cache verification | green | [42271611608](https://github.com/SakibShahariar/adwisp/actions/runs/42271611608) | Recorded the mouse-cache invalidation matrix and its full-suite result. |
+| `de450b521f1373f21ebf54e803914077bd75ab97` | feat(playlist): keep playlist view open while browsing (#34) | red | [42271759081](https://github.com/SakibShahariar/adwisp/actions/runs/42271759081) | Playlist selection test saw the menu-clear OSD command after the selection command; selection cleanup ordering was corrected. |
+| `c861f52fd81bc175a8e89cd46ac165cbf09fbffd` | test(playlist): correct persistent view toggle assertions (#34) | red | [42271818682](https://github.com/SakibShahariar/adwisp/actions/runs/42271818682) | The earlier selection-command ordering failure remained; addressed in the following source fix. |
+| `36574fdfe92caf14aad99e1491ec8df88f6ef642` | fix(playlist): clear persistent view before selection feedback (#34) | red | [42271930290](https://github.com/SakibShahariar/adwisp/actions/runs/42271930290) | Clearing all menus also injected an OSD clear into audio-track selection; limited persistent-panel clearing to the playlist menu. |
+| `b1ad47cddb7d3f1b97b2c7205ed498957356da6b` | fix(menus): preserve track selection feedback when closing menus (#34) | green | [42272201722](https://github.com/SakibShahariar/adwisp/actions/runs/42272201722) | Track-menu selection and persistent playlist-panel cleanup passed the full suite. |
+| `1d21cd3a26879ab46910a030d51ae78a060e4e6e` | feat(playlist): render persistent responsive playlist panel (#34) | red | [42272442481](https://github.com/SakibShahariar/adwisp/actions/runs/42272442481) | A legacy playlist paging assertion still inspected show-text commands instead of the new ASS overlay. |
+| `5d4532b8a3aaea407c5f8fc6cd3546cc9c617343` | test(playlist): assert rendered panel content and document it (#34) | red | [42272531668](https://github.com/SakibShahariar/adwisp/actions/runs/42272531668) | The next-page assertion still inspected the old command output; switched it to the renderer overlay. |
+| `d2e8854a9ceeb4e61bb8fc9f8ce883b0459ebc83` | test(playlist): inspect rendered page after navigation (#34) | red | [42272610212](https://github.com/SakibShahariar/adwisp/actions/runs/42272610212) | Unsupported-input fallback assertion still read show-text instead of the persistent panel overlay. |
+| `0aa0a1d561e5d0222e1a9a8ec5481818344438b1` | test(playlist): assert fallback text in persistent panel (#34) | red | [42272731140](https://github.com/SakibShahariar/adwisp/actions/runs/42272731140) | Fallback test opened an empty playlist, so the menu returned before registering the fallback state; seeded a test entry. |
+| `9328b3f1fcc40c5eb65a8a93528cf6d6469dde5f` | test(playlist): seed entries for unsupported input fallback (#34) | red | [42272876659](https://github.com/SakibShahariar/adwisp/actions/runs/42272876659) | Hidden-render test assumed a fixed overlay update count despite the new panel tests; converted it to a baseline comparison. |
+| `dc280b89caba48ddb451a273c0a9cf41394d22e4` | test(renderer): compare hidden OSD against update baseline (#34) | red | [42273034160](https://github.com/SakibShahariar/adwisp/actions/runs/42273034160) | Baseline was captured before the hidden-OSD section and the OSD was still visible; explicitly hid it and captured the baseline there. |
+| `b036d4a2bd21b2ab24d4c5654883bbebe5122081` | test(renderer): capture hidden overlay baseline at assertion scope (#34) | red | [42273233814](https://github.com/SakibShahariar/adwisp/actions/runs/42273233814) | The baseline was correctly scoped but the test still needed to hide the OSD before measuring; fixed in `db2106d9b74af92f14aa62eec42625cd6d0473e3`. |
+| `db2106d9b74af92f14aa62eec42625cd6d0473e3` | test(renderer): hide OSD before measuring hidden redraws (#34) | red | [42273301726](https://github.com/SakibShahariar/adwisp/actions/runs/42273301726) | Wheel-scroll test inherited playlist position 1 from earlier tests, so the focused row began at item 2; reset the current position in the fixture. |
+| `f7566920c2fae48dcd58a68f33ce025a5fa43c6e` | feat(playlist): add wheel scrolling and compact panel layout (#34) | red | [42273530763](https://github.com/SakibShahariar/adwisp/actions/runs/42273530763) | Same stale playlist-position fixture affected the wheel-down assertion; fixed by `c2725cde08e1672b3f95018ecb819e73181724d8`. |
+| `c2725cde08e1672b3f95018ecb819e73181724d8` | test(playlist): reset current position before wheel assertions (#34) | red | [42273665645](https://github.com/SakibShahariar/adwisp/actions/runs/42273665645) | File-loaded rendering assertion expected an absolute overlay update count; converted it to a per-operation baseline. |
+| `529b3b2f54d68db90e8b2230188d704e654fb787` | test(renderer): measure file-load render from current baseline (#34) | red | [42273961042](https://github.com/SakibShahariar/adwisp/actions/runs/42273961042) | Unchanged-render cache assertion still expected an absolute count; converted it to a baseline comparison. |
+| `7cdc95b8c7049cd97e9abee799fe3656b02576ca` | test(renderer): compare unchanged render against baseline (#34) | green | [42274032730](https://github.com/SakibShahariar/adwisp/actions/runs/42274032730) | Full Lua syntax, Luacheck, and unit-test suite passed with the persistent responsive playlist panel and wheel navigation. |
+| `d075bf7dc70f23083ad42c06fa9c404a57b1df1e` | docs(playlist): clarify panel toggle and idle behavior (#34) | green | [42274148294](https://github.com/SakibShahariar/adwisp/actions/runs/42274148294) | Documented the actual Ctrl+Alt+F12 toggle and clarified that the configured global idle-hide timeout still applies. |
+
 ## Historical red-cross investigation
 
 These failures predate the checkpoint above. They were discovered by inspecting the actual workflow jobs and logs, not inferred from commit badges.
@@ -114,9 +137,11 @@ The five pre-session historical red entries have later corrective/test commits w
 
 ## Current pending CI obligations
 
-- None at checkpoint `180e2380a9cc246b00b35e382a160d0b47a7d5a3`. All reviewed runs in this range reached a terminal state.
+- None at checkpoint `d075bf7dc70f23083ad42c06fa9c404a57b1df1e`. All reviewed runs in this range reached a terminal state.
 
 ## Session history
+
+| 2026-11-06 | `180e2380a9cc246b00b35e382a160d0b47a7d5a3` through `d075bf7dc70f23083ad42c06fa9c404a57b1df1e` | Four green commits and fourteen red attempts diagnosed and corrected. Added a persistent OSD playlist panel with filtering, removal, responsive paging, and wheel scrolling; all menu/renderer tests now pass. Category B issue #34 still needs real-mpv visual validation. |
 
 | 2026-11-06 | `a6f332974e63a9291945b79b9aaf9cd2acf99572` through `180e2380a9cc246b00b35e382a160d0b47a7d5a3` | Two green commits; updated the audit ledger and expanded mouse-cache invalidation coverage. Category B issue #10 now has its automated invalidation matrix verified; real-mpv interaction and CPU measurements remain open. |
 
