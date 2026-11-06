@@ -24,9 +24,9 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `67c19dd3948a8516afb79cebc4baeb6fec0732e6`
+- Reviewed checkpoint SHA: `376a4c32faf99026cfbfc6cfd0d0694b692b302b`
 - Reviewed: 2026-11-06
-- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `67c19dd3948a8516afb79cebc4baeb6fec0732e6`
+- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `376a4c32faf99026cfbfc6cfd0d0694b692b302b`
 - Result: all commits through the checkpoint have terminal CI results. The follow-up range contains five green commits and eleven red attempts, all diagnosed and corrected by later commits; the final timeline commit is green.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: recheck the pending run above before unrelated work; retain all red and pending entries below.
@@ -78,6 +78,7 @@ All commits below were reviewed against their exact-SHA workflow run. Failed att
 | `b5bbe6c140e92ca6c3a56162e01f750d35b3dc0b` | test(playlist): cover active search selection feedback (#44) | red | [42268807469](https://github.com/SakibShahariar/adwisp/actions/runs/42268807469) | Playlist fixture leaked four items into later tests; reset playlist state in `ce8fc5a27d1adb2cbc931315c9b204e41fa14851`. |
 | `ce8fc5a27d1adb2cbc931315c9b204e41fa14851` | test(playlist): isolate search fixture from later cases (#44) | green | [42269006477](https://github.com/SakibShahariar/adwisp/actions/runs/42269006477) | Reset playlist fixtures after search tests; full suite passed. |
 | `67c19dd3948a8516afb79cebc4baeb6fec0732e6` | fix(playlist): guard unsupported text-input bindings (#44) | green | [42269143393](https://github.com/SakibShahariar/adwisp/actions/runs/42269143393) | Unsupported `ANY_UNICODE` bindings are caught; playlist menu retains fallback controls. |
+| `376a4c32faf99026cfbfc6cfd0d0694b692b302b` | docs(playlist): document search fallback and CI review | green | [42269452926](https://github.com/SakibShahariar/adwisp/actions/runs/42269452926) | README documents the unsupported-input fallback; CI ledger records the exact-SHA review. |
 
 ## Historical red-cross investigation
 
@@ -95,7 +96,7 @@ The five pre-session historical red entries have later corrective/test commits w
 
 ## Current pending CI obligations
 
-- None at checkpoint `67c19dd3948a8516afb79cebc4baeb6fec0732e6`. All reviewed runs in this range reached a terminal state.
+- None at checkpoint `376a4c32faf99026cfbfc6cfd0d0694b692b302b`. All reviewed runs in this range reached a terminal state.
 
 ## Session history
 
@@ -106,3 +107,4 @@ The five pre-session historical red entries have later corrective/test commits w
 | 2026-11-06 | `9c8ac16ec6a04dd842c18f4ffad4840f30b83d49` through `400f463b87b6e4c8e0e637a16190193ab3b0492d` | Five commits green; one test-only red was corrected by a later green commit; the ledger commit was initially pending and later passed on rerun. Release workflow now runs BMP tests and checks every core module in the archive. |
 | 2026-11-06 | `400f463b87b6e4c8e0e637a16190193ab3b0492d` through `63f0b8acc7e0e942ddcf77f09daaac75e1545b28` | Five commits green; eleven red attempts diagnosed and corrected by later commits. Thumbfast lifecycle, audio-device selection, minimal timeline, and the Lua 5.2 CI setup have final green verification. |
 | 2026-11-06 | `63f0b8acc7e0e942ddcf77f09daaac75e1545b28` through `67c19dd3948a8516afb79cebc4baeb6fec0732e6` | Three green commits and two red attempts corrected; playlist search now supports filtering, original-index selection, keyboard navigation, clear/dismiss, and safe fallback when ANY_UNICODE is unsupported. |
+| 2026-11-06 | `67c19dd3948a8516afb79cebc4baeb6fec0732e6` through `376a4c32faf99026cfbfc6cfd0d0694b692b302b` | One green documentation/ledger commit; playlist-search compatibility fallback is documented and the ledger checkpoint is current. |

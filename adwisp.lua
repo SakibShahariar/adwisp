@@ -1268,7 +1268,7 @@ open_playlist_menu = function(offset, query, selected_source_index)
     mp.commandv("show-text", table.concat(lines, "\n"), 8000)
 end
 
-local function open_track_menu(kind)
+local function open_track_menu(kind, query, selected_source_id)
     clear_track_menu()
     local tracks = kind == "audio" and state.audio_tracks or state.subtitle_tracks
     if type(tracks) ~= "table" or #tracks == 0 then
@@ -1288,29 +1288,151 @@ local function open_track_menu(kind)
         items[#items + 1] = track
     end
 
-    local lines = { kind == "audio" and "Audio tracks" or "Subtitle tracks" }
+    query = type(query) == "string" and query or ""
+    local results = MenuFilter.filter(items, query, { "label" })
+    local selected_index = 0
+    if #results > 0 then
+        if selected_source_id ~= nil then
+            for index, result in ipairs(results) do
+                if result.item.id == selected_source_id then
+                    selected_index = index
+                    break
+                end
+            end
+        end
+        if selected_index == 0 then
+            for index, result in ipairs(results) do
+                if result.item.selected then
+                    selected_index = index
+                    break
+                end
+            end
+        end
+        if selected_index == 0 then selected_index = 1 end
+    end
+
+    local title = kind == "audio" and "Audio tracks" or "Subtitle tracks"
+    local safe_query = query:gsub("[%c{}]", " "):gsub("\\", " ")
+        :gsub("%s+", " "):match("^%s*(.-)%s*$") or ""
+    local search_line = safe_query == "" and "Search: type to filter"
+        or "Search: " .. safe_query
+    local lines = { title, search_line }
+    if #results == 0 then
+        lines[#lines + 1] = "No matching " .. kind .. " tracks"
+        lines[#lines + 1] = "Ctrl+Backspace clears search; Esc closes"
+    else
+        lines[#lines + 1] = "Up/Down move; Enter selects; Ctrl+Backspace clears"
+    end
+
     local property = kind == "audio" and "aid" or "sid"
-    active_track_menu = { property = property, items = items }
-    for index, item in ipairs(items) do
+    active_track_menu = {
+        kind = kind,
+        property = property,
+        items = items,
+        results = results,
+        query = query,
+        selected_index = selected_index,
+    }
+
+    for index, result in ipairs(results) do
+        local item = result.item
         local marker = item.selected and ">" or " "
-        lines[#lines + 1] = string.format("%d. %s %s", index, marker, item.label)
+        local focus_marker = index == selected_index and "*" or " "
+        lines[#lines + 1] = string.format("%d. %s%s %s", index, marker, focus_marker, item.label)
         if index <= 9 then
+            local filtered_index = index
             local binding_name = "adwisp-track-menu-select-" .. index
             track_menu_binding_names[#track_menu_binding_names + 1] = binding_name
             mp.add_key_binding("CTRL+ALT+" .. index, binding_name, function()
                 local menu = active_track_menu
-                local selected = menu and menu.items[index]
+                local selected = menu and menu.kind == kind and menu.results[filtered_index]
                 if not selected then return end
                 note_activity()
-                mp.commandv("set", menu.property, selected.id)
+                mp.commandv("set", menu.property, selected.item.id)
                 clear_track_menu()
-                mp.commandv("show-text", "Adwisp: selected " .. selected.label, 2500)
+                mp.commandv("show-text", "Adwisp: selected " .. selected.item.label, 2500)
             end)
         end
     end
-    if #items > 9 then
-        lines[#lines + 1] = "Use the cycle shortcut for additional tracks."
+
+    local function add_search_binding(key, name, callback)
+        if type(mp.add_forced_key_binding) ~= "function" then return false end
+        local ok, err = pcall(mp.add_forced_key_binding, key, name, callback, { complex = true })
+        if not ok then
+            mp.msg.warn("Adwisp: unable to register track menu key " .. key .. ": " .. tostring(err))
+            return false
+        end
+        track_menu_binding_names[#track_menu_binding_names + 1] = name
+        return true
     end
+    local function current_source_id()
+        local menu = active_track_menu
+        local selected = menu and menu.results[menu.selected_index]
+        return selected and selected.item.id or nil
+    end
+    local function update_search(next_query)
+        local source_id
+        if next_query ~= "" then source_id = current_source_id() end
+        open_track_menu(kind, next_query, source_id)
+    end
+    local function is_key_down(event)
+        return type(event) == "table" and event.event == "down"
+    end
+
+    local text_input_available = add_search_binding(
+        "ANY_UNICODE", "adwisp-track-menu-search-input", function(event)
+            if not is_key_down(event) then return end
+            local key_name = type(event.key_name) == "string" and event.key_name:upper() or ""
+            if key_name:find("CTRL", 1, true) or key_name:find("ALT", 1, true)
+                or key_name:find("META", 1, true) then
+                return
+            end
+            if type(event.key_text) == "string" and event.key_text ~= "" then
+                local menu = active_track_menu
+                if menu then update_search(menu.query .. event.key_text) end
+            end
+        end)
+    add_search_binding("BS", "adwisp-track-menu-search-backspace", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_track_menu
+        if menu then update_search(remove_last_utf8_character(menu.query)) end
+    end)
+    add_search_binding("CTRL+BACKSPACE", "adwisp-track-menu-search-clear", function(event)
+        if is_key_down(event) then open_track_menu(kind, "", nil) end
+    end)
+    add_search_binding("ESC", "adwisp-track-menu-search-escape", function(event)
+        if not is_key_down(event) then return end
+        clear_track_menu()
+        mp.commandv("show-text", "", 0)
+    end)
+    add_search_binding("ENTER", "adwisp-track-menu-search-enter", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_track_menu
+        local selected = menu and menu.kind == kind and menu.results[menu.selected_index]
+        if not selected then return end
+        note_activity()
+        mp.commandv("set", menu.property, selected.item.id)
+        clear_track_menu()
+        mp.commandv("show-text", "Adwisp: selected " .. selected.item.label, 2500)
+    end)
+    add_search_binding("UP", "adwisp-track-menu-search-up", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_track_menu
+        if not menu or menu.kind ~= kind or #menu.results == 0 then return end
+        local index = math.max(1, menu.selected_index - 1)
+        open_track_menu(kind, menu.query, menu.results[index].item.id)
+    end)
+    add_search_binding("DOWN", "adwisp-track-menu-search-down", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_track_menu
+        if not menu or menu.kind ~= kind or #menu.results == 0 then return end
+        local index = math.min(#menu.results, menu.selected_index + 1)
+        open_track_menu(kind, menu.query, menu.results[index].item.id)
+    end)
+    if not text_input_available then
+        lines[#lines + 1] = "Text filtering is unavailable on this mpv build"
+    end
+
     track_menu_timer = mp.add_timeout(8, clear_track_menu)
     note_activity()
     mp.commandv("show-text", table.concat(lines, "\n"), 8000)

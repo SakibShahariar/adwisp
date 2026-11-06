@@ -456,6 +456,61 @@ assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil,
 assert_equal(observed_state.playlist_items[1].title, "Arrival",
     "searching must not mutate mpv's playlist data")
 
+-- Audio and subtitle track menus search their displayed language/title/codec labels.
+observers["track-list"].callback("track-list", {
+    { id = 1, type = "audio", lang = "eng", title = "Commentary", codec = "aac" },
+    { id = 2, type = "audio", lang = "jpn", title = "Main", codec = "flac", selected = true },
+    { id = 3, type = "sub", lang = "eng", title = "English", codec = "ass", selected = true },
+    { id = 4, type = "sub", lang = "spa", title = "Spanish", codec = "srt" },
+})
+key_bindings["adwisp-audio-menu"].callback()
+local function type_track_query(value)
+    for index = 1, #value do
+        local character = value:sub(index, index)
+        key_bindings["adwisp-track-menu-search-input"].callback({
+            event = "down",
+            key_name = character,
+            key_text = character,
+        })
+    end
+end
+type_track_query("jpn")
+assert_true(commands[#commands][2]:find("Main", 1, true) ~= nil
+    and commands[#commands][2]:find("Commentary", 1, true) == nil,
+    "audio track search should match language metadata")
+key_bindings["adwisp-track-menu-search-enter"].callback({ event = "down" })
+assert_equal(commands[#commands - 1][2], "aid",
+    "Enter should select a filtered audio track")
+assert_equal(commands[#commands - 1][3], 2,
+    "audio track filtering should preserve the original track ID")
+
+key_bindings["adwisp-audio-menu"].callback()
+type_track_query("aac")
+assert_true(commands[#commands][2]:find("Commentary", 1, true) ~= nil,
+    "audio track codec metadata should be searchable")
+key_bindings["adwisp-track-menu-search-clear"].callback({ event = "down" })
+assert_true(commands[#commands][2]:find("Main", 1, true) ~= nil
+    and commands[#commands][2]:find("Commentary", 1, true) ~= nil
+    and commands[#commands][2]:find(">* jpn Main", 1, true) ~= nil,
+    "clearing track search should restore the selected audio track")
+
+key_bindings["adwisp-subtitle-menu"].callback()
+type_track_query("spa")
+assert_true(commands[#commands][2]:find("Spanish", 1, true) ~= nil
+    and commands[#commands][2]:find("English", 1, true) == nil,
+    "subtitle track search should match language metadata")
+key_bindings["adwisp-track-menu-search-enter"].callback({ event = "down" })
+assert_equal(commands[#commands - 1][2], "sid",
+    "Enter should select a filtered subtitle track")
+assert_equal(commands[#commands - 1][3], 4,
+    "subtitle track filtering should preserve the original track ID")
+key_bindings["adwisp-subtitle-menu"].callback()
+type_track_query("missing")
+assert_true(commands[#commands][2]:find("No matching subtitle tracks", 1, true) ~= nil,
+    "subtitle track search should show an empty-results state")
+key_bindings["adwisp-track-menu-search-escape"].callback({ event = "down" })
+observers["track-list"].callback("track-list", {})
+
 local original_forced_binding = mp.add_forced_key_binding
 mp.add_forced_key_binding = function(key, name, callback, flags)
     if key == "ANY_UNICODE" then error("unsupported pseudo-key") end
