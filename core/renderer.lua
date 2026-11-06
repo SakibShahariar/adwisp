@@ -144,6 +144,12 @@ function Renderer:render()
     elseif loop_b >= 0 then
         status_labels[#status_labels + 1] = "B"
     end
+    if state.image_mode == true then
+        local image_zoom = is_finite_number(state.image_zoom)
+            and math.max(-4, math.min(4, state.image_zoom)) or 0
+        status_labels[#status_labels + 1] = "Image · Zoom "
+            .. tostring(math.floor(100 * (2 ^ image_zoom) + 0.5)) .. "%"
+    end
     if type(state.chapter_title) == "string" and state.chapter_title ~= "" then
         status_labels[#status_labels + 1] = "Chapter: " .. truncate_title(state.chapter_title, 14)
     end

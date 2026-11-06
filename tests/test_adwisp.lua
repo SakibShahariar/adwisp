@@ -172,6 +172,7 @@ assert_true(reported_binding_issues.seek_forward_key
     "conflicting and invalid bindings should be reported")
 assert_true(observers.pause ~= nil, "pause property should be observed")
 assert_true(observers["time-pos"] ~= nil, "playback position should be observed")
+assert_true(observers["video-zoom"] ~= nil, "image zoom should be observed")
 assert_true(observers["paused-for-cache"] ~= nil,
     "cache pause state should be observed")
 assert_true(observers["cache-buffering-state"] ~= nil,
@@ -509,6 +510,56 @@ type_track_query("missing")
 assert_true(commands[#commands][2]:find("No matching subtitle tracks", 1, true) ~= nil,
     "subtitle track search should show an empty-results state")
 key_bindings["adwisp-track-menu-search-escape"].callback({ event = "down" })
+observers["track-list"].callback("track-list", {})
+
+-- Still-image controls activate only for mpv tracks marked as images.
+local commands_before_image_controls = #commands
+key_bindings["adwisp-image-fit"].callback()
+key_bindings["adwisp-image-zoom-in"].callback()
+assert_equal(#commands, commands_before_image_controls,
+    "image controls should be inactive during ordinary playback")
+
+observers["track-list"].callback("track-list", {
+    { id = 7, type = "video", selected = true, image = true },
+})
+assert_equal(observed_state.image_mode, true,
+    "a selected mpv still-image track should activate image mode")
+key_bindings["adwisp-image-fit"].callback()
+assert_equal(commands[#commands - 3][2], "video-unscaled",
+    "fit should enable normal window scaling")
+assert_equal(commands[#commands - 2][2], "video-zoom",
+    "fit should reset video zoom")
+assert_equal(commands[#commands - 1][2], "video-pan-x",
+    "fit should center the image horizontally")
+assert_equal(commands[#commands][2], "video-pan-y",
+    "fit should center the image vertically")
+key_bindings["adwisp-image-zoom-in"].callback()
+assert_equal(commands[#commands][2], "video-zoom",
+    "zoom in should update mpv's video-zoom property")
+assert_equal(commands[#commands][3], 0.25,
+    "zoom in should increase the logarithmic zoom value")
+observers["video-zoom"].callback("video-zoom", 0.25)
+key_bindings["adwisp-image-zoom-out"].callback()
+assert_equal(commands[#commands][3], 0,
+    "zoom out should reverse the previous zoom step")
+key_bindings["adwisp-speed-reset"].callback()
+assert_equal(commands[#commands - 3][2], "video-unscaled",
+    "the reset shortcut should restore fit while image mode is active")
+observers["track-list"].callback("track-list", {
+    { id = 8, type = "video", selected = true, image = false },
+})
+assert_equal(observed_state.image_mode, false,
+    "ordinary video tracks should leave image mode")
+local commands_after_image_mode = #commands
+key_bindings["adwisp-image-zoom-in"].callback()
+assert_equal(#commands, commands_after_image_mode,
+    "image zoom controls should become inactive when image playback ends")
+
+observers["track-list"].callback("track-list", {
+    { id = 9, type = "video", selected = true, albumart = true },
+})
+assert_equal(observed_state.image_mode, true,
+    "a selected album-art image track should activate image mode")
 observers["track-list"].callback("track-list", {})
 
 -- Chapter search preserves the original chapter index and supports time metadata.

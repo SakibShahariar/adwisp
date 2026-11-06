@@ -13,6 +13,7 @@ Adwisp is an experimental mpv script that draws a desktop-player-style interface
 - Keyboard and mouse interaction, including timeline and volume dragging.
 - Keyboard focus and navigation for playback controls.
 - Searchable chapter, audio-track, subtitle-track, and playlist menus.
+- Still-image fit, zoom, and reset controls using mpv's native video properties.
 - Event-driven updates, buffering feedback, and optional idle hiding.
 - Semantic color palettes, with optional [Matugen](https://github.com/InioX/matugen) and [thumbfast](https://github.com/po5/thumbfast) integrations.
 

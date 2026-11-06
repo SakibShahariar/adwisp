@@ -29,7 +29,12 @@ This guide covers Adwisp's keyboard and mouse controls, configuration, and scrip
 | `Ctrl+Alt+A` | Cycle A-B loop points: set A, set B, clear |
 | `Ctrl+Alt+S` | Take an mpv screenshot |
 | `Ctrl+Alt+F7` | Export the visible thumbfast preview as BMP |
+| `Ctrl+Alt+Home` | Fit a still image to the window |
+| `Ctrl+Alt+KP_Add` / `Ctrl+Alt+KP_Subtract` | Zoom a still image in / out |
+| `Ctrl+Alt+Backspace` | Reset a still image to fit; otherwise reset playback speed |
 | `Ctrl+Up` / `Ctrl+Down` | Adjust volume |
+
+Still-image controls are available only when mpv marks the selected video track as an image or album-art track. Zoom steps use mpv's logarithmic video-zoom setting; fit/reset clears zoom and pan and restores normal window scaling.
 
 The chapter, audio-track, subtitle-track, and playlist menus support numbered selection with `Ctrl+Alt+1–9`. Playlist items can also be removed with `Ctrl+Alt+Shift+1–9`. While a menu is open, type to filter its entries; use Up/Down and Enter to navigate and select. Chapter search matches titles and timestamps; track search matches displayed language, title, and codec; playlist search matches title and filename. Use Ctrl+Backspace to clear a search. If text input is unsupported by the mpv build, numbered selection remains available.
 

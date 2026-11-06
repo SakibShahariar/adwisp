@@ -37,4 +37,6 @@ return {
     subtitle_track_count = 0,
     subtitle_track_label = "Off",
     subtitle_tracks = {},
+    image_mode = false,
+    image_zoom = 0,
 }

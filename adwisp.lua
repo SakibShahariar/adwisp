@@ -492,6 +492,35 @@ local function change_speed(delta)
     set_speed(current + delta * speed_step())
 end
 
+local function set_image_zoom(value)
+    if not state.image_mode then return false end
+    local zoom = finite_number(value) and value or 0
+    zoom = math.max(-4, math.min(4, zoom))
+    note_activity()
+    state.image_zoom = zoom
+    mp.commandv("set", "video-zoom", zoom)
+    render()
+    return true
+end
+
+local function change_image_zoom(delta)
+    if not state.image_mode then return false end
+    local current = finite_number(state.image_zoom) and state.image_zoom or 0
+    return set_image_zoom(current + delta)
+end
+
+local function fit_image_to_window()
+    if not state.image_mode then return false end
+    note_activity()
+    mp.commandv("set", "video-unscaled", "no")
+    mp.commandv("set", "video-zoom", 0)
+    mp.commandv("set", "video-pan-x", 0)
+    mp.commandv("set", "video-pan-y", 0)
+    state.image_zoom = 0
+    render()
+    return true
+end
+
 local function reset_speed()
     set_speed(1)
 end
@@ -889,20 +918,27 @@ local function update_track_state(value)
     clear_track_menu()
     local audio_tracks, subtitle_tracks = {}, {}
     local audio_label, subtitle_label = "", "Off"
+    local image_mode = false
     if type(value) == "table" then
         for _, track in ipairs(value) do
-            if type(track) == "table" and track.id ~= nil then
-                local entry = {
-                    id = track.id,
-                    label = describe_track(track),
-                    selected = track.selected == true,
-                }
-                if track.type == "audio" then
-                    audio_tracks[#audio_tracks + 1] = entry
-                    if entry.selected then audio_label = entry.label end
-                elseif track.type == "sub" then
-                    subtitle_tracks[#subtitle_tracks + 1] = entry
-                    if entry.selected then subtitle_label = entry.label end
+            if type(track) == "table" then
+                if track.type == "video" and track.selected == true
+                    and (track.image == true or track.albumart == true) then
+                    image_mode = true
+                end
+                if track.id ~= nil then
+                    local entry = {
+                        id = track.id,
+                        label = describe_track(track),
+                        selected = track.selected == true,
+                    }
+                    if track.type == "audio" then
+                        audio_tracks[#audio_tracks + 1] = entry
+                        if entry.selected then audio_label = entry.label end
+                    elseif track.type == "sub" then
+                        subtitle_tracks[#subtitle_tracks + 1] = entry
+                        if entry.selected then subtitle_label = entry.label end
+                    end
                 end
             end
         end
@@ -913,6 +949,7 @@ local function update_track_state(value)
     state.subtitle_tracks = subtitle_tracks
     state.subtitle_track_count = #subtitle_tracks
     state.subtitle_track_label = subtitle_label
+    state.image_mode = image_mode
 end
 
 local function refresh_audio_device_menu()
@@ -998,6 +1035,7 @@ local observers = {
         update_chapter_title()
     end },
     { "track-list", "native", update_track_state },
+    { "video-zoom", "number", function(value) state.image_zoom = finite_property(value, 0) end },
     { "audio-device-list", "native", update_audio_device_list },
     { "audio-device", "string", update_audio_device },
 }
@@ -1730,6 +1768,9 @@ local registered_key_bindings = {
     ["CTRL+ALT+UP"] = "adwisp-speed-up",
     ["CTRL+ALT+DOWN"] = "adwisp-speed-down",
     ["CTRL+ALT+BACKSPACE"] = "adwisp-speed-reset",
+    ["CTRL+ALT+HOME"] = "adwisp-image-fit",
+    ["CTRL+ALT+KP_ADD"] = "adwisp-image-zoom-in",
+    ["CTRL+ALT+KP_SUBTRACT"] = "adwisp-image-zoom-out",
     ["CTRL+PGUP"] = "adwisp-chapter-prev",
     ["CTRL+PGDWN"] = "adwisp-chapter-next",
     ["CTRL+ALT+F5"] = "adwisp-audio-cycle",
@@ -1864,7 +1905,16 @@ end)
 mp.add_key_binding("CTRL+ALT+DOWN", "adwisp-speed-down", function()
     change_speed(-1)
 end)
-mp.add_key_binding("CTRL+ALT+BACKSPACE", "adwisp-speed-reset", reset_speed)
+mp.add_key_binding("CTRL+ALT+BACKSPACE", "adwisp-speed-reset", function()
+    if not fit_image_to_window() then reset_speed() end
+end)
+mp.add_key_binding("CTRL+ALT+HOME", "adwisp-image-fit", fit_image_to_window)
+mp.add_key_binding("CTRL+ALT+KP_ADD", "adwisp-image-zoom-in", function()
+    change_image_zoom(0.25)
+end)
+mp.add_key_binding("CTRL+ALT+KP_SUBTRACT", "adwisp-image-zoom-out", function()
+    change_image_zoom(-0.25)
+end)
 mp.add_key_binding("CTRL+ALT+F7", "adwisp-thumbnail-export", export_thumbnail)
 
 register_configurable_key_binding("loop_toggle_key", "adwisp-loop-toggle", function()
