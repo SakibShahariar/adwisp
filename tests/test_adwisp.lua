@@ -784,6 +784,7 @@ assert_equal(observed_state.buffering_progress, 100,
 observers["paused-for-cache"].callback("paused-for-cache", false)
 assert_equal(observed_state.buffering, false,
     "local or resumed playback should hide the buffering indicator")
+script_messages["adwisp-hide"]()
 local hidden_overlay_updates = overlays[1].update_count
 observers["time-pos"].callback("time-pos", 12)
 observers.duration.callback("duration", 60)
