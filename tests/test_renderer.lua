@@ -370,6 +370,8 @@ state.layout_options = nil
 renderer:render()
 
 state.paused = false
+state.volume = 50.5
+state.mute = false
 state.translations = {
     pause = "Stop",
     volume = "Sound %d%%",
