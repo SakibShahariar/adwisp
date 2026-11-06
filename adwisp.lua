@@ -1120,6 +1120,7 @@ open_playlist_menu = function(offset, query, selected_source_index)
         lines = {
             string.format("Playlist  %d–%d / %d", first, last, #results),
             search_line,
+            "Up/Down move; Enter selects; Ctrl+Backspace clears",
         }
     end
     active_playlist_menu = {

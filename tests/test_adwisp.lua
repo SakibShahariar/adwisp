@@ -433,7 +433,7 @@ type_playlist_query("arr")
 key_bindings["adwisp-playlist-menu-search-clear"].callback({ event = "down" })
 assert_true(commands[#commands][2]:find("Arrival", 1, true) ~= nil
     and commands[#commands][2]:find("Episode 2", 1, true) ~= nil
-    and commands[#commands][2]:find("> * Episode 2", 1, true) ~= nil,
+    and commands[#commands][2]:find(">* Episode 2", 1, true) ~= nil,
     "clearing search should restore the full list and current-item selection")
 
 type_playlist_query("arr")
