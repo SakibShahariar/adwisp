@@ -77,12 +77,12 @@ local function render_playlist_menu(menu, width, height, colors, font_family, fo
     end
 
     local lines = menu.lines
-    local available_height = math.max(1, height - 32)
+    local available_height = math.max(1, height - 16)
     local line_height = math.max(6, math.min(22,
         math.floor(math.max(1, available_height - 20) / #lines)))
-    local panel_width = math.max(1, math.min(520, width - 32))
+    local panel_width = math.max(1, math.min(520, width - 16))
     local panel_height = math.min(available_height, 20 + #lines * line_height)
-    local x = math.max(0, width - panel_width - 16)
+    local x = math.max(0, width - panel_width - 8)
     local y = math.max(0, math.floor((height - panel_height) / 2))
     local font_size = math.max(8, math.min(17,
         math.floor(line_height * 0.72 * font_scale + 0.5)))

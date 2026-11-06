@@ -469,6 +469,8 @@ assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil,
     "the playlist shortcut should toggle the view closed")
 assert_equal(observed_state.playlist_menu, nil,
     "closing the playlist view should remove its persistent panel")
+assert_true(key_bindings["adwisp-playlist-menu-wheel-down"] == nil,
+    "closing the playlist panel should restore the normal mouse-wheel binding")
 assert_equal(observed_state.playlist_items[1].title, "Arrival",
     "searching must not mutate mpv's playlist data")
 
@@ -486,6 +488,15 @@ mp.get_osd_size = function() return 420, 180 end
 key_bindings["adwisp-playlist-menu"].callback()
 assert_equal(observed_state.playlist_menu.page_size, 6,
     "a shorter OSD should show fewer playlist rows per page")
+assert_true(key_bindings["adwisp-playlist-menu-wheel-down"] ~= nil
+    and key_bindings["adwisp-playlist-menu-wheel-up"] ~= nil,
+    "the open playlist panel should capture mouse-wheel navigation")
+key_bindings["adwisp-playlist-menu-wheel-down"].callback({ event = "down" })
+assert_true(overlays[1].data:find("2.  * Long playlist item 2", 1, true) ~= nil,
+    "wheel-down should move the focused playlist entry")
+key_bindings["adwisp-playlist-menu-wheel-up"].callback({ event = "down" })
+assert_true(overlays[1].data:find("1.  * Long playlist item 1", 1, true) ~= nil,
+    "wheel-up should move the focused playlist entry back")
 assert_true(key_bindings["adwisp-playlist-menu-next"] ~= nil,
     "long playlists should expose page navigation")
 key_bindings["adwisp-playlist-menu-next"].callback()

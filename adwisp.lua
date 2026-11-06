@@ -1263,6 +1263,25 @@ open_playlist_menu = function(offset, query, selected_source_index)
         return type(event) == "table" and event.event == "down"
     end
 
+    add_search_binding("WHEEL_UP", "adwisp-playlist-menu-wheel-up", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_playlist_menu
+        if not menu or #menu.results == 0 then return end
+        local index = math.max(1, menu.selected_index - 1)
+        if index ~= menu.selected_index then
+            open_playlist_menu(0, menu.query, menu.results[index].index)
+        end
+    end)
+    add_search_binding("WHEEL_DOWN", "adwisp-playlist-menu-wheel-down", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_playlist_menu
+        if not menu or #menu.results == 0 then return end
+        local index = math.min(#menu.results, menu.selected_index + 1)
+        if index ~= menu.selected_index then
+            open_playlist_menu(0, menu.query, menu.results[index].index)
+        end
+    end)
+
     local text_input_available = add_search_binding(
         "ANY_UNICODE", "adwisp-playlist-menu-search-input", function(event)
         if not is_key_down(event) then return end
