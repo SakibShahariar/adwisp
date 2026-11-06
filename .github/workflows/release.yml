@@ -16,16 +16,21 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Lua
-        uses: leafo/gh-actions-lua@v11
-        with:
-          luaVersion: "5.2"
-
-      - name: Set up LuaRocks
-        uses: leafo/gh-actions-luarocks@v4
+      - name: Set up Lua 5.2 and LuaRocks
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential liblua5.2-dev lua5.2 luarocks
+          mkdir -p "$HOME/.local/bin"
+          ln -sf "$(command -v lua5.2)" "$HOME/.local/bin/lua"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Install luacheck
-        run: luarocks install luacheck
+        run: |
+          luarocks --lua-version=5.2 install --local luacheck
+          eval "$(luarocks --lua-version=5.2 path)"
+          echo "LUA_PATH=$LUA_PATH" >> "$GITHUB_ENV"
+          echo "LUA_CPATH=$LUA_CPATH" >> "$GITHUB_ENV"
+          echo "$HOME/.luarocks/bin" >> "$GITHUB_PATH"
 
       - name: Check Lua syntax
         shell: bash
@@ -33,7 +38,7 @@ jobs:
           set -euo pipefail
           find adwisp.lua core tests -type f -name '*.lua' -print0 |
             while IFS= read -r -d '' file; do
-              luac -p "$file"
+              luac5.2 -p "$file"
             done
 
       - name: Run Luacheck
@@ -41,11 +46,11 @@ jobs:
 
       - name: Run unit tests
         run: |
-          lua tests/test_layout.lua
-          lua tests/test_adwisp.lua
-          lua tests/test_renderer.lua
-          lua tests/test_theme.lua
-          lua tests/test_bmp.lua
+          lua5.2 tests/test_layout.lua
+          lua5.2 tests/test_adwisp.lua
+          lua5.2 tests/test_renderer.lua
+          lua5.2 tests/test_theme.lua
+          lua5.2 tests/test_bmp.lua
 
       - name: Build release archive
         run: |
