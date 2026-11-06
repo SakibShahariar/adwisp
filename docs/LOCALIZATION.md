@@ -1,6 +1,6 @@
 # Localization
 
-Adwisp uses English strings by default. To translate the interface, copy [the template](../locales/template.conf), keep each key unchanged, and replace the value after `=` with your translation.
+Adwisp uses English strings by default. To translate the interface, copy `locales/template.conf`, keep each key unchanged, and replace the value after `=` with your translation.
 
 Set the resulting file in `script-opts/adwisp.conf`:
 

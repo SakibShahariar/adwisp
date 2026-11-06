@@ -18,17 +18,17 @@ Adwisp is an experimental mpv script that draws a desktop-player-style interface
 - Searchable chapter, audio-track, and subtitle-track menus.
 - Still-image fit, zoom, and reset controls using mpv's native video properties.
 - Event-driven updates, buffering feedback, and optional idle hiding.
-- Semantic color palettes, with optional [Matugen](https://github.com/InioX/matugen) and [thumbfast](https://github.com/po5/thumbfast) integrations.
+- Semantic color palettes, with optional Matugen palette generation and thumbfast preview integrations.
 
 ## Requirements
 
-- [mpv](https://mpv.io/) with Lua scripting support.
-- Optional: [thumbfast](https://github.com/po5/thumbfast) for timeline previews.
-- Optional: [Matugen](https://github.com/InioX/matugen) to generate a palette. Adwisp only reads the resulting palette file.
+- mpv with Lua scripting support: https://mpv.io/
+- Optional thumbfast for timeline previews: https://github.com/po5/thumbfast
+- Optional Matugen palette generation: https://github.com/InioX/matugen. Adwisp only reads the resulting palette file.
 
 ## Installation
 
-Download the ZIP asset from [Releases](https://github.com/SakibShahariar/adwisp/releases) when available, then extract it into your mpv configuration directory. The archive provides the `scripts/adwisp/` and `script-opts/` layout.
+Download the ZIP asset when a release is published: https://github.com/SakibShahariar/adwisp/releases. Extract it into your mpv configuration directory. The archive provides the `scripts/adwisp/` and `script-opts/` layout.
 
 To install from source, copy:
 
@@ -52,7 +52,7 @@ Restart mpv and open a media file. Press `g` to show or hide Adwisp (the default
 | `Ctrl+Alt+F12` | Toggle the playlist panel |
 | `Ctrl+Up` / `Ctrl+Down` | Adjust volume |
 
-The full keyboard and mouse reference, configuration options, and script-message API are in the [Usage guide](docs/USAGE.md).
+Full keyboard/mouse reference, configuration options, and script-message API: `docs/USAGE.md`.
 
 ## Documentation
 

@@ -209,9 +209,12 @@ function Renderer:render()
     if (tonumber(state.subtitle_track_count) or 0) > 0 then
         local subtitle_label = type(state.subtitle_track_label) == "string"
             and state.subtitle_track_label ~= "" and state.subtitle_track_label or "Off"
+        if subtitle_label == "Off" then
+            subtitle_label = translate(state, "off", "Off")
+        end
         status_labels[#status_labels + 1] = translate_format(state, "subtitle_status", "S: %s", truncate_title(subtitle_label, 10))
     end
-    local buffering_label = truncate_title(table.concat(status_labels, " · "), 54)
+    local buffering_label = escape_ass(truncate_title(table.concat(status_labels, " · "), 54))
     local buffering_status_width = 0
     if buffering_label ~= "" and title_pos.width >= 140 then
         buffering_status_width = math.min(140,
@@ -246,13 +249,15 @@ function Renderer:render()
             end
         end
     end
+    playlist_label = escape_ass(playlist_label)
     local filled = math.floor(timeline.width * progress)
     local pause_label = state.paused and translate(state, "play", "Play") or translate(state, "pause", "Pause")
-    local playback_label = string.format("%s  %.2g×", pause_label,
-        is_finite_number(state.speed) and math.max(0.01, math.min(100, state.speed)) or 1)
+    local playback_label = escape_ass(string.format("%s  %.2g×", pause_label,
+        is_finite_number(state.speed) and math.max(0.01, math.min(100, state.speed)) or 1))
     local volume_label = state.mute and translate(state, "muted", "Muted")
         or (volume_value <= 20 and translate_format(state, "low_volume", "Low volume %d%%", math.floor(volume_value + 0.5))
             or translate_format(state, "volume", "Volume %d%%", math.floor(volume_value + 0.5)))
+    volume_label = escape_ass(volume_label)
     local progress_text = progress_label.visible
         and string.format("%d%%", math.floor(progress * 100 + 0.5)) or ""
     local time_text = ""

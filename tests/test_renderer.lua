@@ -387,6 +387,15 @@ assert_true(overlay.data:find("Section: Open", 1, true) ~= nil,
     "chapter status should use locale overrides")
 assert_true(overlay.data:find("Audio: eng Eng", 1, true) ~= nil,
     "audio status prefixes should use locale overrides")
+state.translations = {
+    pause = "{Stop}",
+    volume = "{Sound %d%%}",
+}
+renderer:render()
+assert_true(overlay.data:find("\\{Stop\\}", 1, true) ~= nil,
+    "translated playback text should be escaped before ASS rendering")
+assert_true(overlay.data:find("\\{Sound 51%\\}", 1, true) ~= nil,
+    "translated volume text should be escaped before ASS rendering")
 state.translations = nil
 renderer:render()
 

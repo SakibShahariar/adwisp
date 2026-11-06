@@ -85,7 +85,7 @@ Core bindings can be remapped independently. Duplicate Adwisp bindings are detec
 
 ### Localization and accessibility
 
-Set `locale_file=/path/to/adwisp-locale.conf` to override the built-in English UI strings. Locale files are UTF-8 `key=value` files; missing or invalid entries fall back to English. Start from `locales/template.conf` and see [Localization](LOCALIZATION.md) for the supported keys.
+Set `locale_file=/path/to/adwisp-locale.conf` to override the built-in English UI strings. Locale files are UTF-8 `key=value` files; missing or invalid entries fall back to English. Start from `locales/template.conf` and see `docs/LOCALIZATION.md` for the supported keys.
 
 Keyboard navigation is available without a mouse: Tab/Shift+Tab moves focus, Enter activates the focused control, and the playlist/track/chapter menus support arrow-key navigation. Adwisp also exposes the focused control and image-viewer state through `adwisp-query`. Custom themes are checked for text/background contrast; low-contrast combinations produce warnings rather than silently changing the user's palette.
 
@@ -106,7 +106,7 @@ accent=#d0bcff
 on_accent=#381e72
 ```
 
-Supported roles are `background`, `surface`, `text`, `muted`, `accent`, and `on_accent`. Values must be six-digit `#RRGGBB` colors; keys are case-sensitive. Invalid entries produce line-specific warnings. Valid entries still load, while missing roles use the fallback palette. See [Theming and Matugen](THEMING.md) for details.
+Supported roles are `background`, `surface`, `text`, `muted`, `accent`, and `on_accent`. Values must be six-digit `#RRGGBB` colors; keys are case-sensitive. Invalid entries produce line-specific warnings. Valid entries still load, while missing roles use the fallback palette. See `docs/THEMING.md` for details.
 
 After regenerating a palette, reload it without restarting mpv:
 

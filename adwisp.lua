@@ -1279,7 +1279,7 @@ open_playlist_menu = function(offset, query, selected_source_index)
     local lines
     if #results == 0 then
         lines = {
-            string.format("Playlist  0 / 0 matches (%d items)", #items),
+            tr_format("playlist_empty_header", "Playlist  0 / 0 matches (%d items)", #items),
             search_line,
             tr("playlist_no_matches", "No matching playlist items"),
             tr("search_clear_hint", "Ctrl+Backspace clears search; Esc closes"),
