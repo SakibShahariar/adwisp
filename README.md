@@ -13,6 +13,7 @@ Adwisp is an experimental mpv script that draws a desktop-player-style interface
 - Keyboard and mouse interaction, including timeline and volume dragging.
 - Keyboard focus and navigation for playback controls.
 - Persistent, searchable playlist panel with wheel scrolling, paging, and item removal.
+- Optional local recent-file history, disabled by default.
 - Searchable chapter, audio-track, and subtitle-track menus.
 - Still-image fit, zoom, and reset controls using mpv's native video properties.
 - Event-driven updates, buffering feedback, and optional idle hiding.
@@ -45,6 +46,8 @@ Restart mpv and open a media file. Press `g` to show or hide Adwisp (the default
 | `Space` | Play or pause |
 | `m` | Toggle mute |
 | `Ctrl+Left` / `Ctrl+Right` | Previous or next playlist item |
+| `Ctrl+Alt+F3` | Open recent files (opt-in history) |
+| `Ctrl+Alt+Shift+F3` | Clear recent-file history |
 | `Ctrl+Alt+F12` | Toggle the playlist panel |
 | `Ctrl+Up` / `Ctrl+Down` | Adjust volume |
 

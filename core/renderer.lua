@@ -404,7 +404,7 @@ function Renderer:render()
         end
     end
     ass = ass .. table.concat(chapter_markers, "\\n")
-    ass = ass .. render_playlist_menu(state.playlist_menu, width, height,
+    ass = ass .. render_playlist_menu(state.playlist_menu or state.recent_menu, width, height,
         colors, font_family, font_scale)
 
     if state.hover_target == "playback" or state.hover_target == "volume"

@@ -16,6 +16,8 @@ This guide covers Adwisp's keyboard and mouse controls, configuration, and scrip
 | `m` | Toggle mute |
 | `Ctrl+Left` / `Ctrl+Right` | Previous / next playlist item |
 | `Ctrl+Page Up` / `Ctrl+Page Down` | Previous / next chapter |
+| `Ctrl+Alt+F3` | Open the recent-files menu (requires opt-in history) |
+| `Ctrl+Alt+Shift+F3` | Clear local recent-file history |
 | `Ctrl+Alt+F8` | Open the searchable chapter menu |
 | `Ctrl+Alt+F5` | Cycle audio tracks |
 | `Ctrl+Alt+F6` | Cycle subtitle tracks, including Off |
@@ -77,6 +79,13 @@ Core bindings can be remapped independently. Duplicate Adwisp bindings are detec
 | `fade_duration` | OSD fade duration in seconds | `0.25` |
 | `log_level` | Logging verbosity: quiet, info, or debug | `info` |
 | `theme_file` | Absolute path to a semantic palette file | empty |
+| `recent_history` | Persist a local recently played list; off by default | `no` |
+| `recent_history_limit` | Maximum recent local files to retain | `20` |
+| `recent_history_file` | Local JSON history file path | `~~/adwisp-recent.json` |
+
+### Recently played history
+
+Recent history is disabled by default. Set `recent_history=yes` to keep a local JSON list of recently opened files. Only local paths are recorded; network URLs are ignored. The menu displays media titles rather than full paths. History is stored in the configured file, is never sent to a service, and can be cleared with `Ctrl+Alt+Shift+F3` or the `adwisp-clear-recent` script message.
 
 ### Theme palette
 

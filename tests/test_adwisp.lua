@@ -223,10 +223,14 @@ assert_true(key_bindings["adwisp-audio-device-menu"] ~= nil,
     "audio output device menu shortcut should be registered")
 assert_true(key_bindings["adwisp-subtitle-menu"] ~= nil, "subtitle-menu shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-menu"] ~= nil, "playlist-menu shortcut should be registered")
+assert_true(key_bindings["adwisp-recent-menu"] ~= nil, "recent-menu shortcut should be registered")
+assert_true(key_bindings["adwisp-clear-recent"] ~= nil, "clear-recent shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
 assert_true(script_messages["adwisp-hide"] ~= nil, "hide message should be registered")
 assert_true(script_messages["adwisp-toggle"] ~= nil, "toggle message should be registered")
+assert_true(script_messages["adwisp-recent"] ~= nil, "recent-history message should be registered")
+assert_true(script_messages["adwisp-clear-recent"] ~= nil, "clear-history message should be registered")
 assert_true(script_messages["adwisp-reload-theme"] ~= nil, "theme reload message should be registered")
 assert_true(script_messages["adwisp-query"] ~= nil, "state query message should be registered")
 assert_true(script_messages["thumbfast-info"] ~= nil, "thumbfast info message should be registered")
@@ -377,6 +381,17 @@ assert_true(commands[#commands][2]:find("no audio tracks", 1, true) ~= nil,
 key_bindings["adwisp-subtitle-menu"].callback()
 assert_true(commands[#commands][2]:find("no subtitle tracks", 1, true) ~= nil,
     "subtitle menu should explain when no subtitle tracks are available")
+
+-- Recent history is opt-in and must not expose or persist paths by default.
+key_bindings["adwisp-recent-menu"].callback()
+assert_true(commands[#commands][2]:find("recent history is disabled", 1, true) ~= nil,
+    "recent history should remain disabled by default")
+key_bindings["adwisp-clear-recent"].callback()
+assert_true(commands[#commands][2]:find("recent history is disabled", 1, true) ~= nil,
+    "clear-history should explain that history is disabled")
+script_messages["adwisp-recent"]()
+assert_true(commands[#commands][2]:find("recent history is disabled", 1, true) ~= nil,
+    "the recent-history script message should respect the opt-in setting")
 
 -- Playlist menu filtering preserves source indices and supports keyboard search.
 observers["playlist"].callback("playlist", {

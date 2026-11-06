@@ -10,6 +10,7 @@ local script_dir = mp.get_script_directory()
 package.path = script_dir .. "/?.lua;" .. script_dir .. "/?/init.lua;" .. package.path
 
 local MenuFilter = require "core.menu_filter"
+local RecentHistory = require "core.recent_history"
 
 local opts = {
     seek_step = 5,
@@ -42,8 +43,23 @@ local opts = {
     font_family = "Sans",
     font_scale = 1.0,
     log_level = "info",
+    recent_history = false,
+    recent_history_limit = 20,
+    recent_history_file = "~~/adwisp-recent.json",
 }
 options.read_options(opts, "adwisp")
+opts.recent_history = opts.recent_history == true
+local recent_history_limit = tonumber(opts.recent_history_limit)
+if type(recent_history_limit) ~= "number" or recent_history_limit ~= recent_history_limit
+    or recent_history_limit == math.huge or recent_history_limit == -math.huge then
+    recent_history_limit = 20
+end
+opts.recent_history_limit = math.max(1, math.min(100, math.floor(recent_history_limit)))
+if type(opts.recent_history_file) ~= "string"
+    or opts.recent_history_file:match("^%s*$") then
+    opts.recent_history_file = "~~/adwisp-recent.json"
+end
+opts.recent_history_file = opts.recent_history_file:sub(1, 512)
 if type(opts.font_family) ~= "string" then opts.font_family = "Sans" end
 opts.font_family = opts.font_family:sub(1, 48):gsub("[^%w _%-]", "")
 opts.font_family = opts.font_family:match("^%s*(.-)%s*$")
@@ -103,6 +119,59 @@ local function log_debug(message)
     end
 end
 
+local recent_items = {}
+local recent_history_path
+local history_dependencies = {
+    file_info = utils.file_info,
+    open = io.open,
+    rename = os.rename,
+    remove = os.remove,
+    parse_json = utils.parse_json,
+    format_json = utils.format_json,
+}
+
+if opts.recent_history then
+    local ok, expanded = pcall(mp.command_native, { "expand-path", opts.recent_history_file })
+    recent_history_path = ok and type(expanded) == "string" and expanded ~= ""
+        and expanded or opts.recent_history_file
+    recent_items = RecentHistory.load(recent_history_path,
+        opts.recent_history_limit, history_dependencies)
+end
+
+local function resolve_recent_path(path)
+    if not RecentHistory.is_local_path(path) then return nil end
+    local ok, expanded = pcall(mp.command_native, { "expand-path", path })
+    if ok and type(expanded) == "string" and expanded ~= "" then path = expanded end
+
+    local absolute = path:sub(1, 1) == "/" or path:match("^%a:[/\\]")
+        or path:sub(1, 2) == "\\\\"
+    if not absolute then
+        local working_directory = mp.get_property("working-directory")
+        if type(working_directory) == "string" and working_directory ~= "" then
+            local separator = working_directory:find("\\", 1, true) and "\\" or "/"
+            path = working_directory:gsub("[/\\]+$", "") .. separator .. path
+        end
+    end
+    return RecentHistory.is_local_path(path) and path or nil
+end
+
+local function record_recent_file()
+    if not opts.recent_history or not recent_history_path then return end
+    local path = resolve_recent_path(mp.get_property("path"))
+    if not path then return end
+    local updated, recorded = RecentHistory.record(recent_items, path,
+        mp.get_property("media-title"), opts.recent_history_limit)
+    if not recorded then return end
+    recent_items = updated
+    if not RecentHistory.save(recent_history_path, recent_items,
+        opts.recent_history_limit, history_dependencies) then
+        mp.msg.warn("Adwisp: could not save local recent-file history.")
+    else
+        log_debug("updated local recent-file history")
+    end
+end
+
+
 -- thumbfast owns thumbnail generation and display. Adwisp only requests previews.
 local thumbfast = {
     width = 0, height = 0, source_width = 0, source_height = 0,
@@ -118,14 +187,17 @@ local active_drag = nil
 local last_mouse_x, last_mouse_y
 local active_track_menu
 local active_playlist_menu
+local active_recent_menu
 local open_playlist_menu
 local refresh_playlist_menu
+local open_recent_menu
+local refresh_recent_menu
 local open_audio_device_menu
 local track_menu_binding_names = {}
 local track_menu_timer
 
 local function clear_track_menu()
-    local had_playlist_menu = active_playlist_menu ~= nil
+    local had_playlist_menu = active_playlist_menu ~= nil or active_recent_menu ~= nil
     for _, name in ipairs(track_menu_binding_names) do
         if type(mp.remove_key_binding) == "function" then
             mp.remove_key_binding(name)
@@ -138,8 +210,10 @@ local function clear_track_menu()
     track_menu_timer = nil
     active_track_menu = nil
     active_playlist_menu = nil
+    active_recent_menu = nil
     if had_playlist_menu then
         state.playlist_menu = nil
+        state.recent_menu = nil
         renderer:render()
     end
 end
@@ -1072,6 +1146,7 @@ mp.register_event("file-loaded", function()
     log_debug("file loaded")
     clear_interaction_state()
     clear_thumbnail()
+    record_recent_file()
     show_osd()
 end)
 
@@ -1087,6 +1162,8 @@ mp.register_event("video-reconfig", function()
     last_mouse_x, last_mouse_y = nil, nil
     if active_playlist_menu and refresh_playlist_menu then
         refresh_playlist_menu()
+    elseif active_recent_menu and refresh_recent_menu then
+        refresh_recent_menu()
     else
         render()
     end
@@ -1095,6 +1172,8 @@ mp.observe_property("osd-dimensions", "native", function()
     last_mouse_x, last_mouse_y = nil, nil
     if active_playlist_menu and refresh_playlist_menu then
         refresh_playlist_menu()
+    elseif active_recent_menu and refresh_recent_menu then
+        refresh_recent_menu()
     else
         render()
     end
@@ -1357,6 +1436,167 @@ refresh_playlist_menu = function()
     end
     local selected = menu.results[menu.selected_index]
     open_playlist_menu(menu.offset, menu.query, selected and selected.index)
+end
+
+
+open_recent_menu = function(offset, selected_index)
+    clear_track_menu()
+    if not opts.recent_history then
+        mp.commandv("show-text",
+            "Adwisp: recent history is disabled; set recent_history=yes to enable it.", 3500)
+        return
+    end
+    if #recent_items == 0 then
+        mp.commandv("show-text", "Adwisp: no recent local files yet.", 2500)
+        return
+    end
+    if not state.visible then show_osd() end
+
+    local items = recent_items
+    local _, osd_height = mp.get_osd_size()
+    osd_height = finite_property(osd_height, 720)
+    local page_size = math.max(1, math.min(9, math.floor((osd_height - 40) / 22)))
+    local current_path = mp.get_property("path")
+    if type(selected_index) ~= "number" then
+        selected_index = 1
+        for index, item in ipairs(items) do
+            if item.path == current_path then
+                selected_index = index
+                break
+            end
+        end
+    end
+    selected_index = math.max(1, math.min(#items, math.floor(selected_index)))
+    local max_offset = math.max(0, math.floor((#items - 1) / page_size) * page_size)
+    offset = math.max(0, math.min(max_offset, math.floor(finite_property(offset, 0))))
+    if selected_index <= offset or selected_index > offset + page_size then
+        offset = math.floor((selected_index - 1) / page_size) * page_size
+    end
+    local first = offset + 1
+    local last = math.min(#items, first + page_size - 1)
+    local lines = {
+        string.format("Recently played  %d–%d / %d", first, last, #items),
+        "Wheel or Up/Down moves; Enter opens; Esc closes",
+        "Ctrl+Alt+Shift+F3 clears local history",
+    }
+
+    active_recent_menu = {
+        items = items,
+        offset = offset,
+        page_size = page_size,
+        selected_index = selected_index,
+    }
+
+    local function add_recent_binding(key, name, callback, forced)
+        track_menu_binding_names[#track_menu_binding_names + 1] = name
+        local ok
+        if forced then
+            ok = pcall(mp.add_forced_key_binding, key, name, callback, { complex = true })
+        else
+            ok = pcall(mp.add_key_binding, key, name, callback)
+        end
+        if not ok then
+            table.remove(track_menu_binding_names)
+            log_debug("could not register temporary recent-menu binding " .. name)
+        end
+    end
+
+    local function select_recent_item(index)
+        local menu = active_recent_menu
+        local selected = menu and menu.items[index]
+        if not selected then return end
+        note_activity()
+        clear_track_menu()
+        mp.commandv("loadfile", selected.path, "replace")
+    end
+
+    for index = first, last do
+        local item = items[index]
+        local local_index = index - offset
+        local current_marker = item.path == current_path and ">" or " "
+        local focus_marker = index == selected_index and "*" or " "
+        lines[#lines + 1] = string.format("%d. %s%s %s",
+            local_index, current_marker, focus_marker, item.title)
+        local binding_name = "adwisp-recent-menu-select-" .. local_index
+        local selected_index_for_binding = index
+        add_recent_binding("CTRL+ALT+" .. local_index, binding_name, function()
+            select_recent_item(selected_index_for_binding)
+        end, false)
+    end
+
+    if offset > 0 then
+        add_recent_binding("CTRL+ALT+PGUP", "adwisp-recent-menu-previous", function()
+            open_recent_menu(0, math.max(1, first - page_size))
+        end, true)
+    end
+    if last < #items then
+        add_recent_binding("CTRL+ALT+PGDWN", "adwisp-recent-menu-next", function()
+            open_recent_menu(0, math.min(#items, last + 1))
+        end, true)
+    end
+
+    local function move_selection(delta)
+        local menu = active_recent_menu
+        if not menu then return end
+        local index = math.max(1, math.min(#menu.items, menu.selected_index + delta))
+        if index ~= menu.selected_index then open_recent_menu(0, index) end
+    end
+    add_recent_binding("WHEEL_UP", "adwisp-recent-menu-wheel-up", function(event)
+        if type(event) == "table" and event.event == "down" then move_selection(-1) end
+    end, true)
+    add_recent_binding("WHEEL_DOWN", "adwisp-recent-menu-wheel-down", function(event)
+        if type(event) == "table" and event.event == "down" then move_selection(1) end
+    end, true)
+    add_recent_binding("UP", "adwisp-recent-menu-up", function(event)
+        if type(event) == "table" and event.event == "down" then move_selection(-1) end
+    end, true)
+    add_recent_binding("DOWN", "adwisp-recent-menu-down", function(event)
+        if type(event) == "table" and event.event == "down" then move_selection(1) end
+    end, true)
+    add_recent_binding("ENTER", "adwisp-recent-menu-enter", function(event)
+        if type(event) == "table" and event.event == "down" then
+            local menu = active_recent_menu
+            if menu then select_recent_item(menu.selected_index) end
+        end
+    end, true)
+    add_recent_binding("ESC", "adwisp-recent-menu-escape", function(event)
+        if type(event) == "table" and event.event == "down" then clear_track_menu() end
+    end, true)
+
+    state.recent_menu = {
+        lines = lines,
+        page_size = page_size,
+        offset = offset,
+        result_count = #items,
+    }
+    track_menu_timer = nil
+    note_activity()
+    render()
+end
+
+refresh_recent_menu = function()
+    local menu = active_recent_menu
+    if not menu then
+        render()
+        return
+    end
+    open_recent_menu(menu.offset, menu.selected_index)
+end
+
+local function clear_recent_history()
+    if not opts.recent_history then
+        mp.commandv("show-text",
+            "Adwisp: recent history is disabled; set recent_history=yes to enable it.", 3500)
+        return
+    end
+    recent_items = {}
+    local cleared = RecentHistory.clear(recent_history_path, history_dependencies)
+    if active_recent_menu then clear_track_menu() end
+    if not cleared then
+        mp.msg.warn("Adwisp: could not clear local recent-file history.")
+    else
+        mp.commandv("show-text", "Adwisp: recent history cleared.", 2500)
+    end
 end
 
 local function open_track_menu(kind, query, selected_source_id)
@@ -1826,6 +2066,8 @@ local registered_key_bindings = {
     ["CTRL+ALT+KP_SUBTRACT"] = "adwisp-image-zoom-out",
     ["CTRL+PGUP"] = "adwisp-chapter-prev",
     ["CTRL+PGDWN"] = "adwisp-chapter-next",
+    ["CTRL+ALT+F3"] = "adwisp-recent-menu",
+    ["CTRL+ALT+SHIFT+F3"] = "adwisp-clear-recent",
     ["CTRL+ALT+F5"] = "adwisp-audio-cycle",
     ["CTRL+ALT+F6"] = "adwisp-subtitle-cycle",
     ["CTRL+ALT+F7"] = "adwisp-thumbnail-export",
@@ -1943,6 +2185,14 @@ end)
 mp.add_key_binding("CTRL+ALT+F11", "adwisp-subtitle-menu", function()
     open_track_menu("subtitle")
 end)
+mp.add_key_binding("CTRL+ALT+F3", "adwisp-recent-menu", function()
+    if active_recent_menu then
+        clear_track_menu()
+        return
+    end
+    open_recent_menu(0)
+end)
+mp.add_key_binding("CTRL+ALT+SHIFT+F3", "adwisp-clear-recent", clear_recent_history)
 mp.add_key_binding("CTRL+ALT+F12", "adwisp-playlist-menu", function()
     if active_playlist_menu then
         clear_track_menu()
@@ -1999,6 +2249,8 @@ local function register_no_argument_message(name, callback)
     end)
 end
 
+register_no_argument_message("adwisp-recent", function() open_recent_menu(0) end)
+register_no_argument_message("adwisp-clear-recent", clear_recent_history)
 register_no_argument_message("adwisp-toggle", toggle)
 register_no_argument_message("adwisp-show", show_osd)
 register_no_argument_message("adwisp-hide", hide_osd)
