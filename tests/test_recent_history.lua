@@ -51,6 +51,12 @@ local normalized = History.normalize({
 }, 10)
 assert_equal(#normalized, 2, "loading should discard duplicates and invalid paths")
 assert_equal(normalized[2].title, "B Title", "titles should be sanitized")
+local path_title = History.normalize({
+    version = 1,
+    items = { { path = "/private/video.mkv", title = "/private/video.mkv" } },
+}, 1)
+assert_equal(path_title[1].title, "video.mkv",
+    "path-like media titles should not expose full paths in the menu")
 assert_equal(#History.normalize({ version = 2, items = normalized }, 10), 0,
     "unsupported history versions should be ignored")
 
@@ -66,7 +72,7 @@ local store = {
     size = 14,
 }
 local deps = {
-    file_info = function(path)
+    file_info = function()
         if path == "/history.json" and store.raw then
             return { is_file = true, size = store.size }
         end

@@ -35,6 +35,10 @@ local function clean_title(title, path)
     end
     title = tostring(title):gsub("[%c]", " "):gsub("%s+", " ")
     title = title:match("^%s*(.-)%s*$") or ""
+    if title:sub(1, 1) == "/" or title:match("^%a:[/\\]")
+        or title:sub(1, 2) == "\\\\" then
+        title = basename(title)
+    end
     if title == "" then title = basename(path) end
     return title:sub(1, MAX_TITLE_LENGTH)
 end
