@@ -259,8 +259,40 @@ local function test_timeline_labels_do_not_overlap()
         "compact narrow windows should retain elapsed time where it fits")
 end
 
+local function test_minimal_timeline_geometry()
+    local full = Layout.compute(1280, 720)
+    local collapsed = Layout.compute(1280, 720, { minimal_timeline = true })
+    local expanded = Layout.compute(1280, 720, {
+        minimal_timeline = true,
+        timeline_expanded = true,
+    })
+
+    assert_equal(full.timeline.height, 6,
+        "default timeline should retain its full visual height")
+    assert_true(not full.timeline.minimal,
+        "default timeline should not be marked minimal")
+    assert_equal(collapsed.timeline.height, 2,
+        "minimal timeline should collapse to a thin progress indicator")
+    assert_true(collapsed.timeline.minimal,
+        "collapsed timeline should identify its minimal state")
+    assert_true(not collapsed.progress_label.visible and not collapsed.time_label.visible,
+        "collapsed timeline should hide time and percentage labels")
+    assert_equal(collapsed.timeline.hit_y, full.timeline.hit_y,
+        "collapsed and full timelines should share the same hit region")
+    assert_equal(collapsed.timeline.hit_height, full.timeline.hit_height,
+        "collapsed and full timelines should retain the same hit target height")
+    assert_equal(expanded.timeline.height, 6,
+        "hover/focus expansion should restore the full timeline height")
+    assert_true(not expanded.timeline.minimal
+        and expanded.progress_label.visible and expanded.time_label.visible,
+        "expanded timeline should restore labels and normal geometry")
+    assert_equal(expanded.timeline.hit_y, collapsed.timeline.hit_y,
+        "expansion should not move the hit target")
+end
+
 test_layout_rectangles()
 test_timeline_labels_do_not_overlap()
+test_minimal_timeline_geometry()
 test_configurable_vertical_position()
 test_dense_compact_layout_stays_inside_panel()
 

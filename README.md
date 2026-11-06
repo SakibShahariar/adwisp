@@ -96,7 +96,7 @@ Typical mpv configuration directories:
 | Drag timeline | Seek continuously while dragging |
 | Mouse click on left/right playlist control | Previous / next playlist item |
 
-Keyboard focus is visible with the active theme accent. With no control focused, Left/Right retain their normal seek behavior.
+Keyboard focus is visible with the active theme accent. With no control focused, Left/Right retain their normal seek behavior. In minimal-timeline mode, hovering or keyboard-focusing the timeline expands it; Left/Right seek while it is focused.
 
 The audio-output menu uses mpv's `audio-device-list` and `audio-device` properties. Its selected marker identifies the configured/requested target, not a guaranteed physical endpoint currently in use; mpv does not expose that endpoint through `audio-device`. Available names and descriptions depend on the active audio backend.
 
@@ -174,6 +174,9 @@ thumbnail_export_prefix=adwisp-thumbnail
 
 # Playback-position OSD rebuild interval in seconds (0.05–0.5)
 time_pos_render_interval=0.15
+
+# Collapse the timeline to a progress-only line until hovered or focused
+minimal_timeline=no
 
 # OSD placement: bottom, top, or custom
 osd_position=bottom

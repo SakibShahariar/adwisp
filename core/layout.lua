@@ -24,6 +24,8 @@ function Layout.compute(width, height, options)
     local dense_compact = compact and panel_height < 144
     local x = math.floor((width - panel_width) / 2)
     local layout_options = type(options) == "table" and options or {}
+    local minimal_timeline = layout_options.minimal_timeline == true
+        and layout_options.timeline_expanded ~= true
     local position = layout_options.osd_position
     if position ~= "top" and position ~= "bottom" and position ~= "custom" then
         position = "bottom"
@@ -69,13 +71,13 @@ function Layout.compute(width, height, options)
     local label_y = bar_y + (dense_compact and 8 or (compact and 14 or 22))
     local labels_have_room = bar_width >= 164
     local progress_label = {
-        x = bar_x, y = label_y, width = 36, visible = labels_have_room,
+        x = bar_x, y = label_y, width = 36, visible = labels_have_room and not minimal_timeline,
     }
     local time_label = {
         x = labels_have_room and (bar_x + bar_width - 120) or bar_x,
         y = label_y,
         width = labels_have_room and 120 or bar_width,
-        visible = bar_width >= 40,
+        visible = bar_width >= 40 and not minimal_timeline,
         compact = not labels_have_room,
         current_only = bar_width < 120,
         font_size = labels_have_room and 15 or 11,
@@ -108,7 +110,9 @@ function Layout.compute(width, height, options)
             hit = volume_hit,
         },
         timeline = {
-            x = bar_x, y = bar_y, width = bar_width, height = 6,
+            x = bar_x, y = bar_y, width = bar_width,
+            height = minimal_timeline and 2 or 6,
+            minimal = minimal_timeline,
             hit_x = bar_x, hit_y = bar_y - 10, hit_width = bar_width, hit_height = 26,
         },
         progress_label = progress_label,

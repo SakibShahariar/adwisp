@@ -92,6 +92,8 @@ package.loaded["mp.options"] = {
         assert(options.seek_step == 5, "default seek step should be five seconds")
         assert(options.time_pos_render_interval == 0.15,
             "playback render interval should default to 150 milliseconds")
+        assert(options.minimal_timeline == false,
+            "minimal timeline should be disabled by default")
         assert(options.osd_position == "bottom",
             "OSD position should default to bottom")
         assert(options.osd_margin == -1,
@@ -787,6 +789,57 @@ assert_equal(#commands, commands_before_top_click + 1,
     "clicking the repositioned control should issue exactly one command")
 option_fixture.osd_position = "bottom"
 option_fixture.osd_margin = -1
+
+-- Minimal timeline expands on hover, keyboard focus, and active dragging.
+option_fixture.minimal_timeline = true
+script_messages["adwisp-show"]()
+local collapsed_timeline = Layout.compute(1280, 720, option_fixture)
+assert_equal(collapsed_timeline.timeline.height, 2,
+    "minimal-timeline mode should start with a thin progress line")
+mouse_x = collapsed_timeline.timeline.x + collapsed_timeline.timeline.width / 2
+mouse_y = collapsed_timeline.timeline.hit_y + collapsed_timeline.timeline.hit_height / 2
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(observed_state.hover_target, "timeline",
+    "hovering the collapsed hit region should activate timeline hover")
+assert_equal(option_fixture.timeline_expanded, true,
+    "timeline hover should expand the minimal timeline")
+assert_true(overlays[1].data:find(" / 1:00", 1, true) ~= nil,
+    "hover expansion should restore the time label")
+
+mouse_x = collapsed_timeline.timeline.x + collapsed_timeline.timeline.width / 2
+mouse_y = collapsed_timeline.timeline.hit_y + collapsed_timeline.timeline.hit_height / 2
+key_bindings["adwisp-mouse-click"].callback({ event = "down" })
+assert_equal(option_fixture.timeline_expanded, true,
+    "starting a timeline drag should expand the timeline")
+mouse_x, mouse_y = 10, 10
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(option_fixture.timeline_expanded, true,
+    "an active timeline drag should keep the timeline expanded outside hover")
+key_bindings["adwisp-mouse-click"].callback({ event = "up" })
+assert_equal(option_fixture.timeline_expanded, false,
+    "releasing a drag outside the timeline should collapse it")
+
+key_bindings["adwisp-focus-next"].callback()
+key_bindings["adwisp-focus-next"].callback()
+key_bindings["adwisp-focus-next"].callback()
+assert_equal(observed_state.focus_target, "timeline",
+    "minimal-timeline mode should add the timeline to keyboard focus order")
+assert_equal(option_fixture.timeline_expanded, true,
+    "keyboard focus should expand the timeline")
+local commands_before_focused_seek = #commands
+key_bindings["adwisp-seek-forward"].callback()
+assert_equal(commands[#commands][1], "seek",
+    "Left/Right should seek while the timeline has keyboard focus")
+assert_equal(#commands, commands_before_focused_seek + 1,
+    "focused timeline seek should issue one command")
+key_bindings["adwisp-focus-previous"].callback()
+assert_true(observed_state.focus_target ~= "timeline",
+    "Shift+Tab should move focus away from the timeline")
+assert_equal(option_fixture.timeline_expanded, false,
+    "moving keyboard focus away should collapse the timeline")
+option_fixture.minimal_timeline = false
+option_fixture.timeline_expanded = false
+script_messages["adwisp-show"]()
 observers["media-title"].callback("media-title", "Test video")
 mouse_x = layout.playback.x + 5
 mouse_y = layout.playback.y + 5

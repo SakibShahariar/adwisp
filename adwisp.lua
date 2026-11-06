@@ -33,6 +33,8 @@ local opts = {
     thumbnail_export_directory = "~~/",
     thumbnail_export_prefix = "adwisp-thumbnail",
     time_pos_render_interval = 0.15,
+    minimal_timeline = false,
+    timeline_expanded = false,
     osd_position = "bottom",
     osd_margin = -1,
     osd_custom_offset = 120,
@@ -110,6 +112,7 @@ local last_thumbnail_request = nil
 local cached_layout = nil
 local cached_layout_width, cached_layout_height
 local cached_layout_position, cached_layout_margin, cached_layout_custom_offset
+local cached_layout_minimal_timeline, cached_layout_timeline_expanded
 local active_drag = nil
 local last_mouse_x, last_mouse_y
 local active_track_menu
@@ -255,6 +258,9 @@ local function cancel_time_pos_render()
 end
 
 local function render()
+    opts.timeline_expanded = opts.minimal_timeline == true
+        and (state.hover_target == "timeline" or state.focus_target == "timeline"
+            or active_drag == "timeline")
     -- Any immediate render supersedes and cancels a queued playback-position update.
     cancel_time_pos_render()
     time_pos_render_generation = time_pos_render_generation + 1
@@ -545,6 +551,9 @@ end
 
 local function focus_targets()
     local targets = { "playback", "volume" }
+    if opts.minimal_timeline == true then
+        targets[#targets + 1] = "timeline"
+    end
     if has_playlist_navigation() then
         targets[#targets + 1] = "playlist"
     end
@@ -639,12 +648,16 @@ local function get_layout(width, height)
         or height ~= cached_layout_height
         or opts.osd_position ~= cached_layout_position
         or opts.osd_margin ~= cached_layout_margin
-        or opts.osd_custom_offset ~= cached_layout_custom_offset then
+        or opts.osd_custom_offset ~= cached_layout_custom_offset
+        or opts.minimal_timeline ~= cached_layout_minimal_timeline
+        or opts.timeline_expanded ~= cached_layout_timeline_expanded then
         cached_layout = Layout.compute(width, height, opts)
         cached_layout_width, cached_layout_height = width, height
         cached_layout_position = opts.osd_position
         cached_layout_margin = opts.osd_margin
         cached_layout_custom_offset = opts.osd_custom_offset
+        cached_layout_minimal_timeline = opts.minimal_timeline
+        cached_layout_timeline_expanded = opts.timeline_expanded
     end
     return cached_layout
 end
@@ -734,6 +747,7 @@ local function handle_mouse_click(event)
     if event and event.event == "up" then
         active_drag = nil
         note_activity()
+        render()
         return
     end
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
@@ -762,6 +776,7 @@ local function handle_mouse_click(event)
         if contains_timeline(timeline, mouse_x, mouse_y) then
             if state.duration > 0 then
                 active_drag = "timeline"
+                render()
                 if not seek_chapter_marker(mouse_x, timeline) then
                     seek_at(mouse_x, timeline)
                 end
@@ -771,6 +786,10 @@ local function handle_mouse_click(event)
     end
 
     if contains_timeline(timeline, mouse_x, mouse_y) then
+        if state.hover_target ~= "timeline" then
+            state.hover_target = "timeline"
+            render()
+        end
         if state.duration > 0 and not seek_chapter_marker(mouse_x, timeline) then
             seek_at(mouse_x, timeline)
         end

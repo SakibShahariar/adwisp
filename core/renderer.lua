@@ -253,6 +253,13 @@ function Renderer:render()
         focus_geometry = layout.volume
     elseif state.focus_target == "playlist" and playlist_count >= 2 then
         focus_geometry = layout.playlist
+    elseif state.focus_target == "timeline" then
+        focus_geometry = {
+            x = layout.timeline.x,
+            y = layout.timeline.y - 4,
+            width = layout.timeline.width,
+            height = layout.timeline.height + 8,
+        }
     end
     local focus_ass = ""
     if focus_geometry then
@@ -335,7 +342,7 @@ function Renderer:render()
 
     local chapter_markers = {}
     local chapters = type(state.chapter_list) == "table" and state.chapter_list or {}
-    if is_finite_number(duration) and duration > 0 then
+    if not timeline.minimal and is_finite_number(duration) and duration > 0 then
         local seen_markers = {}
         for _, chapter in ipairs(chapters) do
             local chapter_time = type(chapter) == "table" and chapter.time or nil

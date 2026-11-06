@@ -94,6 +94,26 @@ assert_true(overlay.data:find("A: eng Eng", 1, true) ~= nil,
 assert_true(overlay.data:find("S: eng Eng", 1, true) ~= nil,
     "active subtitle track should appear in the OSD status area")
 local Layout = require "core.layout"
+
+state.layout_options = { minimal_timeline = true, timeline_expanded = false }
+renderer:render()
+assert_true(overlay.data:find("0:15 / 1:00", 1, true) == nil
+    and overlay.data:find("25%", 1, true) == nil,
+    "collapsed timeline should hide time and percentage labels")
+assert_true(overlay.data:find("\\p1", 1, true) ~= nil,
+    "collapsed timeline should retain its progress indicator")
+assert_true(overlay.data:find("m 0 0 l 2 0 2 8 0 8", 1, true) == nil,
+    "collapsed timeline should hide chapter decorations")
+state.layout_options.timeline_expanded = true
+renderer:render()
+assert_true(overlay.data:find("0:15 / 1:00", 1, true) ~= nil
+    and overlay.data:find("25%", 1, true) ~= nil,
+    "expanded timeline should restore its labels")
+assert_true(overlay.data:find("m 0 0 l 2 0 2 8 0 8", 1, true) ~= nil,
+    "expanded timeline should restore chapter markers")
+state.layout_options = nil
+renderer:render()
+
 local marker_layout = Layout.compute(width, height)
 local marker_x = math.floor(marker_layout.timeline.x + marker_layout.timeline.width / 2 + 0.5)
 local marker_y = marker_layout.timeline.y - 1
