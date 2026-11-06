@@ -262,8 +262,8 @@ assert_equal(observed_state.playlist_count, 2, "playlist metadata should populat
 assert_equal(observed_state.playlist_items[1].title, "One",
     "playlist view should prefer the entry title")
 key_bindings["adwisp-playlist-menu"].callback()
-assert_true(commands[#commands][2]:find("One", 1, true) ~= nil
-    and commands[#commands][2]:find("Two", 1, true) ~= nil,
+assert_true(overlays[1].data:find("One", 1, true) ~= nil
+    and overlays[1].data:find("Two", 1, true) ~= nil,
     "playlist view should list its entries")
 key_bindings["adwisp-playlist-menu-select-2"].callback()
 assert_equal(commands[#commands - 1][1], "set", "playlist selection should set playlist-pos")
@@ -392,8 +392,10 @@ local timers_before_playlist_view = #timers
 key_bindings["adwisp-playlist-menu"].callback()
 assert_equal(#timers, timers_before_playlist_view,
     "the playlist view should not schedule an auto-close timer")
-assert_equal(commands[#commands][3], -1,
-    "the playlist view should remain visible until explicitly dismissed")
+assert_true(observed_state.playlist_menu ~= nil,
+    "the playlist view should be rendered in the persistent OSD overlay")
+assert_true(overlays[1].data:find("Playlist", 1, true) ~= nil,
+    "the playlist panel should be visible in the renderer overlay")
 assert_true(key_bindings["adwisp-playlist-menu-search-input"] ~= nil
     and key_bindings["adwisp-playlist-menu-search-input"].key == "ANY_UNICODE",
     "playlist menu should register forced text input while open")
@@ -410,9 +412,9 @@ local function type_playlist_query(value)
 end
 
 type_playlist_query("arr")
-assert_true(commands[#commands][2]:find("Search: arr", 1, true) ~= nil
-    and commands[#commands][2]:find("Arrival", 1, true) ~= nil
-    and commands[#commands][2]:find("Episode 2", 1, true) == nil,
+assert_true(overlays[1].data:find("Search: arr", 1, true) ~= nil
+    and overlays[1].data:find("Arrival", 1, true) ~= nil
+    and overlays[1].data:find("Episode 2", 1, true) == nil,
     "typing should filter playlist titles while preserving matching duplicates")
 assert_true(key_bindings["adwisp-playlist-menu-select-2"] ~= nil,
     "filtered playlist results should retain number selection")
@@ -454,7 +456,7 @@ key_bindings["adwisp-playlist-menu-search-backspace"].callback({ event = "down" 
 assert_true(commands[#commands][2]:find("Arrival", 1, true) ~= nil,
     "Backspace should remove the final search character")
 type_playlist_query("zzzz")
-assert_true(commands[#commands][2]:find("No matching playlist items", 1, true) ~= nil,
+assert_true(overlays[1].data:find("No matching playlist items", 1, true) ~= nil,
     "an empty filtered result should display a clear empty state")
 key_bindings["adwisp-playlist-menu-search-escape"].callback({ event = "down" })
 assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil,
@@ -465,8 +467,36 @@ assert_true(key_bindings["adwisp-playlist-menu-search-input"] ~= nil,
 key_bindings["adwisp-playlist-menu"].callback()
 assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil,
     "the playlist shortcut should toggle the view closed")
+assert_equal(observed_state.playlist_menu, nil,
+    "closing the playlist view should remove its persistent panel")
 assert_equal(observed_state.playlist_items[1].title, "Arrival",
     "searching must not mutate mpv's playlist data")
+
+-- Playlist page size adapts to the available OSD height and refreshes on resize.
+local original_playlist_size = mp.get_osd_size
+local long_playlist = {}
+for index = 1, 20 do
+    long_playlist[index] = {
+        title = "Long playlist item " .. index,
+        filename = "/media/item-" .. index .. ".mkv",
+    }
+end
+observers["playlist"].callback("playlist", long_playlist)
+mp.get_osd_size = function() return 420, 180 end
+key_bindings["adwisp-playlist-menu"].callback()
+assert_equal(observed_state.playlist_menu.page_size, 6,
+    "a shorter OSD should show fewer playlist rows per page")
+assert_true(key_bindings["adwisp-playlist-menu-next"] ~= nil,
+    "long playlists should expose page navigation")
+key_bindings["adwisp-playlist-menu-next"].callback()
+assert_equal(observed_state.playlist_menu.offset, 6,
+    "next-page navigation should preserve the selected source entry")
+mp.get_osd_size = original_playlist_size
+observers["osd-dimensions"].callback("osd-dimensions", nil)
+assert_equal(observed_state.playlist_menu.page_size, 9,
+    "resizing the OSD should recalculate the visible playlist page size")
+key_bindings["adwisp-playlist-menu"].callback()
+observers["playlist"].callback("playlist", {})
 
 -- Audio and subtitle track menus search their displayed language/title/codec labels.
 observers["track-list"].callback("track-list", {

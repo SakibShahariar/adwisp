@@ -38,6 +38,8 @@ Still-image controls are available only when mpv marks the selected video track 
 
 The chapter, audio-track, subtitle-track, and playlist menus support numbered selection with `Ctrl+Alt+1–9`. Playlist items can also be removed with `Ctrl+Alt+Shift+1–9`. While a menu is open, type to filter its entries; use Up/Down and Enter to navigate and select. Chapter search matches titles and timestamps; track search matches displayed language, title, and codec; playlist search matches title and filename. Use Ctrl+Backspace to clear a search. If text input is unsupported by the mpv build, numbered selection remains available.
 
+The playlist panel stays open while you browse; press F12 again or Esc to close it. Playlist changes and media transitions close the panel so it cannot display stale entries. The panel is drawn in Adwisp's OSD overlay and reduces the number of visible rows for shorter windows.
+
 The chapter, audio, subtitle, and playlist menus can be paged with `Ctrl+Alt+Page Up` and `Ctrl+Alt+Page Down` when additional results exist.
 
 ### Focus and mouse

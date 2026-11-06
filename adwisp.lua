@@ -119,6 +119,7 @@ local last_mouse_x, last_mouse_y
 local active_track_menu
 local active_playlist_menu
 local open_playlist_menu
+local refresh_playlist_menu
 local open_audio_device_menu
 local track_menu_binding_names = {}
 local track_menu_timer
@@ -137,7 +138,10 @@ local function clear_track_menu()
     track_menu_timer = nil
     active_track_menu = nil
     active_playlist_menu = nil
-    if had_playlist_menu then mp.commandv("show-text", "", 0) end
+    if had_playlist_menu then
+        state.playlist_menu = nil
+        renderer:render()
+    end
 end
 
 local function clear_interaction_state()
@@ -1081,11 +1085,19 @@ mp.register_event("shutdown", cleanup_on_shutdown)
 
 mp.register_event("video-reconfig", function()
     last_mouse_x, last_mouse_y = nil, nil
-    render()
+    if active_playlist_menu and refresh_playlist_menu then
+        refresh_playlist_menu()
+    else
+        render()
+    end
 end)
 mp.observe_property("osd-dimensions", "native", function()
     last_mouse_x, last_mouse_y = nil, nil
-    render()
+    if active_playlist_menu and refresh_playlist_menu then
+        refresh_playlist_menu()
+    else
+        render()
+    end
 end)
 
 local function remove_last_utf8_character(value)
@@ -1115,7 +1127,9 @@ open_playlist_menu = function(offset, query, selected_source_index)
 
     query = type(query) == "string" and query or ""
     local results = MenuFilter.filter(items, query, { "title", "filename" })
-    local page_size = 9
+    local _, osd_height = mp.get_osd_size()
+    osd_height = finite_property(osd_height, 720)
+    local page_size = math.max(1, math.min(9, math.floor((osd_height - 40) / 22)))
     local selected_index = 0
     if #results > 0 then
         if type(selected_source_index) == "number" then
@@ -1303,10 +1317,27 @@ open_playlist_menu = function(offset, query, selected_source_index)
         lines[#lines + 1] = "Text filtering is unavailable on this mpv build"
     end
 
-    -- Keep the playlist view open until dismissed or the playlist changes.
+    if not state.visible then show_osd() end
+    state.playlist_menu = {
+        lines = lines,
+        page_size = page_size,
+        offset = offset,
+        result_count = #results,
+    }
     track_menu_timer = nil
     note_activity()
-    mp.commandv("show-text", table.concat(lines, "\n"), -1)
+    render()
+end
+
+
+refresh_playlist_menu = function()
+    local menu = active_playlist_menu
+    if not menu then
+        render()
+        return
+    end
+    local selected = menu.results[menu.selected_index]
+    open_playlist_menu(menu.offset, menu.query, selected and selected.index)
 end
 
 local function open_track_menu(kind, query, selected_source_id)

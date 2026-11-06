@@ -71,6 +71,42 @@ local function fmt_time(seconds)
     return string.format("%d:%02d", minutes, secs)
 end
 
+local function render_playlist_menu(menu, width, height, colors, font_family, font_scale)
+    if type(menu) ~= "table" or type(menu.lines) ~= "table" or #menu.lines == 0 then
+        return ""
+    end
+
+    local lines = menu.lines
+    local available_height = math.max(1, height - 32)
+    local line_height = math.max(6, math.min(22,
+        math.floor(math.max(1, available_height - 20) / #lines)))
+    local panel_width = math.max(1, math.min(520, width - 32))
+    local panel_height = math.min(available_height, 20 + #lines * line_height)
+    local x = math.max(0, width - panel_width - 16)
+    local y = math.max(0, math.floor((height - panel_height) / 2))
+    local font_size = math.max(8, math.min(17,
+        math.floor(line_height * 0.72 * font_scale + 0.5)))
+    local max_chars = math.max(1, math.floor((panel_width - 28) / (font_size * 0.56)))
+    local ass = string.format(
+        "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\alpha&H18&\\p1}"
+            .. "m 0 0 l %d 0 %d %d 0 %d{\\p0}\\N",
+        x, y, colors.background, panel_width, panel_width, panel_height, panel_height
+    )
+
+    for index, line in ipairs(lines) do
+        local color = index == 1 and colors.accent
+            or (index == 2 and colors.muted or colors.text)
+        local bold = index == 1 and 1 or 0
+        local line_y = y + 10 + (index - 1) * line_height
+        ass = ass .. string.format(
+            "{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\b%d\\1c%s}%s\\N",
+            x + 14, line_y, font_family, font_size, bold, color,
+            escape_ass(truncate_title(line, max_chars))
+        )
+    end
+    return ass
+end
+
 function Renderer.new(mp, state)
     local self = setmetatable({}, Renderer)
     self.mp = mp
@@ -368,6 +404,8 @@ function Renderer:render()
         end
     end
     ass = ass .. table.concat(chapter_markers, "\\n")
+    ass = ass .. render_playlist_menu(state.playlist_menu, width, height,
+        colors, font_family, font_scale)
 
     if state.hover_target == "playback" or state.hover_target == "volume"
         or state.hover_target == "playlist" or state.hover_target == "timeline" then
