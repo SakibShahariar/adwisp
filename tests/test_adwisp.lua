@@ -546,7 +546,7 @@ assert_true(commands[#commands][2]:find("Middle", 1, true) ~= nil,
 key_bindings["adwisp-chapter-menu-search-clear"].callback({ event = "down" })
 assert_true(commands[#commands][2]:find("Opening", 1, true) ~= nil
     and commands[#commands][2]:find("Final", 1, true) ~= nil
-    and commands[#commands][2]:find(">* 00:01:00  Middle", 1, true) ~= nil,
+    and commands[#commands][2]:find(">* 01:00  Middle", 1, true) ~= nil,
     "clearing chapter search should restore the full list and current chapter")
 type_chapter_query("missing")
 assert_true(commands[#commands][2]:find("No matching chapters", 1, true) ~= nil,
