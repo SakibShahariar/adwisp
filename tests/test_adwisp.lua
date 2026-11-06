@@ -992,6 +992,47 @@ assert_equal(osd_size_calls, calls_after_duration_update + 1,
     "duration updates should invalidate the pointer cache")
 observers.duration.callback("duration", 60)
 
+local function assert_pointer_cache_invalidated(label, trigger)
+    mouse_x, mouse_y = 17, 17
+    key_bindings["adwisp-mouse-move"].callback()
+    trigger()
+    local calls_after_trigger = osd_size_calls
+    key_bindings["adwisp-mouse-move"].callback()
+    assert_equal(osd_size_calls, calls_after_trigger + 1, label)
+end
+
+-- Playlist content and count determine whether playlist navigation is hit-testable.
+assert_pointer_cache_invalidated("playlist changes should invalidate the pointer cache", function()
+    observers["playlist"].callback("playlist", {
+        { title = "First", filename = "/media/first.mkv" },
+        { title = "Second", filename = "/media/second.mkv" },
+    })
+end)
+observers["playlist"].callback("playlist", {})
+assert_pointer_cache_invalidated("playlist visibility changes should invalidate the pointer cache", function()
+    observers["playlist-count"].callback("playlist-count", 2)
+end)
+
+-- OSD geometry changes and video reconfiguration alter the hit-test coordinate space.
+assert_pointer_cache_invalidated("OSD dimension changes should invalidate the pointer cache", function()
+    observers["osd-dimensions"].callback("osd-dimensions", { w = 640, h = 480 })
+end)
+assert_pointer_cache_invalidated("video reconfiguration should invalidate the pointer cache", function()
+    events["video-reconfig"]()
+end)
+
+-- thumbfast metadata can change preview geometry under a stationary pointer.
+thumbfast_payload = {
+    width = 160, height = 90, scale_factor = 1,
+    disabled = false, available = true, thumbnail = "thumbfast-cache",
+}
+assert_pointer_cache_invalidated("thumbfast metadata changes should invalidate the pointer cache", function()
+    script_messages["thumbfast-info"]("{}")
+end)
+thumbfast_payload = { width = 160, height = 90, disabled = true, available = false }
+script_messages["thumbfast-info"]("{}")
+thumbfast_payload = nil
+
 mp.get_osd_size = original_get_osd_size
 
 -- Mouse movement warms the OSD-size layout cache; clicks should reuse it.
