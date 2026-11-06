@@ -24,12 +24,12 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `376a4c32faf99026cfbfc6cfd0d0694b692b302b`
+- Reviewed checkpoint SHA: `a6f332974e63a9291945b79b9aaf9cd2acf99572`
 - Reviewed: 2026-11-06
-- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `376a4c32faf99026cfbfc6cfd0d0694b692b302b`
+- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `a6f332974e63a9291945b79b9aaf9cd2acf99572`
 - Result: all commits through the checkpoint have terminal CI results. The follow-up range contains five green commits and eleven red attempts, all diagnosed and corrected by later commits; the final timeline commit is green.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
-- Next session: recheck the pending run above before unrelated work; retain all red and pending entries below.
+- Next session: review this ledger update commit and any newer exact-SHA runs; retain all red history.
 
 ## Reviewed commits
 
@@ -80,6 +80,17 @@ All commits below were reviewed against their exact-SHA workflow run. Failed att
 | `67c19dd3948a8516afb79cebc4baeb6fec0732e6` | fix(playlist): guard unsupported text-input bindings (#44) | green | [42269143393](https://github.com/SakibShahariar/adwisp/actions/runs/42269143393) | Unsupported `ANY_UNICODE` bindings are caught; playlist menu retains fallback controls. |
 | `376a4c32faf99026cfbfc6cfd0d0694b692b302b` | docs(playlist): document search fallback and CI review | green | [42269452926](https://github.com/SakibShahariar/adwisp/actions/runs/42269452926) | README documents the unsupported-input fallback; CI ledger records the exact-SHA review. |
 
+## Follow-up review after the 2026-11-06 checkpoint (continued)
+
+| Commit SHA | Subject | CI result | Run | Diagnosis / resolution |
+|---|---|---|---|---|
+| `4f38a92362d52d2d2587d1011ec65bc937f794e3` | feat(tracks): add searchable audio and subtitle menus (#44) | green | [42269802793](https://github.com/SakibShahariar/adwisp/actions/runs/42269802793) | Audio/subtitle filtering, selection mapping, and interaction tests passed. |
+| `1229fc2a8cd2d2681949de608067e4571d64f836` | feat(chapters): add searchable chapter selection menu (#44) | red | [42270056155](https://github.com/SakibShahariar/adwisp/actions/runs/42270056155) | Chapter search-clear assertion expected a different displayed timestamp format; corrected in `ccb67bb3efbd090e775992b6591d2257499304fe`. |
+| `ccb67bb3efbd090e775992b6591d2257499304fe` | test(chapters): match the displayed timestamp format | red | [42270172395](https://github.com/SakibShahariar/adwisp/actions/runs/42270172395) | After the timestamp expectation was corrected, a later chapter-navigation test had no chapter fixture because the search test had cleared it; restored the fixture in `3f5a377dda8b16e0cdaedab8a7c325dd9bf6d7f2`. |
+| `c4ab60a657a261de15a23499ec9264e8f36503a1` | docs: streamline README and add usage guide | red | [42270320356](https://github.com/SakibShahariar/adwisp/actions/runs/42270320356) | Inherited the chapter-navigation fixture failure; the docs changes were included in the full green rerun after the fixture correction. |
+| `3f5a377dda8b16e0cdaedab8a7c325dd9bf6d7f2` | test(chapters): restore navigation fixture after search tests (#44) | green | [42270482922](https://github.com/SakibShahariar/adwisp/actions/runs/42270482922) | Re-established chapter metadata/current selection before the chapter-prev/next assertions; full suite passed. |
+| `a6f332974e63a9291945b79b9aaf9cd2acf99572` | feat(image): add still-image fit and zoom controls (#47) | green | [42271159763](https://github.com/SakibShahariar/adwisp/actions/runs/42271159763) | Still-image/album-art mode detection, fit/zoom/reset command mapping, and transition tests passed. |
+
 ## Historical red-cross investigation
 
 These failures predate the checkpoint above. They were discovered by inspecting the actual workflow jobs and logs, not inferred from commit badges.
@@ -96,9 +107,11 @@ The five pre-session historical red entries have later corrective/test commits w
 
 ## Current pending CI obligations
 
-- None at checkpoint `376a4c32faf99026cfbfc6cfd0d0694b692b302b`. All reviewed runs in this range reached a terminal state.
+- None at checkpoint `a6f332974e63a9291945b79b9aaf9cd2acf99572`. All reviewed runs in this range reached a terminal state.
 
 ## Session history
+
+| 2026-11-06 | `376a4c32faf99026cfbfc6cfd0d0694b692b302b` through `a6f332974e63a9291945b79b9aaf9cd2acf99572` | Three green commits and three red attempts corrected. Added searchable audio/subtitle/chapter menus, shortened the README to a 70-line landing page with a separate usage guide, and added still-image fit/zoom/reset controls. Full CI passed on the final image-controls commit. |
 
 | Date | Reviewed range / checkpoint | Result summary |
 |---|---|---|
