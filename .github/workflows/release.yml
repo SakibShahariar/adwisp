@@ -51,9 +51,17 @@ jobs:
         run: |
           bash scripts/package.sh "$GITHUB_REF_NAME" dist
           archive="dist/adwisp-$GITHUB_REF_NAME.zip"
-          unzip -Z1 "$archive" | grep -Fx 'scripts/adwisp/adwisp.lua'
-          unzip -Z1 "$archive" | grep -Fx 'scripts/adwisp/core/layout.lua'
-          unzip -Z1 "$archive" | grep -Fx 'script-opts/adwisp.conf'
+          archive_contents=$(unzip -Z1 "$archive")
+          for path in \
+            scripts/adwisp/adwisp.lua \
+            scripts/adwisp/core/bmp.lua \
+            scripts/adwisp/core/layout.lua \
+            scripts/adwisp/core/renderer.lua \
+            scripts/adwisp/core/state.lua \
+            scripts/adwisp/core/theme.lua \
+            script-opts/adwisp.conf; do
+            printf '%s\\n' "$archive_contents" | grep -Fx "$path"
+          done
 
       - name: Publish GitHub release
         env:
