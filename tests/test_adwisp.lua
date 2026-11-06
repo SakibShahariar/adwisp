@@ -244,7 +244,6 @@ assert_true(saw_version, "startup diagnostics should include the mpv version")
 
 -- Property callbacks should update state and safely render while the UI is hidden.
 observers.pause.callback("pause", true)
-local hidden_overlay_updates = overlays[1].update_count
 observers["time-pos"].callback("time-pos", 12)
 observers.duration.callback("duration", 60)
 observers["media-title"].callback("media-title", "Test video")
@@ -785,6 +784,7 @@ assert_equal(observed_state.buffering_progress, 100,
 observers["paused-for-cache"].callback("paused-for-cache", false)
 assert_equal(observed_state.buffering, false,
     "local or resumed playback should hide the buffering indicator")
+local hidden_overlay_updates = overlays[1].update_count
 observers["time-pos"].callback("time-pos", 12)
 observers.duration.callback("duration", 60)
 observers.volume.callback("volume", 100)
