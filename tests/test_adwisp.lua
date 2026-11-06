@@ -177,6 +177,11 @@ assert_true(observers["chapter-list"] ~= nil and observers["chapter-list"].type 
     "chapter metadata should be observed")
 assert_true(observers["track-list"] ~= nil and observers["track-list"].type == "native",
     "audio and subtitle track metadata should be observed")
+assert_true(observers["audio-device-list"] ~= nil
+    and observers["audio-device-list"].type == "native",
+    "available audio output devices should be observed as native metadata")
+assert_true(observers["audio-device"] ~= nil and observers["audio-device"].type == "string",
+    "the selected audio output device should be observed")
 assert_true(observers.playlist ~= nil and observers.playlist.type == "native",
     "playlist metadata should be observed")
 assert_true(observers["osd-dimensions"] ~= nil, "OSD dimensions should be observed")
@@ -208,6 +213,8 @@ assert_true(key_bindings["adwisp-chapter-list"] ~= nil, "chapter-list shortcut s
 assert_true(key_bindings["adwisp-audio-cycle"] ~= nil, "audio-cycle shortcut should be registered")
 assert_true(key_bindings["adwisp-subtitle-cycle"] ~= nil, "subtitle-cycle shortcut should be registered")
 assert_true(key_bindings["adwisp-audio-menu"] ~= nil, "audio-menu shortcut should be registered")
+assert_true(key_bindings["adwisp-audio-device-menu"] ~= nil,
+    "audio output device menu shortcut should be registered")
 assert_true(key_bindings["adwisp-subtitle-menu"] ~= nil, "subtitle-menu shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-menu"] ~= nil, "playlist-menu shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
@@ -364,6 +371,79 @@ assert_true(commands[#commands][2]:find("no audio tracks", 1, true) ~= nil,
 key_bindings["adwisp-subtitle-menu"].callback()
 assert_true(commands[#commands][2]:find("no subtitle tracks", 1, true) ~= nil,
     "subtitle menu should explain when no subtitle tracks are available")
+
+-- Audio output devices use mpv's audio-device-list/audio-device properties.
+key_bindings["adwisp-audio-device-menu"].callback()
+assert_true(commands[#commands][2]:find("no audio output devices", 1, true) ~= nil,
+    "an empty audio-device list should be reported safely")
+observers["audio-device-list"].callback("audio-device-list", {
+    { name = "auto", description = "Automatic output" },
+    { name = "pipewire/speaker", description = "Built-in Speakers" },
+    { name = "pipewire/headset", description = "Bluetooth Headphones" },
+    { name = "", description = "Invalid empty device" },
+    { name = 42, description = "Invalid non-string device" },
+    "invalid entry",
+})
+observers["audio-device"].callback("audio-device", "pipewire/headset")
+assert_equal(observed_state.audio_device, "pipewire/headset",
+    "the selected audio output should follow mpv's audio-device property")
+assert_equal(#observed_state.audio_devices, 3,
+    "malformed audio-device entries should be ignored")
+key_bindings["adwisp-audio-device-menu"].callback()
+assert_true(commands[#commands][2]:find("Automatic output", 1, true) ~= nil
+    and commands[#commands][2]:find("Built-in Speakers", 1, true) ~= nil
+    and commands[#commands][2]:find("> Bluetooth Headphones", 1, true) ~= nil,
+    "the device menu should list descriptions and mark the active device")
+assert_true(key_bindings["adwisp-audio-device-select-2"] ~= nil,
+    "the device menu should register number shortcuts")
+key_bindings["adwisp-audio-device-select-2"].callback()
+assert_equal(commands[#commands - 1][1], "set",
+    "device selection should request an mpv property change")
+assert_equal(commands[#commands - 1][2], "audio-device",
+    "device selection should set audio-device")
+assert_equal(commands[#commands - 1][3], "pipewire/speaker",
+    "device selection should pass the original mpv device name")
+assert_true(commands[#commands][2]:find("requested audio output", 1, true) ~= nil,
+    "device selection should provide feedback")
+
+-- An open device menu refreshes when mpv reports a changed device list or active output.
+key_bindings["adwisp-audio-device-menu"].callback()
+observers["audio-device-list"].callback("audio-device-list", {
+    { name = "auto", description = "Automatic output" },
+    { name = "pipewire/headset", description = "Bluetooth Headphones" },
+})
+assert_true(key_bindings["adwisp-audio-device-select-3"] == nil,
+    "refreshing a shorter device list should remove stale selection bindings")
+assert_true(commands[#commands][2]:find("Audio output devices", 1, true) ~= nil
+    and commands[#commands][2]:find("Built-in Speakers", 1, true) == nil,
+    "an open menu should refresh to the latest device list")
+observers["audio-device"].callback("audio-device", "pipewire/missing")
+assert_true(commands[#commands][2]:find("not in the available device list", 1, true) ~= nil,
+    "a disconnected current device should be identified without breaking the menu")
+key_bindings["adwisp-audio-device-menu"].callback()
+assert_true(key_bindings["adwisp-audio-device-menu-next"] == nil,
+    "short device lists should not expose unnecessary pagination")
+local many_devices = { { name = "auto", description = "Automatic output" } }
+for index = 1, 10 do
+    many_devices[#many_devices + 1] = {
+        name = "test/device-" .. index,
+        description = "Test device " .. index,
+    }
+end
+observers["audio-device-list"].callback("audio-device-list", many_devices)
+key_bindings["adwisp-audio-device-menu"].callback()
+assert_true(key_bindings["adwisp-audio-device-menu-next"] ~= nil,
+    "long device lists should expose a next-page shortcut")
+key_bindings["adwisp-audio-device-menu-next"].callback()
+assert_true(commands[#commands][2]:find("Test device 10", 1, true) ~= nil,
+    "the second page should display devices beyond the first nine")
+key_bindings["adwisp-audio-device-select-2"].callback()
+assert_equal(commands[#commands - 1][3], "test/device-10",
+    "second-page selection should map to the original device name")
+observers["audio-device-list"].callback("audio-device-list", nil)
+key_bindings["adwisp-audio-device-menu"].callback()
+assert_true(commands[#commands][2]:find("no audio output devices", 1, true) ~= nil,
+    "a missing device list should be handled safely")
 local commands_before_chapters = #commands
 key_bindings["adwisp-chapter-prev"].callback()
 assert_equal(commands[#commands][1], "add", "previous chapter should use mpv chapter command")

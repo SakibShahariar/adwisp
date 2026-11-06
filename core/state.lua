@@ -32,6 +32,8 @@ return {
     audio_track_count = 0,
     audio_track_label = "",
     audio_tracks = {},
+    audio_device = "auto",
+    audio_devices = {},
     subtitle_track_count = 0,
     subtitle_track_label = "Off",
     subtitle_tracks = {},

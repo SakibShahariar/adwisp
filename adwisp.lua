@@ -114,6 +114,7 @@ local active_drag = nil
 local last_mouse_x, last_mouse_y
 local active_track_menu
 local active_playlist_menu
+local open_audio_device_menu
 local track_menu_binding_names = {}
 local track_menu_timer
 
@@ -888,6 +889,46 @@ local function update_track_state(value)
     state.subtitle_track_label = subtitle_label
 end
 
+local function refresh_audio_device_menu()
+    if active_track_menu and active_track_menu.kind == "audio-device"
+        and type(open_audio_device_menu) == "function" then
+        open_audio_device_menu(active_track_menu.offset)
+    end
+end
+
+local function update_audio_device_list(value)
+    local devices = {}
+    if type(value) == "table" then
+        for _, device in ipairs(value) do
+            if type(device) == "table" and type(device.name) == "string" then
+                local name = device.name:match("^%s*(.-)%s*$")
+                if name ~= "" and #name <= 512 and not name:find("[%c]") then
+                    local label = type(device.description) == "string"
+                        and device.description or ""
+                    label = label:gsub("[%c{}]", " "):gsub("\\", " ")
+                        :gsub("%s+", " "):match("^%s*(.-)%s*$")
+                    if label == "" then label = name end
+                    devices[#devices + 1] = {
+                        id = name,
+                        label = label:sub(1, 120),
+                        selected = name == state.audio_device,
+                    }
+                end
+            end
+        end
+    end
+    state.audio_devices = devices
+    refresh_audio_device_menu()
+end
+
+local function update_audio_device(value)
+    state.audio_device = type(value) == "string" and value or "auto"
+    for _, device in ipairs(state.audio_devices) do
+        device.selected = device.id == state.audio_device
+    end
+    refresh_audio_device_menu()
+end
+
 -- Playback properties update the shared state and invalidate the renderer.
 local observers = {
     { "pause", "bool", function(value) state.paused = value == true end },
@@ -931,6 +972,8 @@ local observers = {
         update_chapter_title()
     end },
     { "track-list", "native", update_track_state },
+    { "audio-device-list", "native", update_audio_device_list },
+    { "audio-device", "string", update_audio_device },
 }
 
 for _, observer in ipairs(observers) do
@@ -1092,6 +1135,77 @@ local function open_track_menu(kind)
     mp.commandv("show-text", table.concat(lines, "\n"), 8000)
 end
 
+open_audio_device_menu = function(offset)
+    clear_track_menu()
+    local devices = type(state.audio_devices) == "table" and state.audio_devices or {}
+    if #devices == 0 then
+        mp.commandv("show-text", "Adwisp: no audio output devices are available.", 2500)
+        return
+    end
+
+    local page_size = 9
+    local max_offset = math.max(0, math.floor((#devices - 1) / page_size) * page_size)
+    offset = math.max(0, math.min(max_offset, math.floor(finite_property(offset, 0))))
+    local first = offset + 1
+    local last = math.min(#devices, first + page_size - 1)
+    local lines = { string.format("Audio output devices  %d–%d / %d", first, last, #devices) }
+    local current_found = false
+    active_track_menu = {
+        kind = "audio-device",
+        property = "audio-device",
+        items = {},
+        offset = offset,
+    }
+
+    for index = first, last do
+        local device = devices[index]
+        local item = {
+            id = device.id,
+            label = device.label,
+            selected = device.id == state.audio_device,
+        }
+        if item.selected then current_found = true end
+        active_track_menu.items[#active_track_menu.items + 1] = item
+        local local_index = index - offset
+        local marker = item.selected and ">" or " "
+        lines[#lines + 1] = string.format("%d. %s %s", local_index, marker, item.label)
+
+        local binding_name = "adwisp-audio-device-select-" .. local_index
+        track_menu_binding_names[#track_menu_binding_names + 1] = binding_name
+        mp.add_key_binding("CTRL+ALT+" .. local_index, binding_name, function()
+            local menu = active_track_menu
+            local selected = menu and menu.items[local_index]
+            if not selected or menu.kind ~= "audio-device" then return end
+            note_activity()
+            mp.commandv("set", "audio-device", selected.id)
+            clear_track_menu()
+            mp.commandv("show-text", "Adwisp: requested audio output " .. selected.label, 2500)
+        end)
+    end
+
+    if not current_found then
+        lines[#lines + 1] = "Current output is not in the available device list."
+    end
+    if offset > 0 then
+        local previous_name = "adwisp-audio-device-menu-previous"
+        track_menu_binding_names[#track_menu_binding_names + 1] = previous_name
+        mp.add_key_binding("CTRL+ALT+PGUP", previous_name, function()
+            open_audio_device_menu(offset - page_size)
+        end)
+    end
+    if last < #devices then
+        local next_name = "adwisp-audio-device-menu-next"
+        track_menu_binding_names[#track_menu_binding_names + 1] = next_name
+        mp.add_key_binding("CTRL+ALT+PGDWN", next_name, function()
+            open_audio_device_menu(offset + page_size)
+        end)
+    end
+
+    track_menu_timer = mp.add_timeout(8, clear_track_menu)
+    note_activity()
+    mp.commandv("show-text", table.concat(lines, "\n"), 8000)
+end
+
 local function chapter_timestamp(value)
     local seconds = math.max(0, math.floor(finite_property(value, 0)))
     local hours = math.floor(seconds / 3600)
@@ -1146,6 +1260,7 @@ local registered_key_bindings = {
     ["CTRL+ALT+F6"] = "adwisp-subtitle-cycle",
     ["CTRL+ALT+F7"] = "adwisp-thumbnail-export",
     ["CTRL+ALT+F8"] = "adwisp-chapter-list",
+    ["CTRL+ALT+F9"] = "adwisp-audio-device-menu",
     ["CTRL+ALT+F10"] = "adwisp-audio-menu",
     ["CTRL+ALT+F11"] = "adwisp-subtitle-menu",
     ["CTRL+ALT+F12"] = "adwisp-playlist-menu",
@@ -1237,6 +1352,9 @@ mp.add_key_binding("CTRL+PGDWN", "adwisp-chapter-next", function()
     end
 end)
 mp.add_key_binding("CTRL+ALT+F8", "adwisp-chapter-list", show_chapter_list)
+mp.add_key_binding("CTRL+ALT+F9", "adwisp-audio-device-menu", function()
+    open_audio_device_menu(0)
+end)
 mp.add_key_binding("CTRL+ALT+F5", "adwisp-audio-cycle", function()
     if state.audio_track_count > 1 then
         note_activity()

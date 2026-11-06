@@ -69,6 +69,7 @@ Typical mpv configuration directories:
 | `Ctrl` + `Left` / `Ctrl` + `Right` | Previous / next playlist item |
 | `Ctrl` + `Page Up` / `Ctrl` + `Page Down` | Previous / next chapter when available |
 | `Ctrl` + `Alt` + `F8` | Show chapter titles and timestamps |
+| `Ctrl` + `Alt` + `F9` | Open the audio-output device menu; select with `Ctrl+Alt+1–9` |
 | `Ctrl` + `Alt` + `F5` | Cycle audio tracks |
 | `Ctrl` + `Alt` + `F6` | Cycle subtitle tracks (including Off) |
 | `Ctrl` + `Alt` + `F10` | Open the audio track menu; select with `Ctrl+Alt+1–9` |
