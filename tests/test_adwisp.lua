@@ -819,6 +819,7 @@ key_bindings["adwisp-mouse-click"].callback({ event = "up" })
 assert_equal(option_fixture.timeline_expanded, false,
     "releasing a drag outside the timeline should collapse it")
 
+observed_state.focus_target = nil
 key_bindings["adwisp-focus-next"].callback()
 key_bindings["adwisp-focus-next"].callback()
 key_bindings["adwisp-focus-next"].callback()
