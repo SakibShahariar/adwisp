@@ -483,6 +483,7 @@ for index = 1, 20 do
         filename = "/media/item-" .. index .. ".mkv",
     }
 end
+observers["playlist-pos"].callback("playlist-pos", -1)
 observers["playlist"].callback("playlist", long_playlist)
 mp.get_osd_size = function() return 420, 180 end
 key_bindings["adwisp-playlist-menu"].callback()
