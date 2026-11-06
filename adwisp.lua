@@ -1456,7 +1456,7 @@ open_recent_menu = function(offset, selected_index)
     local _, osd_height = mp.get_osd_size()
     osd_height = finite_property(osd_height, 720)
     local page_size = math.max(1, math.min(9, math.floor((osd_height - 40) / 22)))
-    local current_path = mp.get_property("path")
+    local current_path = resolve_recent_path(mp.get_property("path"))
     if type(selected_index) ~= "number" then
         selected_index = 1
         for index, item in ipairs(items) do

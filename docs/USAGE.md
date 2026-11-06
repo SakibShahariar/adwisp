@@ -85,7 +85,7 @@ Core bindings can be remapped independently. Duplicate Adwisp bindings are detec
 
 ### Recently played history
 
-Recent history is disabled by default. Set `recent_history=yes` to keep a local JSON list of recently opened files. Only local paths are recorded; network URLs are ignored. The menu displays media titles rather than full paths. History is stored in the configured file, is never sent to a service, and can be cleared with `Ctrl+Alt+Shift+F3` or the `adwisp-clear-recent` script message.
+Recent history is disabled by default. Set `recent_history=yes` to keep a local JSON list of recently opened files. Only local paths are recorded; network URLs are ignored. The menu displays media titles rather than full paths. History is stored in the configured file, is never sent to a service, and can be cleared with `Ctrl+Alt+Shift+F3` or the `adwisp-clear-recent` script message. The panel supports mouse-wheel and Up/Down selection, Enter to reopen an item, and page navigation for longer lists.
 
 ### Theme palette
 
@@ -124,6 +124,8 @@ Other mpv scripts and external controllers can send these messages to Adwisp. Ea
 | `adwisp-hide` | Hide the OSD and clear active interaction/preview state |
 | `adwisp-toggle` | Toggle OSD visibility |
 | `adwisp-reload-theme` | Reload the configured theme |
+| `adwisp-recent` | Open the recent-files panel (requires opt-in history) |
+| `adwisp-clear-recent` | Clear the local recent-file history |
 | `adwisp-query` | Print a JSON snapshot of the current UI/playback state to mpv's log |
 
 From another mpv Lua script:
