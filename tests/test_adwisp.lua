@@ -9,6 +9,12 @@ local overlays = {}
 local timers = {}
 local mouse_x, mouse_y = 0, 0
 local thumbfast_payload
+local properties = {}
+local recent_history_fixture = {
+    { path = "/media/recent-one.mkv", title = "Recent One" },
+    { path = "/media/recent-two.mkv", title = "Recent Two" },
+}
+local recent_history_saved = false
 local logs = { info = {}, warn = {} }
 
 local mp = {
@@ -36,7 +42,10 @@ local mp = {
         commands[#commands + 1] = { ... }
     end,
     command_native = function(args)
-        if args[1] == "expand-path" then return "." end
+        if args[1] == "expand-path" then
+            if args[2] == "~~/" then return "." end
+            return args[2]
+        end
         return nil
     end,
     add_timeout = function(seconds, callback)
@@ -58,7 +67,7 @@ local mp = {
     end,
     get_property = function(name)
         if name == "mpv-version" then return "mpv test-version" end
-        return nil
+        return properties[name]
     end,
     get_mouse_pos = function()
         return mouse_x, mouse_y
@@ -90,6 +99,40 @@ package.loaded["mp.utils"] = {
         return { is_file = true, size = #data }
     end,
 }
+package.loaded["core.recent_history"] = {
+    is_local_path = function(path)
+        return type(path) == "string" and path ~= "" and not path:find("://", 1, true)
+    end,
+    load = function()
+        local copy = {}
+        for index, item in ipairs(recent_history_fixture) do
+            copy[index] = { path = item.path, title = item.title }
+        end
+        return copy
+    end,
+    record = function(items, path, title, limit)
+        if type(path) ~= "string" or path:find("://", 1, true) then
+            return items, false
+        end
+        local updated = { { path = path, title = title or path } }
+        for _, item in ipairs(items) do
+            if item.path ~= path and #updated < limit then
+                updated[#updated + 1] = item
+            end
+        end
+        recent_history_fixture = updated
+        return updated, true
+    end,
+    save = function()
+        recent_history_saved = true
+        return true
+    end,
+    clear = function()
+        recent_history_fixture = {}
+        return true
+    end,
+}
+
 package.loaded["mp.options"] = {
     read_options = function(options)
         assert(options.seek_step == 5, "default seek step should be five seconds")
@@ -105,6 +148,11 @@ package.loaded["mp.options"] = {
             "custom OSD offset should have a safe default")
         assert(options.log_level == "info",
             "logging should default to concise informational output")
+        assert(options.recent_history == false,
+            "recent-file history should be disabled by default")
+        options.recent_history = true
+        options.recent_history_file = "/tmp/adwisp-recent-test.json"
+        options.recent_history_limit = 20
         assert(options.font_family == "Sans",
             "font family should have a safe default")
         assert(options.font_scale == 1,
@@ -382,16 +430,43 @@ key_bindings["adwisp-subtitle-menu"].callback()
 assert_true(commands[#commands][2]:find("no subtitle tracks", 1, true) ~= nil,
     "subtitle menu should explain when no subtitle tracks are available")
 
--- Recent history is opt-in and must not expose or persist paths by default.
+-- The opt-in recent-files menu uses local titles, preserves selection, and clears cleanly.
 key_bindings["adwisp-recent-menu"].callback()
-assert_true(commands[#commands][2]:find("recent history is disabled", 1, true) ~= nil,
-    "recent history should remain disabled by default")
-key_bindings["adwisp-clear-recent"].callback()
-assert_true(commands[#commands][2]:find("recent history is disabled", 1, true) ~= nil,
-    "clear-history should explain that history is disabled")
+assert_true(observed_state.recent_menu ~= nil,
+    "opening recent files should render the persistent recent panel")
+assert_true(overlays[1].data:find("Recently played", 1, true) ~= nil
+    and overlays[1].data:find("Recent One", 1, true) ~= nil,
+    "recent panel should display saved titles")
+assert_true(overlays[1].data:find("/media/recent-one.mkv", 1, true) == nil,
+    "recent panel should not expose stored full paths")
+key_bindings["adwisp-recent-menu-wheel-down"].callback({ event = "down" })
+assert_true(overlays[1].data:find("2.  * Recent Two", 1, true) ~= nil,
+    "recent menu wheel navigation should move the focused item")
+key_bindings["adwisp-recent-menu-select-2"].callback()
+assert_equal(commands[#commands][1], "loadfile",
+    "selecting a recent item should load the saved path")
+assert_equal(commands[#commands][2], "/media/recent-two.mkv",
+    "recent selection should preserve the exact local path")
+assert_equal(commands[#commands][3], "replace",
+    "recent selection should replace the current media")
+assert_equal(observed_state.recent_menu, nil,
+    "selecting a recent item should close the recent panel")
+
+key_bindings["adwisp-recent-menu"].callback()
+key_bindings["adwisp-recent-menu"].callback()
+assert_equal(observed_state.recent_menu, nil,
+    "the recent-menu shortcut should toggle the panel closed")
 script_messages["adwisp-recent"]()
-assert_true(commands[#commands][2]:find("recent history is disabled", 1, true) ~= nil,
-    "the recent-history script message should respect the opt-in setting")
+assert_true(observed_state.recent_menu ~= nil,
+    "the recent-history script message should open the panel")
+script_messages["adwisp-clear-recent"]()
+assert_equal(observed_state.recent_menu, nil,
+    "clearing history should close the recent panel")
+assert_true(commands[#commands][2]:find("recent history cleared", 1, true) ~= nil,
+    "clearing history should confirm the action")
+key_bindings["adwisp-recent-menu"].callback()
+assert_true(commands[#commands][2]:find("no recent local files", 1, true) ~= nil,
+    "an empty recent history should provide clear feedback")
 
 -- Playlist menu filtering preserves source indices and supports keyboard search.
 observers["playlist"].callback("playlist", {
@@ -1829,5 +1904,21 @@ for index = commands_before_shutdown_without_thumbfast + 1, #commands do
         "shutdown without thumbfast should not send adapter commands")
 end
 
+
+properties.path = "/media/new-local-file.mkv"
+properties["media-title"] = "New local title"
+events["file-loaded"]()
+assert_equal(recent_history_fixture[1].path, "/media/new-local-file.mkv",
+    "file-loaded should add a local path to recent history")
+assert_equal(recent_history_fixture[1].title, "New local title",
+    "file-loaded should save the media title")
+assert_true(recent_history_saved, "file-loaded should persist enabled recent history")
+properties.path = "https://example.test/stream"
+recent_history_saved = false
+events["file-loaded"]()
+assert_equal(recent_history_fixture[1].path, "/media/new-local-file.mkv",
+    "network URLs should not replace local recent history")
+assert_equal(recent_history_saved, false,
+    "network URLs should not trigger a recent-history write")
 
 print("All mocked mpv API tests passed.")
