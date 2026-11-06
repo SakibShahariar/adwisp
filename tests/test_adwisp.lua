@@ -851,8 +851,10 @@ assert_true(#commands > commands_before_speed,
     "speed actions should send commands to mpv")
 
 -- Loading a file makes the UI visible and renders current state.
+local overlay_updates_before_file_loaded = overlays[1].update_count
 events["file-loaded"]()
-assert_equal(overlays[1].update_count, 2, "file-loaded should render the OSD")
+assert_equal(overlays[1].update_count, overlay_updates_before_file_loaded + 1,
+    "file-loaded should render the OSD once")
 assert_true(overlays[1].data:find("Test video", 1, true) ~= nil,
     "rendered OSD should include the current media title")
 assert_true(overlays[1].data:find("Play", 1, true) ~= nil,
