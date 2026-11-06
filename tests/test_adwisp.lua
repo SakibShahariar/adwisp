@@ -430,7 +430,7 @@ assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil,
 
 key_bindings["adwisp-playlist-menu"].callback()
 type_playlist_query("noct")
-assert_true(commands[#commands][2]:find("Episode 2", 1, true) ~= nil,
+assert_true(overlays[1].data:find("Episode 2", 1, true) ~= nil,
     "playlist filename metadata should match even when the title differs")
 key_bindings["adwisp-playlist-menu-search-enter"].callback({ event = "down" })
 assert_equal(commands[#commands - 1][3], 1,
@@ -439,9 +439,9 @@ assert_equal(commands[#commands - 1][3], 1,
 key_bindings["adwisp-playlist-menu"].callback()
 type_playlist_query("arr")
 key_bindings["adwisp-playlist-menu-search-clear"].callback({ event = "down" })
-assert_true(commands[#commands][2]:find("Arrival", 1, true) ~= nil
-    and commands[#commands][2]:find("Episode 2", 1, true) ~= nil
-    and commands[#commands][2]:find(">* Episode 2", 1, true) ~= nil,
+assert_true(overlays[1].data:find("Arrival", 1, true) ~= nil
+    and overlays[1].data:find("Episode 2", 1, true) ~= nil
+    and overlays[1].data:find(">* Episode 2", 1, true) ~= nil,
     "clearing search should restore the full list and current-item selection")
 
 type_playlist_query("arr")
@@ -453,7 +453,7 @@ assert_equal(commands[#commands - 1][3], 2,
 key_bindings["adwisp-playlist-menu"].callback()
 type_playlist_query("arrx")
 key_bindings["adwisp-playlist-menu-search-backspace"].callback({ event = "down" })
-assert_true(commands[#commands][2]:find("Arrival", 1, true) ~= nil,
+assert_true(overlays[1].data:find("Arrival", 1, true) ~= nil,
     "Backspace should remove the final search character")
 type_playlist_query("zzzz")
 assert_true(overlays[1].data:find("No matching playlist items", 1, true) ~= nil,
