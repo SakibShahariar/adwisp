@@ -460,7 +460,6 @@ key_bindings["adwisp-playlist-menu-search-escape"].callback({ event = "down" })
 assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil,
     "Escape should close the playlist menu and remove temporary search bindings")
 key_bindings["adwisp-playlist-menu"].callback()
-key_bindings["adwisp-playlist-menu"].callback()
 assert_true(key_bindings["adwisp-playlist-menu-search-input"] ~= nil,
     "the playlist shortcut should reopen a dismissed view")
 key_bindings["adwisp-playlist-menu"].callback()
