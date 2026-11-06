@@ -747,9 +747,10 @@ end
 
 local function handle_mouse_click(event)
     if event and event.event == "up" then
+        local was_timeline_drag = active_drag == "timeline"
         active_drag = nil
         note_activity()
-        render()
+        if opts.minimal_timeline == true and was_timeline_drag then render() end
         return
     end
     if not state.visible or type(mp.get_mouse_pos) ~= "function" then return end
@@ -778,7 +779,7 @@ local function handle_mouse_click(event)
         if contains_timeline(timeline, mouse_x, mouse_y) then
             if state.duration > 0 then
                 active_drag = "timeline"
-                render()
+                if opts.minimal_timeline == true then render() end
                 if not seek_chapter_marker(mouse_x, timeline) then
                     seek_at(mouse_x, timeline)
                 end
@@ -788,7 +789,7 @@ local function handle_mouse_click(event)
     end
 
     if contains_timeline(timeline, mouse_x, mouse_y) then
-        if state.hover_target ~= "timeline" then
+        if opts.minimal_timeline == true and state.hover_target ~= "timeline" then
             state.hover_target = "timeline"
             render()
         end
