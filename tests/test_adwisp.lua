@@ -497,6 +497,8 @@ local updates_before_immediate = overlays[1].update_count
 observers["media-title"].callback("media-title", "Immediate update")
 assert_equal(overlays[1].update_count, updates_before_immediate + 1,
     "non-time observers should still render immediately")
+assert_true(stale_position_timer.killed,
+    "an immediate observer should cancel the pending playback timer")
 stale_position_timer.callback()
 assert_equal(overlays[1].update_count, updates_before_immediate + 1,
     "superseded time-pos callbacks should not trigger stale renders")
@@ -1201,6 +1203,8 @@ observers["time-pos"].callback("time-pos", 42)
 local pending_position_timer = timers[#timers]
 local updates_before_shutdown = overlays[1].update_count
 events["shutdown"]()
+assert_true(pending_position_timer.killed,
+    "shutdown should cancel the pending playback timer")
 assert_equal(observed_state.visible, false, "shutdown should mark the OSD hidden")
 assert_equal(observed_state.opacity, 1, "shutdown should reset opacity")
 assert_equal(observed_state.preview_visible, false,

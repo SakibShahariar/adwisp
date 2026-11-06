@@ -244,9 +244,18 @@ end
 
 local time_pos_render_pending = false
 local time_pos_render_generation = 0
+local time_pos_render_timer
+
+local function cancel_time_pos_render()
+    if time_pos_render_timer and type(time_pos_render_timer.kill) == "function" then
+        time_pos_render_timer:kill()
+    end
+    time_pos_render_timer = nil
+end
 
 local function render()
-    -- Any immediate render supersedes a queued playback-position update.
+    -- Any immediate render supersedes and cancels a queued playback-position update.
+    cancel_time_pos_render()
     time_pos_render_generation = time_pos_render_generation + 1
     time_pos_render_pending = false
     renderer:render()
@@ -369,6 +378,7 @@ local function cleanup_on_shutdown()
     kill_timer(idle_timer)
     idle_timer = nil
     cancel_fade()
+    cancel_time_pos_render()
     time_pos_render_generation = time_pos_render_generation + 1
     time_pos_render_pending = false
     clear_interaction_state()
@@ -608,10 +618,11 @@ local function request_time_pos_render()
     time_pos_render_pending = true
     time_pos_render_generation = time_pos_render_generation + 1
     local generation = time_pos_render_generation
-    mp.add_timeout(interval, function()
+    time_pos_render_timer = mp.add_timeout(interval, function()
         if generation ~= time_pos_render_generation or not time_pos_render_pending then
             return
         end
+        time_pos_render_timer = nil
         time_pos_render_pending = false
         if state.visible then render() end
     end)
