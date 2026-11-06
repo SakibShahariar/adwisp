@@ -14,6 +14,7 @@ Adwisp is an experimental mpv script that draws a desktop-player-style interface
 - Keyboard focus and navigation for playback controls.
 - Persistent, searchable playlist panel with wheel scrolling, paging, and item removal.
 - Optional local recent-file history, disabled by default.
+- UTF-8 locale-file overrides and theme contrast warnings.
 - Searchable chapter, audio-track, and subtitle-track menus.
 - Still-image fit, zoom, and reset controls using mpv's native video properties.
 - Event-driven updates, buffering feedback, and optional idle hiding.

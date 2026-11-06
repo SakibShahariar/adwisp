@@ -83,6 +83,12 @@ Core bindings can be remapped independently. Duplicate Adwisp bindings are detec
 | `recent_history_limit` | Maximum recent local files to retain | `20` |
 | `recent_history_file` | Local JSON history file path | `~~/adwisp-recent.json` |
 
+### Localization and accessibility
+
+Set `locale_file=/path/to/adwisp-locale.conf` to override the built-in English UI strings. Locale files are UTF-8 `key=value` files; missing or invalid entries fall back to English. Start from `locales/template.conf` and see [Localization](LOCALIZATION.md) for the supported keys.
+
+Keyboard navigation is available without a mouse: Tab/Shift+Tab moves focus, Enter activates the focused control, and the playlist/track/chapter menus support arrow-key navigation. Adwisp also exposes the focused control and image-viewer state through `adwisp-query`. Custom themes are checked for text/background contrast; low-contrast combinations produce warnings rather than silently changing the user's palette.
+
 ### Recently played history
 
 Recent history is disabled by default. Set `recent_history=yes` to keep a local JSON list of recently opened files. Only local paths are recorded; network URLs are ignored. The menu displays media titles rather than full paths. History is stored in the configured file, is never sent to a service, and can be cleared with `Ctrl+Alt+Shift+F3` or the `adwisp-clear-recent` script message. The panel supports mouse-wheel and Up/Down selection, Enter to reopen an item, and page navigation for longer lists.
@@ -141,4 +147,4 @@ From mpv's command line:
 mpv --script-message adwisp-show
 ```
 
-The query response includes visibility, pause state, playback position and duration, volume and mute state, playlist position/count, and cache-buffering state/progress. It is printed even when `log_level=quiet`; other informational and debug messages still follow the configured logging level.
+The query response includes visibility, pause state, playback position and duration, volume and mute state, playlist position/count, cache-buffering state/progress, keyboard focus target, and image-viewer mode/zoom. It is printed even when `log_level=quiet`; other informational and debug messages still follow the configured logging level.

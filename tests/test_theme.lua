@@ -66,4 +66,15 @@ assert(missing_source == "error", "file access failures should be distinguished 
 assert(type(missing_error) == "string" and missing_error ~= "",
     "file access failures should include the operating-system error")
 
+local black_white = Theme.contrast_ratio("#FFFFFF", "#000000")
+assert(math.abs(black_white - 21) < 0.001,
+    "white on black should meet the maximum WCAG contrast ratio")
+assert(Theme.contrast_ratio("#777777", "#FFFFFF") < 4.5,
+    "low-contrast text should be detectable")
+local fallback_contrast = Theme.contrast_report(Theme.fallback)
+assert(fallback_contrast.text_background >= 4.5,
+    "fallback text should meet normal-text contrast")
+assert(fallback_contrast.on_accent >= 3,
+    "fallback accent labels should meet large-text contrast")
+
 print("All theme tests passed.")

@@ -4,6 +4,7 @@
 
 local Layout = require "core.layout"
 local Theme = require "core.theme"
+local I18n = require "core.i18n"
 
 local Renderer = {}
 Renderer.__index = Renderer
@@ -51,6 +52,17 @@ end
 local function is_finite_number(value)
     return type(value) == "number" and value == value
         and value ~= math.huge and value ~= -math.huge
+end
+
+local function translate(state, key, fallback)
+    return I18n.t(state and state.translations, key, fallback)
+end
+
+local function translate_format(state, key, fallback, ...)
+    local template = translate(state, key, fallback)
+    local ok, formatted = pcall(string.format, template, ...)
+    if ok then return formatted end
+    return string.format(fallback, ...)
 end
 
 local function safe_font_family(value)
@@ -161,15 +173,15 @@ function Renderer:render()
         local buffering_progress = is_finite_number(state.buffering_progress)
             and math.max(0, math.min(100, state.buffering_progress)) or 0
         if layout.compact and title_pos.width < 240 then
-            status_labels[#status_labels + 1] = "Buffering"
+            status_labels[#status_labels + 1] = translate(state, "buffering", "Buffering")
         else
-            status_labels[#status_labels + 1] = string.format("Buffering %d%%",
+            status_labels[#status_labels + 1] = translate_format(state, "buffering_percent", "Buffering %d%%",
                 math.floor(buffering_progress + 0.5))
         end
     end
     local loop_file = state.loop_file
     if loop_file == "inf" or (is_finite_number(tonumber(loop_file)) and tonumber(loop_file) > 0) then
-        status_labels[#status_labels + 1] = "Loop"
+        status_labels[#status_labels + 1] = translate(state, "loop", "Loop")
     end
     local loop_a = is_finite_number(state.ab_loop_a) and state.ab_loop_a or -1
     local loop_b = is_finite_number(state.ab_loop_b) and state.ab_loop_b or -1
@@ -183,21 +195,21 @@ function Renderer:render()
     if state.image_mode == true then
         local image_zoom = is_finite_number(state.image_zoom)
             and math.max(-4, math.min(4, state.image_zoom)) or 0
-        status_labels[#status_labels + 1] = "Image · Zoom "
+        status_labels[#status_labels + 1] = translate(state, "image_zoom_prefix", "Image · Zoom ")
             .. tostring(math.floor(100 * (2 ^ image_zoom) + 0.5)) .. "%"
     end
     if type(state.chapter_title) == "string" and state.chapter_title ~= "" then
-        status_labels[#status_labels + 1] = "Chapter: " .. truncate_title(state.chapter_title, 14)
+        status_labels[#status_labels + 1] = translate_format(state, "chapter_status", "Chapter: %s", truncate_title(state.chapter_title, 14))
     end
     if (tonumber(state.audio_track_count) or 0) > 0 then
         local audio_label = type(state.audio_track_label) == "string"
             and state.audio_track_label ~= "" and state.audio_track_label or "—"
-        status_labels[#status_labels + 1] = "A: " .. truncate_title(audio_label, 10)
+        status_labels[#status_labels + 1] = translate_format(state, "audio_status", "A: %s", truncate_title(audio_label, 10))
     end
     if (tonumber(state.subtitle_track_count) or 0) > 0 then
         local subtitle_label = type(state.subtitle_track_label) == "string"
             and state.subtitle_track_label ~= "" and state.subtitle_track_label or "Off"
-        status_labels[#status_labels + 1] = "S: " .. truncate_title(subtitle_label, 10)
+        status_labels[#status_labels + 1] = translate_format(state, "subtitle_status", "S: %s", truncate_title(subtitle_label, 10))
     end
     local buffering_label = truncate_title(table.concat(status_labels, " · "), 54)
     local buffering_status_width = 0
@@ -225,22 +237,22 @@ function Renderer:render()
     local playlist_count = is_finite_number(state.playlist_count)
         and math.max(0, math.floor(state.playlist_count)) or 0
     if playlist_count >= 2 then
-        playlist_label = "‹    Previous       Next    ›"
+        playlist_label = translate(state, "playlist_controls", "‹    Previous       Next    ›")
         if is_finite_number(state.playlist_pos) and state.playlist_pos >= 0 then
             local playlist_pos = math.floor(state.playlist_pos)
             if playlist_pos < playlist_count then
-                playlist_label = string.format("‹    Previous      %d / %d      Next    ›",
+                playlist_label = translate_format(state, "playlist_controls_position", "‹    Previous      %d / %d      Next    ›",
                     playlist_pos + 1, playlist_count)
             end
         end
     end
     local filled = math.floor(timeline.width * progress)
-    local pause_label = state.paused and "Play" or "Pause"
+    local pause_label = state.paused and translate(state, "play", "Play") or translate(state, "pause", "Pause")
     local playback_label = string.format("%s  %.2g×", pause_label,
         is_finite_number(state.speed) and math.max(0.01, math.min(100, state.speed)) or 1)
-    local volume_label = state.mute and "Muted"
-        or (volume_value <= 20 and string.format("Low volume %d%%", math.floor(volume_value + 0.5))
-            or string.format("Volume %d%%", math.floor(volume_value + 0.5)))
+    local volume_label = state.mute and translate(state, "muted", "Muted")
+        or (volume_value <= 20 and translate_format(state, "low_volume", "Low volume %d%%", math.floor(volume_value + 0.5))
+            or translate_format(state, "volume", "Volume %d%%", math.floor(volume_value + 0.5)))
     local progress_text = progress_label.visible
         and string.format("%d%%", math.floor(progress * 100 + 0.5)) or ""
     local time_text = ""

@@ -94,4 +94,37 @@ function Theme.to_ass(palette)
     return result
 end
 
+
+local function linear_channel(value)
+    value = value / 255
+    if value <= 0.04045 then return value / 12.92 end
+    return ((value + 0.055) / 1.055) ^ 2.4
+end
+
+local function luminance(hex)
+    if not valid_hex(hex) then return nil end
+    local red = linear_channel(tonumber(hex:sub(2, 3), 16))
+    local green = linear_channel(tonumber(hex:sub(4, 5), 16))
+    local blue = linear_channel(tonumber(hex:sub(6, 7), 16))
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+end
+
+function Theme.contrast_ratio(foreground, background)
+    local foreground_luminance = luminance(foreground)
+    local background_luminance = luminance(background)
+    if not foreground_luminance or not background_luminance then return nil end
+    local lighter = math.max(foreground_luminance, background_luminance)
+    local darker = math.min(foreground_luminance, background_luminance)
+    return (lighter + 0.05) / (darker + 0.05)
+end
+
+function Theme.contrast_report(palette)
+    palette = palette or Theme.fallback
+    return {
+        text_background = Theme.contrast_ratio(palette.text, palette.background),
+        muted_background = Theme.contrast_ratio(palette.muted, palette.background),
+        on_accent = Theme.contrast_ratio(palette.on_accent, palette.accent),
+    }
+end
+
 return Theme

@@ -369,4 +369,22 @@ assert_true(overlay.data:find("m 0 0 l 2 0 2 8 0 8", 1, true) ~= nil,
 state.layout_options = nil
 renderer:render()
 
+state.translations = {
+    pause = "Stop",
+    volume = "Sound %d%%",
+    chapter_status = "Section: %s",
+    audio_status = "Audio: %s",
+}
+renderer:render()
+assert_true(overlay.data:find("Stop  1.2×", 1, true) ~= nil,
+    "playback labels should use locale overrides")
+assert_true(overlay.data:find("Sound 51%", 1, true) ~= nil,
+    "formatted volume labels should use locale overrides")
+assert_true(overlay.data:find("Section: Open", 1, true) ~= nil,
+    "chapter status should use locale overrides")
+assert_true(overlay.data:find("Audio: eng Eng", 1, true) ~= nil,
+    "audio status prefixes should use locale overrides")
+state.translations = nil
+renderer:render()
+
 print("All renderer tests passed.")

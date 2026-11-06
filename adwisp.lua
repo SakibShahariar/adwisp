@@ -11,6 +11,7 @@ package.path = script_dir .. "/?.lua;" .. script_dir .. "/?/init.lua;" .. packag
 
 local MenuFilter = require "core.menu_filter"
 local RecentHistory = require "core.recent_history"
+local I18n = require "core.i18n"
 
 local opts = {
     seek_step = 5,
@@ -46,6 +47,7 @@ local opts = {
     recent_history = false,
     recent_history_limit = 20,
     recent_history_file = "~~/adwisp-recent.json",
+    locale_file = "",
 }
 options.read_options(opts, "adwisp")
 opts.recent_history = opts.recent_history == true
@@ -60,6 +62,8 @@ if type(opts.recent_history_file) ~= "string"
     opts.recent_history_file = "~~/adwisp-recent.json"
 end
 opts.recent_history_file = opts.recent_history_file:sub(1, 512)
+if type(opts.locale_file) ~= "string" then opts.locale_file = "" end
+opts.locale_file = opts.locale_file:sub(1, 512)
 if type(opts.font_family) ~= "string" then opts.font_family = "Sans" end
 opts.font_family = opts.font_family:sub(1, 48):gsub("[^%w _%-]", "")
 opts.font_family = opts.font_family:match("^%s*(.-)%s*$")
@@ -104,6 +108,27 @@ local Renderer = require "core.renderer"
 local Layout = require "core.layout"
 local Theme = require "core.theme"
 local utils = require "mp.utils"
+local locale_path = opts.locale_file
+if locale_path ~= "" then
+    local ok, expanded = pcall(mp.command_native, { "expand-path", locale_path })
+    if ok and type(expanded) == "string" and expanded ~= "" then
+        locale_path = expanded
+    end
+end
+state.translations = I18n.load(locale_path, {
+    file_info = utils.file_info,
+    open = io.open,
+})
+local function tr(key, fallback)
+    return I18n.t(state.translations, key, fallback)
+end
+local function tr_format(key, fallback, ...)
+    local template = tr(key, fallback)
+    local ok, formatted = pcall(string.format, template, ...)
+    if ok then return formatted end
+    return string.format(fallback, ...)
+end
+
 local BMP = require "core.bmp"
 local renderer = Renderer.new(mp, state)
 
@@ -502,6 +527,16 @@ local function reload_theme()
     end
 
     renderer:set_palette(active_palette)
+    local contrast = Theme.contrast_report(active_palette)
+    if contrast.text_background and contrast.text_background < 4.5 then
+        mp.msg.warn("Adwisp: theme text/background contrast is below 4.5:1 (WCAG AA).")
+    end
+    if contrast.muted_background and contrast.muted_background < 3 then
+        mp.msg.warn("Adwisp: theme muted-text/background contrast is below 3:1.")
+    end
+    if contrast.on_accent and contrast.on_accent < 3 then
+        mp.msg.warn("Adwisp: theme accent-label contrast is below 3:1.")
+    end
     render()
 
     for _, diagnostic in ipairs(diagnostics or {}) do
@@ -1200,7 +1235,7 @@ open_playlist_menu = function(offset, query, selected_source_index)
     clear_track_menu()
     local items = type(state.playlist_items) == "table" and state.playlist_items or {}
     if #items == 0 then
-        mp.commandv("show-text", "Adwisp: the playlist is empty.", 2500)
+        mp.commandv("show-text", tr("playlist_empty", "Adwisp: the playlist is empty."), 2500)
         return
     end
 
@@ -1239,21 +1274,21 @@ open_playlist_menu = function(offset, query, selected_source_index)
     local last = #results > 0 and math.min(#results, first + page_size - 1) or 0
     local safe_query = query:gsub("[%c{}]", " "):gsub("\\", " ")
         :gsub("%s+", " "):match("^%s*(.-)%s*$") or ""
-    local search_line = safe_query == "" and "Search: type to filter"
-        or "Search: " .. safe_query
+    local search_line = safe_query == "" and tr("search_prompt", "Search: type to filter")
+        or tr_format("search_query", "Search: %s", safe_query)
     local lines
     if #results == 0 then
         lines = {
             string.format("Playlist  0 / 0 matches (%d items)", #items),
             search_line,
-            "No matching playlist items",
-            "Ctrl+Backspace clears search; Esc closes",
+            tr("playlist_no_matches", "No matching playlist items"),
+            tr("search_clear_hint", "Ctrl+Backspace clears search; Esc closes"),
         }
     else
         lines = {
-            string.format("Playlist  %d–%d / %d", first, last, #results),
+            tr_format("playlist_header", "Playlist  %d–%d / %d", first, last, #results),
             search_line,
-            "Up/Down move; Enter selects; Ctrl+Backspace clears",
+            tr("menu_navigation_hint", "Up/Down move; Enter selects; Ctrl+Backspace clears"),
         }
     end
     active_playlist_menu = {
@@ -1284,7 +1319,7 @@ open_playlist_menu = function(offset, query, selected_source_index)
             note_activity()
             clear_track_menu()
             mp.commandv("set", "playlist-pos", selected.index - 1)
-            mp.commandv("show-text", "Adwisp: playing " .. selected.item.title, 2500)
+            mp.commandv("show-text", tr_format("playlist_playing", "Adwisp: playing %s", selected.item.title), 2500)
         end)
 
         local remove_name = "adwisp-playlist-menu-remove-" .. local_index
@@ -1296,7 +1331,7 @@ open_playlist_menu = function(offset, query, selected_source_index)
             note_activity()
             clear_track_menu()
             mp.commandv("playlist-remove", selected.index - 1)
-            mp.commandv("show-text", "Adwisp: removed " .. selected.item.title, 2500)
+            mp.commandv("show-text", tr_format("playlist_removed", "Adwisp: removed %s", selected.item.title), 2500)
         end)
     end
 
@@ -1395,7 +1430,7 @@ open_playlist_menu = function(offset, query, selected_source_index)
         note_activity()
         clear_track_menu()
         mp.commandv("set", "playlist-pos", selected.index - 1)
-        mp.commandv("show-text", "Adwisp: playing " .. selected.item.title, 2500)
+        mp.commandv("show-text", tr_format("playlist_playing", "Adwisp: playing %s", selected.item.title), 2500)
     end)
     add_search_binding("UP", "adwisp-playlist-menu-search-up", function(event)
         if not is_key_down(event) then return end
@@ -1412,7 +1447,7 @@ open_playlist_menu = function(offset, query, selected_source_index)
         open_playlist_menu(0, menu.query, menu.results[index].index)
     end)
     if not text_input_available then
-        lines[#lines + 1] = "Text filtering is unavailable on this mpv build"
+        lines[#lines + 1] = tr("filter_unavailable", "Text filtering is unavailable on this mpv build")
     end
 
     if not state.visible then show_osd() end
@@ -1443,11 +1478,11 @@ open_recent_menu = function(offset, selected_index)
     clear_track_menu()
     if not opts.recent_history then
         mp.commandv("show-text",
-            "Adwisp: recent history is disabled; set recent_history=yes to enable it.", 3500)
+            tr("recent_disabled", "Adwisp: recent history is disabled; set recent_history=yes to enable it."), 3500)
         return
     end
     if #recent_items == 0 then
-        mp.commandv("show-text", "Adwisp: no recent local files yet.", 2500)
+        mp.commandv("show-text", tr("recent_empty", "Adwisp: no recent local files yet."), 2500)
         return
     end
     if not state.visible then show_osd() end
@@ -1475,9 +1510,9 @@ open_recent_menu = function(offset, selected_index)
     local first = offset + 1
     local last = math.min(#items, first + page_size - 1)
     local lines = {
-        string.format("Recently played  %d–%d / %d", first, last, #items),
-        "Wheel or Up/Down moves; Enter opens; Esc closes",
-        "Ctrl+Alt+Shift+F3 clears local history",
+        tr_format("recent_header", "Recently played  %d–%d / %d", first, last, #items),
+        tr("recent_navigation_hint", "Wheel or Up/Down moves; Enter opens; Esc closes"),
+        tr("recent_clear_hint", "Ctrl+Alt+Shift+F3 clears local history"),
     }
 
     active_recent_menu = {
@@ -1586,16 +1621,16 @@ end
 local function clear_recent_history()
     if not opts.recent_history then
         mp.commandv("show-text",
-            "Adwisp: recent history is disabled; set recent_history=yes to enable it.", 3500)
+            tr("recent_disabled", "Adwisp: recent history is disabled; set recent_history=yes to enable it."), 3500)
         return
     end
     recent_items = {}
     local cleared = RecentHistory.clear(recent_history_path, history_dependencies)
     if active_recent_menu then clear_track_menu() end
     if not cleared then
-        mp.msg.warn("Adwisp: could not clear local recent-file history.")
+        mp.msg.warn(tr("recent_clear_failed", "Adwisp: could not clear local recent-file history."))
     else
-        mp.commandv("show-text", "Adwisp: recent history cleared.", 2500)
+        mp.commandv("show-text", tr("recent_cleared", "Adwisp: recent history cleared."), 2500)
     end
 end
 
@@ -1603,7 +1638,7 @@ local function open_track_menu(kind, query, selected_source_id)
     clear_track_menu()
     local tracks = kind == "audio" and state.audio_tracks or state.subtitle_tracks
     if type(tracks) ~= "table" or #tracks == 0 then
-        mp.commandv("show-text", "Adwisp: no " .. kind .. " tracks are available.", 2500)
+        mp.commandv("show-text", tr_format("no_tracks_available", "Adwisp: no %s tracks are available.", kind), 2500)
         return
     end
 
@@ -1611,7 +1646,7 @@ local function open_track_menu(kind, query, selected_source_id)
     if kind == "subtitle" then
         items[#items + 1] = {
             id = "no",
-            label = "Off",
+            label = tr("off", "Off"),
             selected = state.subtitle_track_label == "Off",
         }
     end
@@ -1642,17 +1677,17 @@ local function open_track_menu(kind, query, selected_source_id)
         if selected_index == 0 then selected_index = 1 end
     end
 
-    local title = kind == "audio" and "Audio tracks" or "Subtitle tracks"
+    local title = kind == "audio" and tr("audio_tracks", "Audio tracks") or tr("subtitle_tracks", "Subtitle tracks")
     local safe_query = query:gsub("[%c{}]", " "):gsub("\\", " ")
         :gsub("%s+", " "):match("^%s*(.-)%s*$") or ""
-    local search_line = safe_query == "" and "Search: type to filter"
-        or "Search: " .. safe_query
+    local search_line = safe_query == "" and tr("search_prompt", "Search: type to filter")
+        or tr_format("search_query", "Search: %s", safe_query)
     local lines = { title, search_line }
     if #results == 0 then
-        lines[#lines + 1] = "No matching " .. kind .. " tracks"
-        lines[#lines + 1] = "Ctrl+Backspace clears search; Esc closes"
+        lines[#lines + 1] = tr_format("no_matching_tracks", "No matching %s tracks", kind)
+        lines[#lines + 1] = tr("search_clear_hint", "Ctrl+Backspace clears search; Esc closes")
     else
-        lines[#lines + 1] = "Up/Down move; Enter selects; Ctrl+Backspace clears"
+        lines[#lines + 1] = tr("menu_navigation_hint", "Up/Down move; Enter selects; Ctrl+Backspace clears")
     end
 
     local property = kind == "audio" and "aid" or "sid"
@@ -1681,7 +1716,7 @@ local function open_track_menu(kind, query, selected_source_id)
                 note_activity()
                 mp.commandv("set", menu.property, selected.item.id)
                 clear_track_menu()
-                mp.commandv("show-text", "Adwisp: selected " .. selected.item.label, 2500)
+                mp.commandv("show-text", tr_format("track_selected", "Adwisp: selected %s", selected.item.label), 2500)
             end)
         end
     end
@@ -1761,7 +1796,7 @@ local function open_track_menu(kind, query, selected_source_id)
         open_track_menu(kind, menu.query, menu.results[index].item.id)
     end)
     if not text_input_available then
-        lines[#lines + 1] = "Text filtering is unavailable on this mpv build"
+        lines[#lines + 1] = tr("filter_unavailable", "Text filtering is unavailable on this mpv build")
     end
 
     track_menu_timer = mp.add_timeout(8, clear_track_menu)
@@ -1773,7 +1808,7 @@ open_audio_device_menu = function(offset)
     clear_track_menu()
     local devices = type(state.audio_devices) == "table" and state.audio_devices or {}
     if #devices == 0 then
-        mp.commandv("show-text", "Adwisp: no audio output devices are available.", 2500)
+        mp.commandv("show-text", tr("no_audio_devices", "Adwisp: no audio output devices are available."), 2500)
         return
     end
 
@@ -1782,7 +1817,7 @@ open_audio_device_menu = function(offset)
     offset = math.max(0, math.min(max_offset, math.floor(finite_property(offset, 0))))
     local first = offset + 1
     local last = math.min(#devices, first + page_size - 1)
-    local lines = { string.format("Audio output devices  %d–%d / %d", first, last, #devices) }
+    local lines = { tr_format("audio_devices_header", "Audio output devices  %d–%d / %d", first, last, #devices) }
     local current_found = false
     active_track_menu = {
         kind = "audio-device",
@@ -1813,12 +1848,12 @@ open_audio_device_menu = function(offset)
             note_activity()
             mp.commandv("set", "audio-device", selected.id)
             clear_track_menu()
-            mp.commandv("show-text", "Adwisp: requested audio output " .. selected.label, 2500)
+            mp.commandv("show-text", tr_format("audio_device_requested", "Adwisp: requested audio output %s", selected.label), 2500)
         end)
     end
 
     if not current_found then
-        lines[#lines + 1] = "Configured output is not in the available device list."
+        lines[#lines + 1] = tr("audio_device_unavailable", "Configured output is not in the available device list.")
     end
     if offset > 0 then
         local previous_name = "adwisp-audio-device-menu-previous"
@@ -1855,7 +1890,7 @@ local function open_chapter_menu(offset, query, selected_source_index)
     clear_track_menu()
     local chapters = type(state.chapter_list) == "table" and state.chapter_list or {}
     if #chapters == 0 then
-        mp.commandv("show-text", "Adwisp: this media has no chapters.", 2500)
+        mp.commandv("show-text", tr("no_chapters", "Adwisp: this media has no chapters."), 2500)
         return
     end
 
@@ -1893,17 +1928,17 @@ local function open_chapter_menu(offset, query, selected_source_index)
     local last = #results > 0 and math.min(#results, first + page_size - 1) or 0
     local safe_query = query:gsub("[%c{}]", " "):gsub("\\", " ")
         :gsub("%s+", " "):match("^%s*(.-)%s*$") or ""
-    local search_line = safe_query == "" and "Search: type to filter"
-        or "Search: " .. safe_query
+    local search_line = safe_query == "" and tr("search_prompt", "Search: type to filter")
+        or tr_format("search_query", "Search: %s", safe_query)
     local lines = {
-        string.format("Chapters  %d / %d", #results, #chapters),
+        tr_format("chapter_header", "Chapters  %d / %d", #results, #chapters),
         search_line,
     }
     if #results == 0 then
-        lines[#lines + 1] = "No matching chapters"
-        lines[#lines + 1] = "Ctrl+Backspace clears search; Esc closes"
+        lines[#lines + 1] = tr("no_matching_chapters", "No matching chapters")
+        lines[#lines + 1] = tr("search_clear_hint", "Ctrl+Backspace clears search; Esc closes")
     else
-        lines[#lines + 1] = "Up/Down move; Enter selects; Ctrl+Backspace clears"
+        lines[#lines + 1] = tr("menu_navigation_hint", "Up/Down move; Enter selects; Ctrl+Backspace clears")
     end
 
     active_track_menu = {
@@ -2041,7 +2076,7 @@ local function open_chapter_menu(offset, query, selected_source_index)
         open_chapter_menu(0, menu.query, menu.results[index].index)
     end)
     if not text_input_available then
-        lines[#lines + 1] = "Text filtering is unavailable on this mpv build"
+        lines[#lines + 1] = tr("filter_unavailable", "Text filtering is unavailable on this mpv build")
     end
 
     track_menu_timer = mp.add_timeout(8, clear_track_menu)
@@ -2277,6 +2312,9 @@ register_no_argument_message("adwisp-query", function()
         subtitle_track_label = state.subtitle_track_label,
         buffering = state.buffering == true,
         buffering_progress = finite_property(state.buffering_progress, 0),
+        focus_target = type(state.focus_target) == "string" and state.focus_target or "",
+        image_mode = state.image_mode == true,
+        image_zoom = finite_property(state.image_zoom, 0),
     }
     local json = utils.format_json(payload)
     if type(json) ~= "string" then
