@@ -72,13 +72,13 @@ local store = {
     size = 14,
 }
 local deps = {
-    file_info = function()
+    file_info = function(path)
         if path == "/history.json" and store.raw then
             return { is_file = true, size = store.size }
         end
         return nil
     end,
-    open = function(path, mode)
+    open = function(_, mode)
         if mode == "rb" then
             return {
                 read = function() return store.raw end,
