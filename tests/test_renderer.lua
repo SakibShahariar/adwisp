@@ -369,6 +369,7 @@ assert_true(overlay.data:find("m 0 0 l 2 0 2 8 0 8", 1, true) ~= nil,
 state.layout_options = nil
 renderer:render()
 
+state.paused = false
 state.translations = {
     pause = "Stop",
     volume = "Sound %d%%",

@@ -195,8 +195,8 @@ function Renderer:render()
     if state.image_mode == true then
         local image_zoom = is_finite_number(state.image_zoom)
             and math.max(-4, math.min(4, state.image_zoom)) or 0
-        status_labels[#status_labels + 1] = translate(state, "image_zoom_prefix", "Image · Zoom ")
-            .. tostring(math.floor(100 * (2 ^ image_zoom) + 0.5)) .. "%"
+        status_labels[#status_labels + 1] = translate_format(state, "image_zoom",
+            "Image · Zoom %d%%", math.floor(100 * (2 ^ image_zoom) + 0.5))
     end
     if type(state.chapter_title) == "string" and state.chapter_title ~= "" then
         status_labels[#status_labels + 1] = translate_format(state, "chapter_status", "Chapter: %s", truncate_title(state.chapter_title, 14))
