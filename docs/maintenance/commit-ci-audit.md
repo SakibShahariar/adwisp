@@ -24,11 +24,11 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `400f463b87b6e4c8e0e637a16190193ab3b0492d`
+- Reviewed checkpoint SHA: `63f0b8acc7e0e942ddcf77f09daaac75e1545b28`
 - Reviewed: 2026-11-06
-- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `400f463b87b6e4c8e0e637a16190193ab3b0492d`
-- Result: five commits in this range have successful exact-SHA CI runs; one test-only commit failed and was corrected by a later green commit; the documentation-ledger commit remains pending.
-- Outstanding: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` is still in progress at **Set up Lua**. Its logs are not available yet. Treat it as pending, not green.
+- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `63f0b8acc7e0e942ddcf77f09daaac75e1545b28`
+- Result: all commits through the checkpoint have terminal CI results. The follow-up range contains five green commits and eleven red attempts, all diagnosed and corrected by later commits; the final timeline commit is green.
+- Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: recheck the pending run above before unrelated work; retain all red and pending entries below.
 
 ## Reviewed commits
@@ -43,13 +43,36 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 | `1cd6cd2d1100fcae87e63f60394decb2976ef9f2` | docs(agents): clarify acceptance criteria evidence | green | [41864174877](https://github.com/SakibShahariar/adwisp/actions/runs/41864174877) |
 | `cbe3bd1273c14abc7d86a6eaf87e4a34e77296ad` | docs(theme): clarify Matugen integration and fallback behavior (#43) | green | [42206649204](https://github.com/SakibShahariar/adwisp/actions/runs/42206649204) |
 | `9c8ac16ec6a04dd842c18f4ffad4840f30b83d49` | perf(render): cancel superseded playback timers (#42) | green | [42206955176](https://github.com/SakibShahariar/adwisp/actions/runs/42206955176) |
-| `522dba926fddb34463d38061281b4cad2e8f644d` | docs(ci): record historical failure resolutions | pending | [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) |
+| `522dba926fddb34463d38061281b4cad2e8f644d` | docs(ci): record historical failure resolutions | green (successful rerun) | [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) |
 | `44ee59a6147118560c59017c27122389e12c018e` | perf(input): preserve pointer cache during playback updates (#10) | green | [42261839590](https://github.com/SakibShahariar/adwisp/actions/runs/42261839590) |
 | `21ffaa1b7843608d0ac8d9567016eea98be7c431` | test(input): cover playback pointer-cache invalidation (#10) | red; corrected | [42261870546](https://github.com/SakibShahariar/adwisp/actions/runs/42261870546) |
 | `2ee79b9248c3a2be280fbb5d7a11bc1200f46846` | test(input): restore fixture duration after cache check (#10) | green | [42261991020](https://github.com/SakibShahariar/adwisp/actions/runs/42261991020) |
 | `d27516ae4f85f3d857b03d326b3e14978f662714` | ci(release): run the BMP regression suite (#17) | green | [42262047858](https://github.com/SakibShahariar/adwisp/actions/runs/42262047858) |
 | `c423e4e157cac2d633207d47e84f8544416bcdc7` | test(release): verify every packaged core module (#17) | green | [42262262002](https://github.com/SakibShahariar/adwisp/actions/runs/42262262002) |
 | `400f463b87b6e4c8e0e637a16190193ab3b0492d` | fix(release): print archive entries on separate lines (#17) | green | [42262292533](https://github.com/SakibShahariar/adwisp/actions/runs/42262292533) |
+
+## Follow-up review after the 2026-11-06 checkpoint
+
+All commits below were reviewed against their exact-SHA workflow run. Failed attempts are retained; the correction column records the later commit/run that established the final green state.
+
+| Commit SHA | Subject | CI result | Run | Diagnosis / resolution |
+|---|---|---|---|---|
+| \`19127e7a7ec740fe7c1a8095596e4989e461bdad\` | docs(ci): checkpoint Adwisp maintenance verification | green | [42262585925](https://github.com/SakibShahariar/adwisp/actions/runs/42262585925) | Ledger checkpoint commit passed. |
+| \`64123199b0aa52766eab841cafe377a0138b65f4\` | test(thumbfast): cover lifecycle invalidation (#11) | red | [42265160731](https://github.com/SakibShahariar/adwisp/actions/runs/42265160731) | Fixture pointer remained outside the timeline; corrected by \`1e593551341d9006f5e0ed5443293efacaadec3a\`, green [42265403428](https://github.com/SakibShahariar/adwisp/actions/runs/42265403428). |
+| \`25669e324d4a93610e617dcbb9691f9f33afbe69\` | test(shutdown): cover missing thumbfast adapter (#24) | red | [42265220602](https://github.com/SakibShahariar/adwisp/actions/runs/42265220602) | Same invalid-message fixture setup failure; pointer correction landed in \`1e593551341d9006f5e0ed5443293efacaadec3a\`. |
+| \`1e593551341d9006f5e0ed5443293efacaadec3a\` | test(thumbfast): position pointer for lifecycle cases (#11) | green | [42265403428](https://github.com/SakibShahariar/adwisp/actions/runs/42265403428) | Corrected preview fixture coordinates. |
+| \`3f59679ed32df1ac4def18a6e374c9ae8acd0a39\` | test(thumbfast): cover OSD dismissal cleanup (#11) | red | [42265517461](https://github.com/SakibShahariar/adwisp/actions/runs/42265517461) | Dismissal fixture attempted to preview while the OSD was hidden; corrected by showing the OSD and positioning the pointer in \`97749c25151b3b9c7e29582459c711cd5d641944\`. |
+| \`85b8e7250aaae1cb1a8e6a4c91990309327866ef\` | feat(audio): add output device selection menu (#46) | red | [42265843878](https://github.com/SakibShahariar/adwisp/actions/runs/42265843878) | Inherited the dismissal-fixture failure; corrected in the same follow-up. |
+| \`97749c25151b3b9c7e29582459c711cd5d641944\` | test(thumbfast): show OSD before dismissal fixture (#11) | green | [42265904895](https://github.com/SakibShahariar/adwisp/actions/runs/42265904895) | Verified thumbfast lifecycle/shutdown tests and audio-device implementation. |
+| \`24dd86511c086025f73a394abe6ffc7db7b19e9a\` | docs(audio): clarify configured output device state (#46) | green | [42266098458](https://github.com/SakibShahariar/adwisp/actions/runs/42266098458) | Documented configured-target versus actual backend endpoint limitation. |
+| \`428dc7fb5d697490add2930ba650594af80bfcb3\` | feat(timeline): add optional minimal progress mode (#45) | red | [42266619196](https://github.com/SakibShahariar/adwisp/actions/runs/42266619196) | New interaction path triggered an extra layout render in default mode; redraws were gated to minimal mode. |
+| \`76c4a1ed00b9934076b0b3344dc1015c493e0cb9\` | test(timeline): keep renderer counters stable (#45) | red | [42266719540](https://github.com/SakibShahariar/adwisp/actions/runs/42266719540) | Same default-mode cache regression; follow-up cache/render fixes are in \`80e625e4a843c38b78afeca2d5c2710f47897fa4\` and \`70e547672bec5ccd7ffffaac01df5a0b0d6ca643\`. |
+| \`80e625e4a843c38b78afeca2d5c2710f47897fa4\` | fix(timeline): preserve default layout cache (#45) | red | [42266782626](https://github.com/SakibShahariar/adwisp/actions/runs/42266782626) | Cache state was preserved, but click/drag redraws still ran outside minimal mode; corrected in \`70e547672bec5ccd7ffffaac01df5a0b0d6ca643\`. |
+| \`5865c61900ba7200618783b086b54a05769ae451\` | test(timeline): cover minimal geometry across window sizes (#45) | red | [42266882229](https://github.com/SakibShahariar/adwisp/actions/runs/42266882229) | Same default-mode cache regression; corrected in \`70e547672bec5ccd7ffffaac01df5a0b0d6ca643\`. |
+| \`825f79de31b768a4c2aa67209336ba0296b65336\` | ci: use runner Lua 5.2 packages for stable setup | red | [42266996199](https://github.com/SakibShahariar/adwisp/actions/runs/42266996199) | LuaRocks could not locate Lua headers; explicit \`LUA_INCDIR=/usr/include/lua5.2\` and \`--lua-dir=/usr\` added in \`b9281577b6a69036ea3b57b3ee0964f2f9a977a2\`. |
+| \`70e547672bec5ccd7ffffaac01df5a0b0d6ca643\` | fix(timeline): avoid redraws outside minimal mode (#45) | red | [42267061183](https://github.com/SakibShahariar/adwisp/actions/runs/42267061183) | Code fix was present, but the same Lua header setup failure prevented checks; verified in the later green run. |
+| \`b9281577b6a69036ea3b57b3ee0964f2f9a977a2\` | ci: point LuaRocks at Lua 5.2 headers | red | [42267158185](https://github.com/SakibShahariar/adwisp/actions/runs/42267158185) | Static checks passed; focus test retained a prior playback focus target and expected the wrong cycle position. Test now resets focus before navigation. |
+| \`63f0b8acc7e0e942ddcf77f09daaac75e1545b28\` | test(timeline): reset focus before navigation assertions (#45) | green | [42267262610](https://github.com/SakibShahariar/adwisp/actions/runs/42267262610) | Final timeline implementation, layout matrix, renderer, interaction tests, and updated Lua 5.2 CI setup all passed. |
 
 ## Historical red-cross investigation
 
@@ -67,12 +90,7 @@ The five pre-session historical red entries have later corrective/test commits w
 
 ## Current pending CI obligations
 
-- Commit: `522dba926fddb34463d38061281b4cad2e8f644d`
-- Run: [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543)
-- Observed state: in progress; the only active step is **Set up Lua**.
-- Logs: unavailable while the job is in progress.
-- Classification: pending / inconclusive; no code failure is established.
-- Next action: recheck this exact run and record its terminal result before treating the commit as verified.
+- None at checkpoint `63f0b8acc7e0e942ddcf77f09daaac75e1545b28`. All reviewed runs in this range reached a terminal state.
 
 ## Session history
 
@@ -80,4 +98,5 @@ The five pre-session historical red entries have later corrective/test commits w
 |---|---|---|
 | 2026-11-02 | Initial checkpoint: `107549915369fa46dab2c2bceab25b2102f820f8` | Combined status lookup returned no entries; result recorded as unavailable. |
 | 2026-11-06 | `107549915369fa46dab2c2bceab25b2102f820f8` through `9c8ac16ec6a04dd842c18f4ffad4840f30b83d49` | All eight commits green. Investigated five older red runs and recorded their later green corrections. |
-| 2026-11-06 | `9c8ac16ec6a04dd842c18f4ffad4840f30b83d49` through `400f463b87b6e4c8e0e637a16190193ab3b0492d` | Five commits green; one test-only red was corrected by a later green commit; one ledger commit remains pending at Set up Lua. Release workflow now runs BMP tests and checks every core module in the archive. |
+| 2026-11-06 | `9c8ac16ec6a04dd842c18f4ffad4840f30b83d49` through `400f463b87b6e4c8e0e637a16190193ab3b0492d` | Five commits green; one test-only red was corrected by a later green commit; the ledger commit was initially pending and later passed on rerun. Release workflow now runs BMP tests and checks every core module in the archive. |
+| 2026-11-06 | `400f463b87b6e4c8e0e637a16190193ab3b0492d` through `63f0b8acc7e0e942ddcf77f09daaac75e1545b28` | Five commits green; eleven red attempts diagnosed and corrected by later commits. Thumbfast lifecycle, audio-device selection, minimal timeline, and the Lua 5.2 CI setup have final green verification. |
