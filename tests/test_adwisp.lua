@@ -968,6 +968,20 @@ assert_equal(observed_state.preview_visible, false,
     "ending a file should clear its thumbnail")
 assert_equal(commands[#commands][3], "clear",
     "ending a file should notify thumbfast to clear its preview")
+
+thumbfast_payload = {
+    width = 160, height = 90, disabled = false, available = true,
+    thumbnail = "/tmp/adwisp-preview-dismiss",
+}
+script_messages["thumbfast-info"]("{}")
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(observed_state.preview_visible, true,
+    "dismissal setup should activate a preview")
+script_messages["adwisp-hide"]()
+assert_equal(observed_state.preview_visible, false,
+    "dismissing the OSD should clear its thumbnail")
+assert_equal(commands[#commands][3], "clear",
+    "dismissing the OSD should notify thumbfast to clear its preview")
 script_messages["adwisp-show"]()
 
 -- Export a real one-pixel thumbfast BGRA fixture through the public shortcut.
