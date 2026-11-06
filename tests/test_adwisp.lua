@@ -918,6 +918,8 @@ assert_true(overlays[1].data:find("0:30", 1, true) == nil,
     "leaving the timeline should hide the preview timestamp")
 
 -- Invalid adapter messages must clear an active preview and disable future requests.
+mouse_x = hover_layout.timeline.x + hover_layout.timeline.width / 2
+mouse_y = hover_layout.timeline.y
 thumbfast_payload = {
     width = 160, height = 90, disabled = false, available = true,
     thumbnail = "/tmp/adwisp-preview-invalid",
