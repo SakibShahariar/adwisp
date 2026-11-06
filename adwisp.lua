@@ -937,8 +937,13 @@ for _, observer in ipairs(observers) do
     local property, property_type, apply = observer[1], observer[2], observer[3]
     mp.observe_property(property, property_type, function(_, value)
         apply(value)
-        -- Property changes can alter hit-test visibility without pointer motion.
-        last_mouse_x, last_mouse_y = nil, nil
+        -- Invalidate the pointer cache only when a property can change
+        -- hit-test eligibility. Playback position and presentation-only state
+        -- updates must not turn a stationary pointer into repeated hit-test work.
+        if property == "duration" or property == "playlist"
+            or property == "playlist-count" then
+            last_mouse_x, last_mouse_y = nil, nil
+        end
         if property ~= "time-pos" then
             log_debug("property " .. property .. " updated")
         end
