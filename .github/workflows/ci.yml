@@ -27,7 +27,7 @@ jobs:
 
       - name: Install luacheck
         run: |
-          luarocks --lua-version=5.2 install --local luacheck
+          LUA_INCDIR=/usr/include/lua5.2 luarocks --lua-version=5.2 --lua-dir=/usr install --local luacheck
           eval "$(luarocks --lua-version=5.2 path)"
           echo "LUA_PATH=$LUA_PATH" >> "$GITHUB_ENV"
           echo "LUA_CPATH=$LUA_CPATH" >> "$GITHUB_ENV"
