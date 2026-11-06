@@ -1,0 +1,126 @@
+# Usage
+
+This guide covers Adwisp's keyboard and mouse controls, configuration, and script-message interface.
+
+## Controls
+
+### Keyboard
+
+| Input | Action |
+| --- | --- |
+| `g` | Toggle the interface |
+| `q` | Dismiss the interface |
+| `Escape` | Close an open selection menu; otherwise dismiss the interface |
+| `Left` / `Right` | Seek by `seek_step` seconds |
+| `Space` | Toggle playback pause |
+| `m` | Toggle mute |
+| `Ctrl+Left` / `Ctrl+Right` | Previous / next playlist item |
+| `Ctrl+Page Up` / `Ctrl+Page Down` | Previous / next chapter |
+| `Ctrl+Alt+F8` | Open the searchable chapter menu |
+| `Ctrl+Alt+F5` | Cycle audio tracks |
+| `Ctrl+Alt+F6` | Cycle subtitle tracks, including Off |
+| `Ctrl+Alt+F9` | Open the audio-output device menu |
+| `Ctrl+Alt+F10` | Open the audio track menu |
+| `Ctrl+Alt+F11` | Open the subtitle track menu |
+| `Ctrl+Alt+F12` | Open the playlist menu |
+| `Ctrl+Alt+Up` / `Ctrl+Alt+Down` | Adjust playback speed |
+| `Ctrl+Alt+Backspace` | Reset playback speed to 1× |
+| `Ctrl+Alt+L` | Toggle infinite file looping |
+| `Ctrl+Alt+A` | Cycle A-B loop points: set A, set B, clear |
+| `Ctrl+Alt+S` | Take an mpv screenshot |
+| `Ctrl+Alt+F7` | Export the visible thumbfast preview as BMP |
+| `Ctrl+Up` / `Ctrl+Down` | Adjust volume |
+
+The chapter, audio-track, subtitle-track, and playlist menus support numbered selection with `Ctrl+Alt+1–9`. Playlist items can also be removed with `Ctrl+Alt+Shift+1–9`. While a menu is open, type to filter its entries; use Up/Down and Enter to navigate and select. Chapter search matches titles and timestamps; track search matches displayed language, title, and codec; playlist search matches title and filename. Use Ctrl+Backspace to clear a search. If text input is unsupported by the mpv build, numbered selection remains available.
+
+The chapter, audio, subtitle, and playlist menus can be paged with `Ctrl+Alt+Page Up` and `Ctrl+Alt+Page Down` when additional results exist.
+
+### Focus and mouse
+
+- `Tab` / `Shift+Tab` moves keyboard focus between playback, volume, and playlist controls.
+- `Enter` activates the focused control.
+- Left/Right adjusts volume or moves through the playlist when those controls are focused; otherwise, they seek.
+- Hovering or focusing the timeline expands it when `minimal_timeline=yes`.
+- Click the timeline to seek, the playback control to pause/resume, or the volume bar to set volume.
+- Drag the timeline or volume bar for continuous adjustment.
+- Click the left/right playlist controls to move between items.
+
+Keyboard focus uses the active theme accent.
+
+The audio-output menu reads mpv's `audio-device-list` and `audio-device` properties. Its selected marker represents the configured/requested target, not necessarily the physical endpoint currently in use. Available device names depend on the active audio backend.
+
+Mouse and OSD behavior can vary with mpv configuration and platform. Include your mpv version and relevant logs when reporting issues.
+
+## Configuration
+
+Adwisp uses mpv's standard script options. Edit `script-opts/adwisp.conf` in your mpv configuration directory. The repository's [default configuration](../script-opts/adwisp.conf) documents every option.
+
+Core bindings can be remapped independently. Duplicate Adwisp bindings are detected; the later action falls back to its default.
+
+| Option | Purpose | Default |
+| --- | --- | --- |
+| `seek_step` | Seek distance in seconds | `5` |
+| `volume_step` | Volume change per shortcut | `5` |
+| `speed_step` | Playback-speed change per shortcut | `0.1` |
+| `thumbnail_preview` | Enable the thumbfast adapter | `yes` |
+| `minimal_timeline` | Collapse the timeline until hovered/focused | `no` |
+| `osd_position` | OSD placement: bottom, top, or custom | `bottom` |
+| `font_family` / `font_scale` | Font and relative scale | `Sans` / `1.0` |
+| `idle_hide_timeout` | Hide after inactivity; 0 disables it | `0` |
+| `fade_duration` | OSD fade duration in seconds | `0.25` |
+| `log_level` | Logging verbosity: quiet, info, or debug | `info` |
+| `theme_file` | Absolute path to a semantic palette file | empty |
+
+### Theme palette
+
+Set `theme_file` to an absolute path to a UTF-8 key/value file:
+
+```ini
+background=#1d1a20
+surface=#29252d
+text=#f5eff7
+muted=#cac3cf
+accent=#d0bcff
+on_accent=#381e72
+```
+
+Supported roles are `background`, `surface`, `text`, `muted`, `accent`, and `on_accent`. Values must be six-digit `#RRGGBB` colors; keys are case-sensitive. Invalid entries produce line-specific warnings. Valid entries still load, while missing roles use the fallback palette. See [Theming and Matugen](THEMING.md) for details.
+
+After regenerating a palette, reload it without restarting mpv:
+
+```text
+/script-message adwisp-reload-theme
+```
+
+### Thumbnail previews
+
+Install [thumbfast](https://github.com/po5/thumbfast) as an mpv script and keep `thumbnail_preview=yes`. Adwisp requests previews while the pointer is over the timeline and asks thumbfast to clear them when appropriate.
+
+Press `Ctrl+Alt+F7` while a preview is visible to export it as a BMP image. The configured export directory must already exist. Preview and export features are unavailable when thumbfast is absent. This integration still needs manual validation in a real mpv session.
+
+## Script-message API
+
+Other mpv scripts and external controllers can send these messages to Adwisp. Each message takes no arguments; unexpected arguments are rejected with a warning and do not change the interface state.
+
+| Message | Action |
+| --- | --- |
+| `adwisp-show` | Show the OSD |
+| `adwisp-hide` | Hide the OSD and clear active interaction/preview state |
+| `adwisp-toggle` | Toggle OSD visibility |
+| `adwisp-reload-theme` | Reload the configured theme |
+| `adwisp-query` | Print a JSON snapshot of the current UI/playback state to mpv's log |
+
+From another mpv Lua script:
+
+```lua
+mp.commandv("script-message-to", "adwisp", "adwisp-show")
+mp.commandv("script-message-to", "adwisp", "adwisp-query")
+```
+
+From mpv's command line:
+
+```sh
+mpv --script-message adwisp-show
+```
+
+The query response includes visibility, pause state, playback position and duration, volume and mute state, playlist position/count, and cache-buffering state/progress. It is printed even when `log_level=quiet`; other informational and debug messages still follow the configured logging level.
