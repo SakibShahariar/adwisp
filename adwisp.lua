@@ -1185,8 +1185,17 @@ open_playlist_menu = function(offset, query, selected_source_index)
     end
 
     local function add_search_binding(key, name, callback)
+        if type(mp.add_forced_key_binding) ~= "function" then
+            return false
+        end
+        local ok, err = pcall(mp.add_forced_key_binding, key, name, callback, { complex = true })
+        if not ok then
+            mp.msg.warn("Adwisp: unable to register playlist menu key " .. key
+                .. ": " .. tostring(err))
+            return false
+        end
         track_menu_binding_names[#track_menu_binding_names + 1] = name
-        mp.add_forced_key_binding(key, name, callback, { complex = true })
+        return true
     end
     local function current_source_index()
         return playlist_search_source_index(active_playlist_menu)
@@ -1200,7 +1209,8 @@ open_playlist_menu = function(offset, query, selected_source_index)
         return type(event) == "table" and event.event == "down"
     end
 
-    add_search_binding("ANY_UNICODE", "adwisp-playlist-menu-search-input", function(event)
+    local text_input_available = add_search_binding(
+        "ANY_UNICODE", "adwisp-playlist-menu-search-input", function(event)
         if not is_key_down(event) then return end
         local key_name = type(event.key_name) == "string" and event.key_name:upper() or ""
         if key_name:find("CTRL", 1, true) or key_name:find("ALT", 1, true)
@@ -1249,6 +1259,9 @@ open_playlist_menu = function(offset, query, selected_source_index)
         local index = math.min(#menu.results, menu.selected_index + 1)
         open_playlist_menu(0, menu.query, menu.results[index].index)
     end)
+    if not text_input_available then
+        lines[#lines + 1] = "Text filtering is unavailable on this mpv build"
+    end
 
     track_menu_timer = mp.add_timeout(8, clear_track_menu)
     note_activity()

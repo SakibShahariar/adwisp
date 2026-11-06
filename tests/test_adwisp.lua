@@ -455,6 +455,19 @@ assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil,
     "Escape should close the playlist menu and remove temporary search bindings")
 assert_equal(observed_state.playlist_items[1].title, "Arrival",
     "searching must not mutate mpv's playlist data")
+
+local original_forced_binding = mp.add_forced_key_binding
+mp.add_forced_key_binding = function(key, name, callback, flags)
+    if key == "ANY_UNICODE" then error("unsupported pseudo-key") end
+    return original_forced_binding(key, name, callback, flags)
+end
+key_bindings["adwisp-playlist-menu"].callback()
+assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil
+    and commands[#commands][2]:find("Text filtering is unavailable", 1, true) ~= nil,
+    "unsupported ANY_UNICODE should not break the playlist menu")
+key_bindings["adwisp-playlist-menu-search-escape"].callback({ event = "down" })
+mp.add_forced_key_binding = original_forced_binding
+
 observers["playlist"].callback("playlist", {})
 observers["playlist-pos"].callback("playlist-pos", -1)
 
