@@ -1291,5 +1291,20 @@ pending_position_timer.callback()
 assert_equal(overlays[1].update_count, updates_before_shutdown + 1,
     "a stale playback timer must not redraw after shutdown")
 
+-- Shutdown must also be safe when the optional thumbfast adapter is unavailable.
+thumbfast_payload = nil
+script_messages["thumbfast-info"]("{}")
+local commands_before_shutdown_without_thumbfast = #commands
+events["shutdown"]()
+assert_equal(observed_state.visible, false,
+    "shutdown without thumbfast should leave the OSD hidden")
+assert_equal(overlays[1].data, "",
+    "shutdown without thumbfast should leave the overlay cleared")
+for index = commands_before_shutdown_without_thumbfast + 1, #commands do
+    assert_true(not (commands[index][1] == "script-message-to"
+        and commands[index][2] == "thumbfast" and commands[index][3] == "clear"),
+        "shutdown without thumbfast should not send adapter commands")
+end
+
 
 print("All mocked mpv API tests passed.")
