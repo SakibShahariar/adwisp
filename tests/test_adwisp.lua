@@ -1049,6 +1049,9 @@ assert_equal(observed_state.preview_visible, false,
 assert_equal(commands[#commands][3], "clear",
     "ending a file should notify thumbfast to clear its preview")
 
+script_messages["adwisp-show"]()
+mouse_x = hover_layout.timeline.x + hover_layout.timeline.width / 2
+mouse_y = hover_layout.timeline.y
 thumbfast_payload = {
     width = 160, height = 90, disabled = false, available = true,
     thumbnail = "/tmp/adwisp-preview-dismiss",
