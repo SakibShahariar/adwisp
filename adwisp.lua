@@ -124,6 +124,7 @@ local track_menu_binding_names = {}
 local track_menu_timer
 
 local function clear_track_menu()
+    local had_menu = active_track_menu ~= nil or active_playlist_menu ~= nil
     for _, name in ipairs(track_menu_binding_names) do
         if type(mp.remove_key_binding) == "function" then
             mp.remove_key_binding(name)
@@ -136,6 +137,7 @@ local function clear_track_menu()
     track_menu_timer = nil
     active_track_menu = nil
     active_playlist_menu = nil
+    if had_menu then mp.commandv("show-text", "", 0) end
 end
 
 local function clear_interaction_state()
@@ -1301,9 +1303,10 @@ open_playlist_menu = function(offset, query, selected_source_index)
         lines[#lines + 1] = "Text filtering is unavailable on this mpv build"
     end
 
-    track_menu_timer = mp.add_timeout(8, clear_track_menu)
+    -- Keep the playlist view open until dismissed or the playlist changes.
+    track_menu_timer = nil
     note_activity()
-    mp.commandv("show-text", table.concat(lines, "\n"), 8000)
+    mp.commandv("show-text", table.concat(lines, "\n"), -1)
 end
 
 local function open_track_menu(kind, query, selected_source_id)
@@ -1891,6 +1894,10 @@ mp.add_key_binding("CTRL+ALT+F11", "adwisp-subtitle-menu", function()
     open_track_menu("subtitle")
 end)
 mp.add_key_binding("CTRL+ALT+F12", "adwisp-playlist-menu", function()
+    if active_playlist_menu then
+        clear_track_menu()
+        return
+    end
     open_playlist_menu(0)
 end)
 register_configurable_key_binding("volume_up_key", "adwisp-volume-up", function()

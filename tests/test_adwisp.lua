@@ -388,7 +388,12 @@ observers["playlist"].callback("playlist", {
 observers["playlist-pos"].callback("playlist-pos", 1)
 assert_equal(observed_state.playlist_items[2].filename, "/media/nocturne.mkv",
     "playlist state should retain filenames for metadata filtering")
+local timers_before_playlist_view = #timers
 key_bindings["adwisp-playlist-menu"].callback()
+assert_equal(#timers, timers_before_playlist_view,
+    "the playlist view should not schedule an auto-close timer")
+assert_equal(commands[#commands][3], -1,
+    "the playlist view should remain visible until explicitly dismissed")
 assert_true(key_bindings["adwisp-playlist-menu-search-input"] ~= nil
     and key_bindings["adwisp-playlist-menu-search-input"].key == "ANY_UNICODE",
     "playlist menu should register forced text input while open")
@@ -454,6 +459,13 @@ assert_true(commands[#commands][2]:find("No matching playlist items", 1, true) ~
 key_bindings["adwisp-playlist-menu-search-escape"].callback({ event = "down" })
 assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil,
     "Escape should close the playlist menu and remove temporary search bindings")
+key_bindings["adwisp-playlist-menu"].callback()
+key_bindings["adwisp-playlist-menu"].callback()
+assert_true(key_bindings["adwisp-playlist-menu-search-input"] ~= nil,
+    "the playlist shortcut should reopen a dismissed view")
+key_bindings["adwisp-playlist-menu"].callback()
+assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil,
+    "the playlist shortcut should toggle the view closed")
 assert_equal(observed_state.playlist_items[1].title, "Arrival",
     "searching must not mutate mpv's playlist data")
 
