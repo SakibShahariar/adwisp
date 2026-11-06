@@ -647,6 +647,9 @@ key_bindings["adwisp-chapter-menu-search-escape"].callback({ event = "down" })
 observers["chapter-list"].callback("chapter-list", {})
 observers.chapter.callback("chapter", -1)
 
+observers["playlist"].callback("playlist", {
+    { title = "Fallback item", filename = "/media/fallback.mkv" },
+})
 local original_forced_binding = mp.add_forced_key_binding
 mp.add_forced_key_binding = function(key, name, callback, flags)
     if key == "ANY_UNICODE" then error("unsupported pseudo-key") end
