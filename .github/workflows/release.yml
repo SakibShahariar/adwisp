@@ -60,7 +60,7 @@ jobs:
             scripts/adwisp/core/state.lua \
             scripts/adwisp/core/theme.lua \
             script-opts/adwisp.conf; do
-            printf '%s\\n' "$archive_contents" | grep -Fx "$path"
+            printf '%s\n' "$archive_contents" | grep -Fx "$path"
           done
 
       - name: Publish GitHub release
