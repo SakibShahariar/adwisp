@@ -642,6 +642,11 @@ observers["audio-device-list"].callback("audio-device-list", nil)
 key_bindings["adwisp-audio-device-menu"].callback()
 assert_true(commands[#commands][2]:find("no audio output devices", 1, true) ~= nil,
     "a missing device list should be handled safely")
+observers["chapter-list"].callback("chapter-list", {
+    { title = "Opening", time = 0 },
+    { title = "Middle", time = 60 },
+})
+observers.chapter.callback("chapter", 1)
 local commands_before_chapters = #commands
 key_bindings["adwisp-chapter-prev"].callback()
 assert_equal(commands[#commands][1], "add", "previous chapter should use mpv chapter command")
