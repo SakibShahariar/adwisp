@@ -288,6 +288,34 @@ local function test_minimal_timeline_geometry()
         "expanded timeline should restore labels and normal geometry")
     assert_equal(expanded.timeline.hit_y, collapsed.timeline.hit_y,
         "expansion should not move the hit target")
+
+    for _, size in ipairs({
+        { 120, 120 }, { 160, 180 }, { 320, 240 }, { 640, 360 }, { 1280, 720 },
+    }) do
+        local width, height = size[1], size[2]
+        local compact_layout = Layout.compute(width, height, { minimal_timeline = true })
+        local expanded_layout = Layout.compute(width, height, {
+            minimal_timeline = true,
+            timeline_expanded = true,
+        })
+        assert_equal(compact_layout.timeline.height, 2,
+            "minimal timeline should remain thin at " .. width .. "x" .. height)
+        assert_equal(expanded_layout.timeline.height, 6,
+            "expanded timeline should restore its height at " .. width .. "x" .. height)
+        assert_equal(compact_layout.timeline.x, expanded_layout.timeline.x,
+            "expansion should preserve horizontal position at " .. width .. "x" .. height)
+        assert_equal(compact_layout.timeline.width, expanded_layout.timeline.width,
+            "expansion should preserve width at " .. width .. "x" .. height)
+        assert_equal(compact_layout.timeline.hit_y, expanded_layout.timeline.hit_y,
+            "expansion should preserve hit-test origin at " .. width .. "x" .. height)
+        assert_equal(compact_layout.timeline.hit_height, expanded_layout.timeline.hit_height,
+            "expansion should preserve hit target height at " .. width .. "x" .. height)
+        assert_true(compact_layout.timeline.hit_x >= compact_layout.panel.x
+            and compact_layout.timeline.hit_x + compact_layout.timeline.hit_width
+                <= compact_layout.panel.x + compact_layout.panel.width,
+            "minimal timeline hit target should remain inside the panel at "
+                .. width .. "x" .. height)
+    end
 end
 
 test_layout_rectangles()
