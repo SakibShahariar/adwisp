@@ -1189,8 +1189,8 @@ open_playlist_menu = function(offset, query, selected_source_index)
             local selected = menu and menu.results[filtered_index]
             if not selected then return end
             note_activity()
-            mp.commandv("set", "playlist-pos", selected.index - 1)
             clear_track_menu()
+            mp.commandv("set", "playlist-pos", selected.index - 1)
             mp.commandv("show-text", "Adwisp: playing " .. selected.item.title, 2500)
         end)
 
@@ -1201,8 +1201,8 @@ open_playlist_menu = function(offset, query, selected_source_index)
             local selected = menu and menu.results[filtered_index]
             if not selected then return end
             note_activity()
-            mp.commandv("playlist-remove", selected.index - 1)
             clear_track_menu()
+            mp.commandv("playlist-remove", selected.index - 1)
             mp.commandv("show-text", "Adwisp: removed " .. selected.item.title, 2500)
         end)
     end
@@ -1281,8 +1281,8 @@ open_playlist_menu = function(offset, query, selected_source_index)
         local selected = menu and menu.results[menu.selected_index]
         if not selected then return end
         note_activity()
-        mp.commandv("set", "playlist-pos", selected.index - 1)
         clear_track_menu()
+        mp.commandv("set", "playlist-pos", selected.index - 1)
         mp.commandv("show-text", "Adwisp: playing " .. selected.item.title, 2500)
     end)
     add_search_binding("UP", "adwisp-playlist-menu-search-up", function(event)
