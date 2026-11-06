@@ -124,7 +124,7 @@ local track_menu_binding_names = {}
 local track_menu_timer
 
 local function clear_track_menu()
-    local had_menu = active_track_menu ~= nil or active_playlist_menu ~= nil
+    local had_playlist_menu = active_playlist_menu ~= nil
     for _, name in ipairs(track_menu_binding_names) do
         if type(mp.remove_key_binding) == "function" then
             mp.remove_key_binding(name)
@@ -137,7 +137,7 @@ local function clear_track_menu()
     track_menu_timer = nil
     active_track_menu = nil
     active_playlist_menu = nil
-    if had_menu then mp.commandv("show-text", "", 0) end
+    if had_playlist_menu then mp.commandv("show-text", "", 0) end
 end
 
 local function clear_interaction_state()
