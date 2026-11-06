@@ -24,9 +24,9 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `d075bf7dc70f23083ad42c06fa9c404a57b1df1e`
+- Reviewed checkpoint SHA: `7595691120ec768be21fe9fcaca4d221118f9ded`
 - Reviewed: 2026-11-06
-- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `d075bf7dc70f23083ad42c06fa9c404a57b1df1e`
+- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `7595691120ec768be21fe9fcaca4d221118f9ded`
 - Result: all commits through the checkpoint have terminal CI results. The follow-up range contains five green commits and eleven red attempts, all diagnosed and corrected by later commits; the final timeline commit is green.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: review this ledger update commit and any newer exact-SHA runs; retain all red history.
@@ -121,6 +121,18 @@ All commits below were reviewed against their exact-SHA workflow run. Failed att
 | `7cdc95b8c7049cd97e9abee799fe3656b02576ca` | test(renderer): compare unchanged render against baseline (#34) | green | [42274032730](https://github.com/SakibShahariar/adwisp/actions/runs/42274032730) | Full Lua syntax, Luacheck, and unit-test suite passed with the persistent responsive playlist panel and wheel navigation. |
 | `d075bf7dc70f23083ad42c06fa9c404a57b1df1e` | docs(playlist): clarify panel toggle and idle behavior (#34) | green | [42274148294](https://github.com/SakibShahariar/adwisp/actions/runs/42274148294) | Documented the actual Ctrl+Alt+F12 toggle and clarified that the configured global idle-hide timeout still applies. |
 
+## Follow-up review through the recent-history checkpoint
+
+| Commit SHA | Subject | CI result | Run | Diagnosis / resolution |
+|---|---|---|---|---|
+| `dac568753aa98a501e1f6674ee59685a5fb81995` | docs(ci): record persistent playlist panel verification | green | [42274376106](https://github.com/SakibShahariar/adwisp/actions/runs/42274376106) | Recorded the persistent playlist panel's full green test result and earlier corrected attempts. |
+| `3afe8e019a0a69047ebcd5ab3b19477e658c9639` | feat(history): add opt-in local recent-file store (#38) | red | [42274729192](https://github.com/SakibShahariar/adwisp/actions/runs/42274729192) | Luacheck found an unused fixture argument in the new history test; the integration commit inherited the warning. |
+| `405e377a04c242c896ebc5b9add9fe1356a243a3` | feat(history): add opt-in recent-files menu (#38) | red | [42275047895](https://github.com/SakibShahariar/adwisp/actions/runs/42275047895) | Same Luacheck warning blocked tests; corrected in the fixture follow-up. |
+| `278ba420f758f434f7054b0638552b8ab2d6e69f` | fix(history): sanitize path-like titles and lint fixture (#38) | red | [42275179946](https://github.com/SakibShahariar/adwisp/actions/runs/42275179946) | Fixture edit removed the required `file_info(path)` parameter while leaving an unused `open(path)` parameter; both were corrected in `c90b4e098c5c6455eb41bc9ae938e11905985aca`. |
+| `c90b4e098c5c6455eb41bc9ae938e11905985aca` | test(history): correct file fixture arguments (#38) | green | [42275400103](https://github.com/SakibShahariar/adwisp/actions/runs/42275400103) | Luacheck and all unit tests passed after correcting the fake file API signatures. |
+| `344175780fc87e1cfc6f06ca779ed6f9fcaff1db` | test(history): cover recent menu and file-loaded integration (#38) | green | [42275525154](https://github.com/SakibShahariar/adwisp/actions/runs/42275525154) | Mocked mpv tests cover recent-panel rendering, wheel selection, reopening, clear actions, local file recording, and network URL rejection. |
+| `7595691120ec768be21fe9fcaca4d221118f9ded` | docs(history): document recent menu and script messages (#38) | green | [42275677126](https://github.com/SakibShahariar/adwisp/actions/runs/42275677126) | Documented the recent-history controls, privacy defaults, and script-message API; full CI remained green. |
+
 ## Historical red-cross investigation
 
 These failures predate the checkpoint above. They were discovered by inspecting the actual workflow jobs and logs, not inferred from commit badges.
@@ -137,9 +149,11 @@ The five pre-session historical red entries have later corrective/test commits w
 
 ## Current pending CI obligations
 
-- None at checkpoint `d075bf7dc70f23083ad42c06fa9c404a57b1df1e`. All reviewed runs in this range reached a terminal state.
+- None at checkpoint `7595691120ec768be21fe9fcaca4d221118f9ded`. All reviewed runs in this range reached a terminal state.
 
 ## Session history
+
+| 2026-11-06 | `d075bf7dc70f23083ad42c06fa9c404a57b1df1e` through `7595691120ec768be21fe9fcaca4d221118f9ded` | Four green commits and three red attempts diagnosed and corrected. Added opt-in local recent-file persistence, a recent-items OSD panel, safe clearing, and integration tests. Category B issue #38 still needs real-mpv validation across restarts. |
 
 | 2026-11-06 | `180e2380a9cc246b00b35e382a160d0b47a7d5a3` through `d075bf7dc70f23083ad42c06fa9c404a57b1df1e` | Four green commits and fourteen red attempts diagnosed and corrected. Added a persistent OSD playlist panel with filtering, removal, responsive paging, and wheel scrolling; all menu/renderer tests now pass. Category B issue #34 still needs real-mpv visual validation. |
 
