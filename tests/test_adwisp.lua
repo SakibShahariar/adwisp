@@ -294,7 +294,7 @@ key_bindings["adwisp-playlist-menu"].callback()
 assert_true(key_bindings["adwisp-playlist-menu-next"] ~= nil,
     "long playlists should expose a next-page shortcut")
 key_bindings["adwisp-playlist-menu-next"].callback()
-assert_true(commands[#commands][2]:find("Entry 10", 1, true) ~= nil,
+assert_true(overlays[1].data:find("Entry 10", 1, true) ~= nil,
     "playlist next-page should display later entries")
 key_bindings["adwisp-playlist-menu-select-1"].callback()
 assert_equal(commands[#commands - 1][3], 9,
