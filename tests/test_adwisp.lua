@@ -656,6 +656,7 @@ local calls_after_duration_update = osd_size_calls
 key_bindings["adwisp-mouse-move"].callback()
 assert_equal(osd_size_calls, calls_after_duration_update + 1,
     "duration updates should invalidate the pointer cache")
+observers.duration.callback("duration", 60)
 
 mp.get_osd_size = original_get_osd_size
 
