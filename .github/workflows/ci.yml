@@ -54,3 +54,4 @@ jobs:
           lua5.2 tests/test_bmp.lua
           lua5.2 tests/test_menu_filter.lua
           lua5.2 tests/test_recent_history.lua
+          lua5.2 tests/test_i18n.lua
