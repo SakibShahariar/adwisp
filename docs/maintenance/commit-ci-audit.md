@@ -24,9 +24,9 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `a6f332974e63a9291945b79b9aaf9cd2acf99572`
+- Reviewed checkpoint SHA: `180e2380a9cc246b00b35e382a160d0b47a7d5a3`
 - Reviewed: 2026-11-06
-- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `a6f332974e63a9291945b79b9aaf9cd2acf99572`
+- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `180e2380a9cc246b00b35e382a160d0b47a7d5a3`
 - Result: all commits through the checkpoint have terminal CI results. The follow-up range contains five green commits and eleven red attempts, all diagnosed and corrected by later commits; the final timeline commit is green.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: review this ledger update commit and any newer exact-SHA runs; retain all red history.
@@ -91,6 +91,13 @@ All commits below were reviewed against their exact-SHA workflow run. Failed att
 | `3f5a377dda8b16e0cdaedab8a7c325dd9bf6d7f2` | test(chapters): restore navigation fixture after search tests (#44) | green | [42270482922](https://github.com/SakibShahariar/adwisp/actions/runs/42270482922) | Re-established chapter metadata/current selection before the chapter-prev/next assertions; full suite passed. |
 | `a6f332974e63a9291945b79b9aaf9cd2acf99572` | feat(image): add still-image fit and zoom controls (#47) | green | [42271159763](https://github.com/SakibShahariar/adwisp/actions/runs/42271159763) | Still-image/album-art mode detection, fit/zoom/reset command mapping, and transition tests passed. |
 
+## Follow-up review after the 2026-11-06 checkpoint (continued)
+
+| Commit SHA | Subject | CI result | Run | Diagnosis / resolution |
+|---|---|---|---|---|
+| `ef98986b0b0936a1beb56b76deb7261ebf8dcfab` | docs(ci): record menu, image, and README verification | green | [42271309768](https://github.com/SakibShahariar/adwisp/actions/runs/42271309768) | Updated the audit ledger with the final menu, README, and image-control CI outcomes. |
+| `180e2380a9cc246b00b35e382a160d0b47a7d5a3` | test(input): cover pointer cache invalidation events (#10) | green | [42271481971](https://github.com/SakibShahariar/adwisp/actions/runs/42271481971) | Added mocked invalidation checks for playlist content/count, OSD dimensions, video reconfiguration, and thumbfast metadata; full suite passed. |
+
 ## Historical red-cross investigation
 
 These failures predate the checkpoint above. They were discovered by inspecting the actual workflow jobs and logs, not inferred from commit badges.
@@ -107,9 +114,11 @@ The five pre-session historical red entries have later corrective/test commits w
 
 ## Current pending CI obligations
 
-- None at checkpoint `a6f332974e63a9291945b79b9aaf9cd2acf99572`. All reviewed runs in this range reached a terminal state.
+- None at checkpoint `180e2380a9cc246b00b35e382a160d0b47a7d5a3`. All reviewed runs in this range reached a terminal state.
 
 ## Session history
+
+| 2026-11-06 | `a6f332974e63a9291945b79b9aaf9cd2acf99572` through `180e2380a9cc246b00b35e382a160d0b47a7d5a3` | Two green commits; updated the audit ledger and expanded mouse-cache invalidation coverage. Category B issue #10 now has its automated invalidation matrix verified; real-mpv interaction and CPU measurements remain open. |
 
 | 2026-11-06 | `376a4c32faf99026cfbfc6cfd0d0694b692b302b` through `a6f332974e63a9291945b79b9aaf9cd2acf99572` | Three green commits and three red attempts corrected. Added searchable audio/subtitle/chapter menus, shortened the README to a 70-line landing page with a separate usage guide, and added still-image fit/zoom/reset controls. Full CI passed on the final image-controls commit. |
 
