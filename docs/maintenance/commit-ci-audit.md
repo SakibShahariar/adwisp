@@ -24,9 +24,9 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `6130a83dc9d7c2d875b72c2779f7e6677cf6283a`
+- Reviewed checkpoint SHA: `67c19dd3948a8516afb79cebc4baeb6fec0732e6`
 - Reviewed: 2026-11-06
-- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `6130a83dc9d7c2d875b72c2779f7e6677cf6283a`
+- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `67c19dd3948a8516afb79cebc4baeb6fec0732e6`
 - Result: all commits through the checkpoint have terminal CI results. The follow-up range contains five green commits and eleven red attempts, all diagnosed and corrected by later commits; the final timeline commit is green.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: recheck the pending run above before unrelated work; retain all red and pending entries below.
@@ -73,6 +73,11 @@ All commits below were reviewed against their exact-SHA workflow run. Failed att
 | `70e547672bec5ccd7ffffaac01df5a0b0d6ca643` | fix(timeline): avoid redraws outside minimal mode (#45) | red | [42267061183](https://github.com/SakibShahariar/adwisp/actions/runs/42267061183) | Code fix was present, but the same Lua header setup failure prevented checks; verified in the later green run. |
 | `b9281577b6a69036ea3b57b3ee0964f2f9a977a2` | ci: point LuaRocks at Lua 5.2 headers | red | [42267158185](https://github.com/SakibShahariar/adwisp/actions/runs/42267158185) | Static checks passed; focus test retained a prior playback focus target and expected the wrong cycle position. Test now resets focus before navigation. |
 | `63f0b8acc7e0e942ddcf77f09daaac75e1545b28` | test(timeline): reset focus before navigation assertions (#45) | green | [42267262610](https://github.com/SakibShahariar/adwisp/actions/runs/42267262610) | Final timeline implementation, layout matrix, renderer, interaction tests, and updated Lua 5.2 CI setup all passed. |
+| `6130a83dc9d7c2d875b72c2779f7e6677cf6283a` | feat(menu): add reusable filtering model (#44) | green | [42267790730](https://github.com/SakibShahariar/adwisp/actions/runs/42267790730) | Added pure multi-token filtering and original-index mapping tests to CI and release workflows. |
+| `00d4db7ba03713b9e18a59478110861474fb4334` | feat(playlist): add type-to-filter menu search (#44) | red | [42268734304](https://github.com/SakibShahariar/adwisp/actions/runs/42268734304) | Search-clear test expected a space between current/focus markers; corrected in the following test commit. |
+| `b5bbe6c140e92ca6c3a56162e01f750d35b3dc0b` | test(playlist): cover active search selection feedback (#44) | red | [42268807469](https://github.com/SakibShahariar/adwisp/actions/runs/42268807469) | Playlist fixture leaked four items into later tests; reset playlist state in `ce8fc5a27d1adb2cbc931315c9b204e41fa14851`. |
+| `ce8fc5a27d1adb2cbc931315c9b204e41fa14851` | test(playlist): isolate search fixture from later cases (#44) | green | [42269006477](https://github.com/SakibShahariar/adwisp/actions/runs/42269006477) | Reset playlist fixtures after search tests; full suite passed. |
+| `67c19dd3948a8516afb79cebc4baeb6fec0732e6` | fix(playlist): guard unsupported text-input bindings (#44) | green | [42269143393](https://github.com/SakibShahariar/adwisp/actions/runs/42269143393) | Unsupported `ANY_UNICODE` bindings are caught; playlist menu retains fallback controls. |
 
 ## Historical red-cross investigation
 
@@ -90,7 +95,7 @@ The five pre-session historical red entries have later corrective/test commits w
 
 ## Current pending CI obligations
 
-- None at checkpoint `6130a83dc9d7c2d875b72c2779f7e6677cf6283a`. All reviewed runs in this range reached a terminal state.
+- None at checkpoint `67c19dd3948a8516afb79cebc4baeb6fec0732e6`. All reviewed runs in this range reached a terminal state.
 
 ## Session history
 
@@ -100,3 +105,4 @@ The five pre-session historical red entries have later corrective/test commits w
 | 2026-11-06 | `107549915369fa46dab2c2bceab25b2102f820f8` through `9c8ac16ec6a04dd842c18f4ffad4840f30b83d49` | All eight commits green. Investigated five older red runs and recorded their later green corrections. |
 | 2026-11-06 | `9c8ac16ec6a04dd842c18f4ffad4840f30b83d49` through `400f463b87b6e4c8e0e637a16190193ab3b0492d` | Five commits green; one test-only red was corrected by a later green commit; the ledger commit was initially pending and later passed on rerun. Release workflow now runs BMP tests and checks every core module in the archive. |
 | 2026-11-06 | `400f463b87b6e4c8e0e637a16190193ab3b0492d` through `63f0b8acc7e0e942ddcf77f09daaac75e1545b28` | Five commits green; eleven red attempts diagnosed and corrected by later commits. Thumbfast lifecycle, audio-device selection, minimal timeline, and the Lua 5.2 CI setup have final green verification. |
+| 2026-11-06 | `63f0b8acc7e0e942ddcf77f09daaac75e1545b28` through `67c19dd3948a8516afb79cebc4baeb6fec0732e6` | Three green commits and two red attempts corrected; playlist search now supports filtering, original-index selection, keyboard navigation, clear/dismiss, and safe fallback when ANY_UNICODE is unsupported. |
