@@ -455,6 +455,8 @@ assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil,
     "Escape should close the playlist menu and remove temporary search bindings")
 assert_equal(observed_state.playlist_items[1].title, "Arrival",
     "searching must not mutate mpv's playlist data")
+observers["playlist"].callback("playlist", {})
+observers["playlist-pos"].callback("playlist-pos", -1)
 
 -- Audio output devices use mpv's audio-device-list/audio-device properties.
 key_bindings["adwisp-audio-device-menu"].callback()

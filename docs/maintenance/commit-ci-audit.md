@@ -24,9 +24,9 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `63f0b8acc7e0e942ddcf77f09daaac75e1545b28`
+- Reviewed checkpoint SHA: `6130a83dc9d7c2d875b72c2779f7e6677cf6283a`
 - Reviewed: 2026-11-06
-- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `63f0b8acc7e0e942ddcf77f09daaac75e1545b28`
+- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `6130a83dc9d7c2d875b72c2779f7e6677cf6283a`
 - Result: all commits through the checkpoint have terminal CI results. The follow-up range contains five green commits and eleven red attempts, all diagnosed and corrected by later commits; the final timeline commit is green.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: recheck the pending run above before unrelated work; retain all red and pending entries below.
@@ -57,22 +57,22 @@ All commits below were reviewed against their exact-SHA workflow run. Failed att
 
 | Commit SHA | Subject | CI result | Run | Diagnosis / resolution |
 |---|---|---|---|---|
-| \`19127e7a7ec740fe7c1a8095596e4989e461bdad\` | docs(ci): checkpoint Adwisp maintenance verification | green | [42262585925](https://github.com/SakibShahariar/adwisp/actions/runs/42262585925) | Ledger checkpoint commit passed. |
-| \`64123199b0aa52766eab841cafe377a0138b65f4\` | test(thumbfast): cover lifecycle invalidation (#11) | red | [42265160731](https://github.com/SakibShahariar/adwisp/actions/runs/42265160731) | Fixture pointer remained outside the timeline; corrected by \`1e593551341d9006f5e0ed5443293efacaadec3a\`, green [42265403428](https://github.com/SakibShahariar/adwisp/actions/runs/42265403428). |
-| \`25669e324d4a93610e617dcbb9691f9f33afbe69\` | test(shutdown): cover missing thumbfast adapter (#24) | red | [42265220602](https://github.com/SakibShahariar/adwisp/actions/runs/42265220602) | Same invalid-message fixture setup failure; pointer correction landed in \`1e593551341d9006f5e0ed5443293efacaadec3a\`. |
-| \`1e593551341d9006f5e0ed5443293efacaadec3a\` | test(thumbfast): position pointer for lifecycle cases (#11) | green | [42265403428](https://github.com/SakibShahariar/adwisp/actions/runs/42265403428) | Corrected preview fixture coordinates. |
-| \`3f59679ed32df1ac4def18a6e374c9ae8acd0a39\` | test(thumbfast): cover OSD dismissal cleanup (#11) | red | [42265517461](https://github.com/SakibShahariar/adwisp/actions/runs/42265517461) | Dismissal fixture attempted to preview while the OSD was hidden; corrected by showing the OSD and positioning the pointer in \`97749c25151b3b9c7e29582459c711cd5d641944\`. |
-| \`85b8e7250aaae1cb1a8e6a4c91990309327866ef\` | feat(audio): add output device selection menu (#46) | red | [42265843878](https://github.com/SakibShahariar/adwisp/actions/runs/42265843878) | Inherited the dismissal-fixture failure; corrected in the same follow-up. |
-| \`97749c25151b3b9c7e29582459c711cd5d641944\` | test(thumbfast): show OSD before dismissal fixture (#11) | green | [42265904895](https://github.com/SakibShahariar/adwisp/actions/runs/42265904895) | Verified thumbfast lifecycle/shutdown tests and audio-device implementation. |
-| \`24dd86511c086025f73a394abe6ffc7db7b19e9a\` | docs(audio): clarify configured output device state (#46) | green | [42266098458](https://github.com/SakibShahariar/adwisp/actions/runs/42266098458) | Documented configured-target versus actual backend endpoint limitation. |
-| \`428dc7fb5d697490add2930ba650594af80bfcb3\` | feat(timeline): add optional minimal progress mode (#45) | red | [42266619196](https://github.com/SakibShahariar/adwisp/actions/runs/42266619196) | New interaction path triggered an extra layout render in default mode; redraws were gated to minimal mode. |
-| \`76c4a1ed00b9934076b0b3344dc1015c493e0cb9\` | test(timeline): keep renderer counters stable (#45) | red | [42266719540](https://github.com/SakibShahariar/adwisp/actions/runs/42266719540) | Same default-mode cache regression; follow-up cache/render fixes are in \`80e625e4a843c38b78afeca2d5c2710f47897fa4\` and \`70e547672bec5ccd7ffffaac01df5a0b0d6ca643\`. |
-| \`80e625e4a843c38b78afeca2d5c2710f47897fa4\` | fix(timeline): preserve default layout cache (#45) | red | [42266782626](https://github.com/SakibShahariar/adwisp/actions/runs/42266782626) | Cache state was preserved, but click/drag redraws still ran outside minimal mode; corrected in \`70e547672bec5ccd7ffffaac01df5a0b0d6ca643\`. |
-| \`5865c61900ba7200618783b086b54a05769ae451\` | test(timeline): cover minimal geometry across window sizes (#45) | red | [42266882229](https://github.com/SakibShahariar/adwisp/actions/runs/42266882229) | Same default-mode cache regression; corrected in \`70e547672bec5ccd7ffffaac01df5a0b0d6ca643\`. |
-| \`825f79de31b768a4c2aa67209336ba0296b65336\` | ci: use runner Lua 5.2 packages for stable setup | red | [42266996199](https://github.com/SakibShahariar/adwisp/actions/runs/42266996199) | LuaRocks could not locate Lua headers; explicit \`LUA_INCDIR=/usr/include/lua5.2\` and \`--lua-dir=/usr\` added in \`b9281577b6a69036ea3b57b3ee0964f2f9a977a2\`. |
-| \`70e547672bec5ccd7ffffaac01df5a0b0d6ca643\` | fix(timeline): avoid redraws outside minimal mode (#45) | red | [42267061183](https://github.com/SakibShahariar/adwisp/actions/runs/42267061183) | Code fix was present, but the same Lua header setup failure prevented checks; verified in the later green run. |
-| \`b9281577b6a69036ea3b57b3ee0964f2f9a977a2\` | ci: point LuaRocks at Lua 5.2 headers | red | [42267158185](https://github.com/SakibShahariar/adwisp/actions/runs/42267158185) | Static checks passed; focus test retained a prior playback focus target and expected the wrong cycle position. Test now resets focus before navigation. |
-| \`63f0b8acc7e0e942ddcf77f09daaac75e1545b28\` | test(timeline): reset focus before navigation assertions (#45) | green | [42267262610](https://github.com/SakibShahariar/adwisp/actions/runs/42267262610) | Final timeline implementation, layout matrix, renderer, interaction tests, and updated Lua 5.2 CI setup all passed. |
+| `19127e7a7ec740fe7c1a8095596e4989e461bdad` | docs(ci): checkpoint Adwisp maintenance verification | green | [42262585925](https://github.com/SakibShahariar/adwisp/actions/runs/42262585925) | Ledger checkpoint commit passed. |
+| `64123199b0aa52766eab841cafe377a0138b65f4` | test(thumbfast): cover lifecycle invalidation (#11) | red | [42265160731](https://github.com/SakibShahariar/adwisp/actions/runs/42265160731) | Fixture pointer remained outside the timeline; corrected by `1e593551341d9006f5e0ed5443293efacaadec3a`, green [42265403428](https://github.com/SakibShahariar/adwisp/actions/runs/42265403428). |
+| `25669e324d4a93610e617dcbb9691f9f33afbe69` | test(shutdown): cover missing thumbfast adapter (#24) | red | [42265220602](https://github.com/SakibShahariar/adwisp/actions/runs/42265220602) | Same invalid-message fixture setup failure; pointer correction landed in `1e593551341d9006f5e0ed5443293efacaadec3a`. |
+| `1e593551341d9006f5e0ed5443293efacaadec3a` | test(thumbfast): position pointer for lifecycle cases (#11) | green | [42265403428](https://github.com/SakibShahariar/adwisp/actions/runs/42265403428) | Corrected preview fixture coordinates. |
+| `3f59679ed32df1ac4def18a6e374c9ae8acd0a39` | test(thumbfast): cover OSD dismissal cleanup (#11) | red | [42265517461](https://github.com/SakibShahariar/adwisp/actions/runs/42265517461) | Dismissal fixture attempted to preview while the OSD was hidden; corrected by showing the OSD and positioning the pointer in `97749c25151b3b9c7e29582459c711cd5d641944`. |
+| `85b8e7250aaae1cb1a8e6a4c91990309327866ef` | feat(audio): add output device selection menu (#46) | red | [42265843878](https://github.com/SakibShahariar/adwisp/actions/runs/42265843878) | Inherited the dismissal-fixture failure; corrected in the same follow-up. |
+| `97749c25151b3b9c7e29582459c711cd5d641944` | test(thumbfast): show OSD before dismissal fixture (#11) | green | [42265904895](https://github.com/SakibShahariar/adwisp/actions/runs/42265904895) | Verified thumbfast lifecycle/shutdown tests and audio-device implementation. |
+| `24dd86511c086025f73a394abe6ffc7db7b19e9a` | docs(audio): clarify configured output device state (#46) | green | [42266098458](https://github.com/SakibShahariar/adwisp/actions/runs/42266098458) | Documented configured-target versus actual backend endpoint limitation. |
+| `428dc7fb5d697490add2930ba650594af80bfcb3` | feat(timeline): add optional minimal progress mode (#45) | red | [42266619196](https://github.com/SakibShahariar/adwisp/actions/runs/42266619196) | New interaction path triggered an extra layout render in default mode; redraws were gated to minimal mode. |
+| `76c4a1ed00b9934076b0b3344dc1015c493e0cb9` | test(timeline): keep renderer counters stable (#45) | red | [42266719540](https://github.com/SakibShahariar/adwisp/actions/runs/42266719540) | Same default-mode cache regression; follow-up cache/render fixes are in `80e625e4a843c38b78afeca2d5c2710f47897fa4` and `70e547672bec5ccd7ffffaac01df5a0b0d6ca643`. |
+| `80e625e4a843c38b78afeca2d5c2710f47897fa4` | fix(timeline): preserve default layout cache (#45) | red | [42266782626](https://github.com/SakibShahariar/adwisp/actions/runs/42266782626) | Cache state was preserved, but click/drag redraws still ran outside minimal mode; corrected in `70e547672bec5ccd7ffffaac01df5a0b0d6ca643`. |
+| `5865c61900ba7200618783b086b54a05769ae451` | test(timeline): cover minimal geometry across window sizes (#45) | red | [42266882229](https://github.com/SakibShahariar/adwisp/actions/runs/42266882229) | Same default-mode cache regression; corrected in `70e547672bec5ccd7ffffaac01df5a0b0d6ca643`. |
+| `825f79de31b768a4c2aa67209336ba0296b65336` | ci: use runner Lua 5.2 packages for stable setup | red | [42266996199](https://github.com/SakibShahariar/adwisp/actions/runs/42266996199) | LuaRocks could not locate Lua headers; explicit `LUA_INCDIR=/usr/include/lua5.2` and `--lua-dir=/usr` added in `b9281577b6a69036ea3b57b3ee0964f2f9a977a2`. |
+| `70e547672bec5ccd7ffffaac01df5a0b0d6ca643` | fix(timeline): avoid redraws outside minimal mode (#45) | red | [42267061183](https://github.com/SakibShahariar/adwisp/actions/runs/42267061183) | Code fix was present, but the same Lua header setup failure prevented checks; verified in the later green run. |
+| `b9281577b6a69036ea3b57b3ee0964f2f9a977a2` | ci: point LuaRocks at Lua 5.2 headers | red | [42267158185](https://github.com/SakibShahariar/adwisp/actions/runs/42267158185) | Static checks passed; focus test retained a prior playback focus target and expected the wrong cycle position. Test now resets focus before navigation. |
+| `63f0b8acc7e0e942ddcf77f09daaac75e1545b28` | test(timeline): reset focus before navigation assertions (#45) | green | [42267262610](https://github.com/SakibShahariar/adwisp/actions/runs/42267262610) | Final timeline implementation, layout matrix, renderer, interaction tests, and updated Lua 5.2 CI setup all passed. |
 
 ## Historical red-cross investigation
 
@@ -90,7 +90,7 @@ The five pre-session historical red entries have later corrective/test commits w
 
 ## Current pending CI obligations
 
-- None at checkpoint `63f0b8acc7e0e942ddcf77f09daaac75e1545b28`. All reviewed runs in this range reached a terminal state.
+- None at checkpoint `6130a83dc9d7c2d875b72c2779f7e6677cf6283a`. All reviewed runs in this range reached a terminal state.
 
 ## Session history
 
