@@ -45,6 +45,7 @@ jobs:
           lua tests/test_adwisp.lua
           lua tests/test_renderer.lua
           lua tests/test_theme.lua
+          lua tests/test_bmp.lua
 
       - name: Build release archive
         run: |
