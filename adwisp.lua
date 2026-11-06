@@ -1184,7 +1184,7 @@ open_audio_device_menu = function(offset)
     end
 
     if not current_found then
-        lines[#lines + 1] = "Current output is not in the available device list."
+        lines[#lines + 1] = "Configured output is not in the available device list."
     end
     if offset > 0 then
         local previous_name = "adwisp-audio-device-menu-previous"

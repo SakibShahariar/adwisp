@@ -98,6 +98,8 @@ Typical mpv configuration directories:
 
 Keyboard focus is visible with the active theme accent. With no control focused, Left/Right retain their normal seek behavior.
 
+The audio-output menu uses mpv's `audio-device-list` and `audio-device` properties. Its selected marker identifies the configured/requested target, not a guaranteed physical endpoint currently in use; mpv does not expose that endpoint through `audio-device`. Available names and descriptions depend on the active audio backend.
+
 Mouse and OSD behavior can vary with mpv configuration and platform; please report issues with your mpv version and relevant logs.
 
 ## Script-message API
