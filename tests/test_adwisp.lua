@@ -654,7 +654,7 @@ mp.add_forced_key_binding = function(key, name, callback, flags)
 end
 key_bindings["adwisp-playlist-menu"].callback()
 assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil
-    and commands[#commands][2]:find("Text filtering is unavailable", 1, true) ~= nil,
+    and overlays[1].data:find("Text filtering is unavailable", 1, true) ~= nil,
     "unsupported ANY_UNICODE should not break the playlist menu")
 key_bindings["adwisp-playlist-menu-search-escape"].callback({ event = "down" })
 mp.add_forced_key_binding = original_forced_binding
