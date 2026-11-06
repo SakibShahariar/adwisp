@@ -917,6 +917,57 @@ assert_equal(commands[#commands][3], "clear", "leaving timeline should clear pre
 assert_true(overlays[1].data:find("0:30", 1, true) == nil,
     "leaving the timeline should hide the preview timestamp")
 
+-- Invalid adapter messages must clear an active preview and disable future requests.
+thumbfast_payload = {
+    width = 160, height = 90, disabled = false, available = true,
+    thumbnail = "/tmp/adwisp-preview-invalid",
+}
+script_messages["thumbfast-info"]("{}")
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(observed_state.preview_visible, true,
+    "invalid-message setup should activate a preview")
+local warnings_before_invalid_thumbfast = #logs.warn
+thumbfast_payload = nil
+script_messages["thumbfast-info"]("{}")
+assert_equal(#logs.warn, warnings_before_invalid_thumbfast + 1,
+    "invalid thumbfast metadata should produce a warning")
+assert_equal(observed_state.preview_visible, false,
+    "invalid thumbfast metadata should clear the active preview")
+local commands_before_disabled_thumbfast = #commands
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(#commands, commands_before_disabled_thumbfast,
+    "invalid thumbfast metadata should disable subsequent preview requests")
+
+-- Loading a new file and ending the current file must both clear active previews.
+thumbfast_payload = {
+    width = 160, height = 90, disabled = false, available = true,
+    thumbnail = "/tmp/adwisp-preview-file-load",
+}
+script_messages["thumbfast-info"]("{}")
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(observed_state.preview_visible, true,
+    "file-load setup should activate a preview")
+events["file-loaded"]()
+assert_equal(observed_state.preview_visible, false,
+    "loading a new file should clear the previous thumbnail")
+assert_equal(commands[#commands][3], "clear",
+    "loading a new file should notify thumbfast to clear its preview")
+
+thumbfast_payload = {
+    width = 160, height = 90, disabled = false, available = true,
+    thumbnail = "/tmp/adwisp-preview-end-file",
+}
+script_messages["thumbfast-info"]("{}")
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(observed_state.preview_visible, true,
+    "end-file setup should activate a preview")
+events["end-file"]()
+assert_equal(observed_state.preview_visible, false,
+    "ending a file should clear its thumbnail")
+assert_equal(commands[#commands][3], "clear",
+    "ending a file should notify thumbfast to clear its preview")
+script_messages["adwisp-show"]()
+
 -- Export a real one-pixel thumbfast BGRA fixture through the public shortcut.
 local fixture_path = "tests/adwisp-thumbfast-fixture"
 local fixture = assert(io.open(fixture_path .. ".bgra", "wb"))
