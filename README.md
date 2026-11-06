@@ -22,9 +22,9 @@ Adwisp is an experimental mpv script that draws a desktop-player-style interface
 
 ## Requirements
 
-- mpv with Lua scripting support: https://mpv.io/
-- Optional thumbfast for timeline previews: https://github.com/po5/thumbfast
-- Optional Matugen palette generation: https://github.com/InioX/matugen. Adwisp only reads the resulting palette file.
+- mpv with Lua scripting support. Project: https://mpv.io/
+- Optional thumbfast for timeline previews. Project: https://github.com/po5/thumbfast
+- Optional Matugen palette generation. Project: https://github.com/InioX/matugen. Adwisp only reads the resulting palette file.
 
 ## Installation
 
@@ -63,14 +63,14 @@ Full keyboard/mouse reference, configuration options, and script-message API: `d
 
 ## Development
 
-Adwisp is modular Lua. CI checks Lua syntax, runs Luacheck, and executes the automated test suite. See [Architecture](docs/ARCHITECTURE.md) for design boundaries and performance principles. Before a release, complete the [real-mpv testing checklist](docs/MPV_TESTING.md).
+Adwisp is modular Lua. CI checks Lua syntax, runs Luacheck, and executes the automated test suite. Architecture details: `docs/ARCHITECTURE.md`. Before a release, complete `docs/MPV_TESTING.md`.
 
 When reporting a bug, include your mpv version, operating system, reproduction steps, and relevant logs.
 
 ## Roadmap
 
-Current priorities are real-mpv validation, a preferences interface, accessibility and localization, performance measurements, and release polish. See the open [issues](https://github.com/SakibShahariar/adwisp/issues) for implementation status.
+Current priorities are real-mpv validation, a preferences interface, accessibility/localization polish, performance measurements, and release polish. Implementation status: https://github.com/SakibShahariar/adwisp/issues.
 
 ## License
 
-[MIT](LICENSE)
+MIT License. See the `LICENSE` file.

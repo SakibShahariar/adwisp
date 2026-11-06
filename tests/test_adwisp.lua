@@ -88,7 +88,10 @@ package.loaded["mp.utils"] = {
             .. ',"speed":' .. tostring(value.speed)
             .. ',"loop_file":"' .. tostring(value.loop_file)
             .. '","ab_loop_a":' .. tostring(value.ab_loop_a)
-            .. ',"ab_loop_b":' .. tostring(value.ab_loop_b) .. '}'
+            .. ',"ab_loop_b":' .. tostring(value.ab_loop_b)
+            .. ',"focus_target":"' .. tostring(value.focus_target)
+            .. '","image_mode":' .. tostring(value.image_mode)
+            .. ',"image_zoom":' .. tostring(value.image_zoom) .. '}'
     end,
     file_info = function(path)
         if path == "." then return { is_dir = true } end
@@ -1920,5 +1923,13 @@ assert_equal(recent_history_fixture[1].path, "/media/new-local-file.mkv",
     "network URLs should not replace local recent history")
 assert_equal(recent_history_saved, false,
     "network URLs should not trigger a recent-history write")
+
+script_messages["adwisp-query"]()
+local query_output = logs.info[#logs.info]
+assert_true(query_output:find('"focus_target"', 1, true) ~= nil,
+    "the state query should expose the current keyboard focus target")
+assert_true(query_output:find('"image_mode"', 1, true) ~= nil
+    and query_output:find('"image_zoom"', 1, true) ~= nil,
+    "the state query should expose image-viewer mode and zoom")
 
 print("All mocked mpv API tests passed.")

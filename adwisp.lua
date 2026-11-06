@@ -531,8 +531,8 @@ local function reload_theme()
     if contrast.text_background and contrast.text_background < 4.5 then
         mp.msg.warn("Adwisp: theme text/background contrast is below 4.5:1 (WCAG AA).")
     end
-    if contrast.muted_background and contrast.muted_background < 3 then
-        mp.msg.warn("Adwisp: theme muted-text/background contrast is below 3:1.")
+    if contrast.muted_background and contrast.muted_background < 4.5 then
+        mp.msg.warn("Adwisp: theme muted-text/background contrast is below 4.5:1 (WCAG AA).")
     end
     if contrast.on_accent and contrast.on_accent < 3 then
         mp.msg.warn("Adwisp: theme accent-label contrast is below 3:1.")

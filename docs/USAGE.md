@@ -62,7 +62,7 @@ Mouse and OSD behavior can vary with mpv configuration and platform. Include you
 
 ## Configuration
 
-Adwisp uses mpv's standard script options. Edit `script-opts/adwisp.conf` in your mpv configuration directory. The repository's [default configuration](../script-opts/adwisp.conf) documents every option.
+Adwisp uses mpv's standard script options. Edit `script-opts/adwisp.conf` in your mpv configuration directory. The full option list is in `script-opts/adwisp.conf`.
 
 Core bindings can be remapped independently. Duplicate Adwisp bindings are detected; the later action falls back to its default.
 
@@ -116,7 +116,7 @@ After regenerating a palette, reload it without restarting mpv:
 
 ### Thumbnail previews
 
-Install [thumbfast](https://github.com/po5/thumbfast) as an mpv script and keep `thumbnail_preview=yes`. Adwisp requests previews while the pointer is over the timeline and asks thumbfast to clear them when appropriate.
+Install thumbfast as an mpv script and keep `thumbnail_preview=yes`. Project page: https://github.com/po5/thumbfast. Adwisp requests previews while the pointer is over the timeline and asks thumbfast to clear them when appropriate.
 
 Press `Ctrl+Alt+F7` while a preview is visible to export it as a BMP image. The configured export directory must already exist. Preview and export features are unavailable when thumbfast is absent. This integration still needs manual validation in a real mpv session.
 
