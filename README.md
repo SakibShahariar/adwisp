@@ -75,6 +75,8 @@ Typical mpv configuration directories:
 | `Ctrl` + `Alt` + `F10` | Open the audio track menu; select with `Ctrl+Alt+1–9` |
 | `Ctrl` + `Alt` + `F11` | Open the subtitle track menu; select with `Ctrl+Alt+1–9` |
 | `Ctrl` + `Alt` + `F12` | Open the playlist view; select with `Ctrl+Alt+1–9`, remove with `Ctrl+Alt+Shift+1–9` |
+
+When the playlist menu is open, type to filter by title or filename; use Up/Down and Enter to select, Ctrl+Backspace to clear the search, and Esc to close.
 | `Ctrl` + `Alt` + `Page Up/Down` | Previous / next playlist page |
 | `Ctrl` + `Up` / `Ctrl` + `Down` | Increase / decrease volume by `volume_step`; volume changes also unmute |
 | `Ctrl` + `Alt` + `Up` / `Ctrl` + `Alt` + `Down` | Increase / decrease playback speed by `speed_step` |
@@ -88,7 +90,7 @@ Typical mpv configuration directories:
 | `Enter` | Activate the focused control |
 | `Left` / `Right` while volume or playlist is focused | Adjust volume or move through the playlist |
 | `q` | Dismiss the interface |
-| `Escape` | Dismiss the interface |
+| `Escape` | Close an open selection menu; otherwise dismiss the interface |
 | Mouse click on timeline | Seek to the clicked position |
 | Mouse click on playback control | Toggle pause |
 | Mouse click on volume bar | Set volume and unmute |

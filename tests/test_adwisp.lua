@@ -23,6 +23,9 @@ local mp = {
         if key == "INVALID" then error("invalid test key") end
         key_bindings[name] = { key = key, callback = callback }
     end,
+    add_forced_key_binding = function(key, name, callback, flags)
+        key_bindings[name] = { key = key, callback = callback, flags = flags, forced = true }
+    end,
     remove_key_binding = function(name)
         key_bindings[name] = nil
     end,
@@ -373,6 +376,85 @@ assert_true(commands[#commands][2]:find("no audio tracks", 1, true) ~= nil,
 key_bindings["adwisp-subtitle-menu"].callback()
 assert_true(commands[#commands][2]:find("no subtitle tracks", 1, true) ~= nil,
     "subtitle menu should explain when no subtitle tracks are available")
+
+-- Playlist menu filtering preserves source indices and supports keyboard search.
+observers["playlist"].callback("playlist", {
+    { title = "Arrival", filename = "/media/arrival.mkv" },
+    { title = "Episode 2", filename = "/media/nocturne.mkv", current = true },
+    { title = "Arrival", filename = "/media/arrival-live.mkv" },
+    { title = "Other", filename = "/media/other.mkv" },
+})
+observers["playlist-pos"].callback("playlist-pos", 1)
+assert_equal(observed_state.playlist_items[2].filename, "/media/nocturne.mkv",
+    "playlist state should retain filenames for metadata filtering")
+key_bindings["adwisp-playlist-menu"].callback()
+assert_true(key_bindings["adwisp-playlist-menu-search-input"] ~= nil
+    and key_bindings["adwisp-playlist-menu-search-input"].key == "ANY_UNICODE",
+    "playlist menu should register forced text input while open")
+
+local function type_playlist_query(value)
+    for index = 1, #value do
+        local character = value:sub(index, index)
+        key_bindings["adwisp-playlist-menu-search-input"].callback({
+            event = "down",
+            key_name = character,
+            key_text = character,
+        })
+    end
+end
+
+type_playlist_query("arr")
+assert_true(commands[#commands][2]:find("Search: arr", 1, true) ~= nil
+    and commands[#commands][2]:find("Arrival", 1, true) ~= nil
+    and commands[#commands][2]:find("Episode 2", 1, true) == nil,
+    "typing should filter playlist titles while preserving matching duplicates")
+assert_true(key_bindings["adwisp-playlist-menu-select-2"] ~= nil,
+    "filtered playlist results should retain number selection")
+key_bindings["adwisp-playlist-menu-select-2"].callback()
+assert_equal(commands[#commands - 1][1], "set",
+    "filtered playlist selection should request a playlist position change")
+assert_equal(commands[#commands - 1][2], "playlist-pos",
+    "filtered playlist selection should update playlist-pos")
+assert_equal(commands[#commands - 1][3], 2,
+    "filtered row two should map to original playlist index three")
+assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil,
+    "selecting a playlist entry should remove temporary search bindings")
+
+key_bindings["adwisp-playlist-menu"].callback()
+type_playlist_query("noct")
+assert_true(commands[#commands][2]:find("Episode 2", 1, true) ~= nil,
+    "playlist filename metadata should match even when the title differs")
+key_bindings["adwisp-playlist-menu-search-enter"].callback({ event = "down" })
+assert_equal(commands[#commands - 1][3], 1,
+    "Enter should select the filtered item using its original playlist index")
+
+key_bindings["adwisp-playlist-menu"].callback()
+type_playlist_query("arr")
+key_bindings["adwisp-playlist-menu-search-clear"].callback({ event = "down" })
+assert_true(commands[#commands][2]:find("Arrival", 1, true) ~= nil
+    and commands[#commands][2]:find("Episode 2", 1, true) ~= nil
+    and commands[#commands][2]:find("> * Episode 2", 1, true) ~= nil,
+    "clearing search should restore the full list and current-item selection")
+
+type_playlist_query("arr")
+key_bindings["adwisp-playlist-menu-search-down"].callback({ event = "down" })
+key_bindings["adwisp-playlist-menu-search-enter"].callback({ event = "down" })
+assert_equal(commands[#commands - 1][3], 2,
+    "Down and Enter should select the next filtered source item")
+
+key_bindings["adwisp-playlist-menu"].callback()
+type_playlist_query("arrx")
+key_bindings["adwisp-playlist-menu-search-backspace"].callback({ event = "down" })
+assert_true(commands[#commands][2]:find("Arrival", 1, true) ~= nil,
+    "Backspace should remove the final search character")
+type_playlist_query("zzzz")
+assert_true(commands[#commands][2]:find("No matching playlist items", 1, true) ~= nil,
+    "an empty filtered result should display a clear empty state")
+key_bindings["adwisp-playlist-menu-search-escape"].callback({ event = "down" })
+assert_true(key_bindings["adwisp-playlist-menu-search-input"] == nil,
+    "Escape should close the playlist menu and remove temporary search bindings")
+assert_equal(observed_state.playlist_items[1].title, "Arrival",
+    "searching must not mutate mpv's playlist data")
 
 -- Audio output devices use mpv's audio-device-list/audio-device properties.
 key_bindings["adwisp-audio-device-menu"].callback()

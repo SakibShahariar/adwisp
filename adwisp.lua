@@ -9,6 +9,8 @@ local options = require "mp.options"
 local script_dir = mp.get_script_directory()
 package.path = script_dir .. "/?.lua;" .. script_dir .. "/?/init.lua;" .. package.path
 
+local MenuFilter = require "core.menu_filter"
+
 local opts = {
     seek_step = 5,
     volume_step = 5,
@@ -116,6 +118,7 @@ local active_drag = nil
 local last_mouse_x, last_mouse_y
 local active_track_menu
 local active_playlist_menu
+local open_playlist_menu
 local open_audio_device_menu
 local track_menu_binding_names = {}
 local track_menu_timer
@@ -872,6 +875,7 @@ local function update_playlist_state(value)
                 if title == "" then title = "Playlist item " .. index end
                 items[#items + 1] = {
                     title = title:sub(1, 120),
+                    filename = type(item.filename) == "string" and item.filename or "",
                     current = item.current == true or item.playing == true,
                 }
             end
@@ -1044,7 +1048,24 @@ mp.observe_property("osd-dimensions", "native", function()
     render()
 end)
 
-local function open_playlist_menu(offset)
+local function remove_last_utf8_character(value)
+    local index = #value
+    while index > 0 do
+        local byte = value:byte(index)
+        if byte < 0x80 or byte >= 0xC0 then
+            return value:sub(1, index - 1)
+        end
+        index = index - 1
+    end
+    return ""
+end
+
+local function playlist_search_source_index(menu)
+    local selected = menu and menu.results[menu.selected_index]
+    return selected and selected.index or nil
+end
+
+open_playlist_menu = function(offset, query, selected_source_index)
     clear_track_menu()
     local items = type(state.playlist_items) == "table" and state.playlist_items or {}
     if #items == 0 then
@@ -1052,41 +1073,96 @@ local function open_playlist_menu(offset)
         return
     end
 
+    query = type(query) == "string" and query or ""
+    local results = MenuFilter.filter(items, query, { "title", "filename" })
     local page_size = 9
-    local max_offset = math.max(0, math.floor((#items - 1) / page_size) * page_size)
-    offset = math.max(0, math.min(max_offset, math.floor(finite_property(offset, 0))))
-    local first = offset + 1
-    local last = math.min(#items, first + page_size - 1)
-    local lines = { string.format("Playlist  %d–%d / %d", first, last, #items) }
-    active_playlist_menu = { items = items, offset = offset }
-    for index = first, last do
-        local item = items[index]
-        local local_index = index - offset
-        local marker = (item.current or index - 1 == state.playlist_pos) and ">" or " "
-        lines[#lines + 1] = string.format("%d. %s %s", local_index, marker, item.title)
+    local selected_index = 0
+    if #results > 0 then
+        if type(selected_source_index) == "number" then
+            for index, result in ipairs(results) do
+                if result.index == selected_source_index then
+                    selected_index = index
+                    break
+                end
+            end
+        end
+        if selected_index == 0 then
+            for index, result in ipairs(results) do
+                if result.item.current or result.index - 1 == state.playlist_pos then
+                    selected_index = index
+                    break
+                end
+            end
+        end
+        if selected_index == 0 then selected_index = 1 end
+    end
 
+    local max_offset = math.max(0, math.floor((#results - 1) / page_size) * page_size)
+    offset = math.max(0, math.min(max_offset, math.floor(finite_property(offset, 0))))
+    if selected_index > 0 and (selected_index <= offset or selected_index > offset + page_size) then
+        offset = math.floor((selected_index - 1) / page_size) * page_size
+    end
+    local first = #results > 0 and offset + 1 or 1
+    local last = #results > 0 and math.min(#results, first + page_size - 1) or 0
+    local safe_query = query:gsub("[%c{}]", " "):gsub("\\", " ")
+        :gsub("%s+", " "):match("^%s*(.-)%s*$") or ""
+    local search_line = safe_query == "" and "Search: type to filter"
+        or "Search: " .. safe_query
+    local lines
+    if #results == 0 then
+        lines = {
+            string.format("Playlist  0 / 0 matches (%d items)", #items),
+            search_line,
+            "No matching playlist items",
+            "Ctrl+Backspace clears search; Esc closes",
+        }
+    else
+        lines = {
+            string.format("Playlist  %d–%d / %d", first, last, #results),
+            search_line,
+        }
+    end
+    active_playlist_menu = {
+        items = items,
+        results = results,
+        offset = offset,
+        query = query,
+        selected_index = selected_index,
+    }
+
+    for index = first, last do
+        local result = results[index]
+        local item = result.item
+        local local_index = index - offset
+        local current_marker = (item.current or result.index - 1 == state.playlist_pos)
+            and ">" or " "
+        local focus_marker = index == selected_index and "*" or " "
+        lines[#lines + 1] = string.format("%d. %s%s %s",
+            local_index, current_marker, focus_marker, item.title)
+
+        local filtered_index = index
         local select_name = "adwisp-playlist-menu-select-" .. local_index
         track_menu_binding_names[#track_menu_binding_names + 1] = select_name
         mp.add_key_binding("CTRL+ALT+" .. local_index, select_name, function()
             local menu = active_playlist_menu
-            local selected = menu and menu.items[index]
+            local selected = menu and menu.results[filtered_index]
             if not selected then return end
             note_activity()
-            mp.commandv("set", "playlist-pos", index - 1)
+            mp.commandv("set", "playlist-pos", selected.index - 1)
             clear_track_menu()
-            mp.commandv("show-text", "Adwisp: playing " .. selected.title, 2500)
+            mp.commandv("show-text", "Adwisp: playing " .. selected.item.title, 2500)
         end)
 
         local remove_name = "adwisp-playlist-menu-remove-" .. local_index
         track_menu_binding_names[#track_menu_binding_names + 1] = remove_name
         mp.add_key_binding("CTRL+ALT+SHIFT+" .. local_index, remove_name, function()
             local menu = active_playlist_menu
-            local selected = menu and menu.items[index]
+            local selected = menu and menu.results[filtered_index]
             if not selected then return end
             note_activity()
-            mp.commandv("playlist-remove", index - 1)
+            mp.commandv("playlist-remove", selected.index - 1)
             clear_track_menu()
-            mp.commandv("show-text", "Adwisp: removed " .. selected.title, 2500)
+            mp.commandv("show-text", "Adwisp: removed " .. selected.item.title, 2500)
         end)
     end
 
@@ -1094,16 +1170,85 @@ local function open_playlist_menu(offset)
         local previous_name = "adwisp-playlist-menu-previous"
         track_menu_binding_names[#track_menu_binding_names + 1] = previous_name
         mp.add_key_binding("CTRL+ALT+PGUP", previous_name, function()
-            open_playlist_menu(offset - page_size)
+            local target = results[math.max(1, first - page_size)]
+            open_playlist_menu(0, query, target and target.index)
         end)
     end
-    if last < #items then
+    if last < #results then
         local next_name = "adwisp-playlist-menu-next"
         track_menu_binding_names[#track_menu_binding_names + 1] = next_name
         mp.add_key_binding("CTRL+ALT+PGDWN", next_name, function()
-            open_playlist_menu(offset + page_size)
+            local target = results[last + 1]
+            open_playlist_menu(0, query, target and target.index)
         end)
     end
+
+    local function add_search_binding(key, name, callback)
+        track_menu_binding_names[#track_menu_binding_names + 1] = name
+        mp.add_forced_key_binding(key, name, callback, { complex = true })
+    end
+    local function current_source_index()
+        return playlist_search_source_index(active_playlist_menu)
+    end
+    local function update_search(next_query)
+        local source_index
+        if next_query ~= "" then source_index = current_source_index() end
+        open_playlist_menu(0, next_query, source_index)
+    end
+    local function is_key_down(event)
+        return type(event) == "table" and event.event == "down"
+    end
+
+    add_search_binding("ANY_UNICODE", "adwisp-playlist-menu-search-input", function(event)
+        if not is_key_down(event) then return end
+        local key_name = type(event.key_name) == "string" and event.key_name:upper() or ""
+        if key_name:find("CTRL", 1, true) or key_name:find("ALT", 1, true)
+            or key_name:find("META", 1, true) then
+            return
+        end
+        if type(event.key_text) == "string" and event.key_text ~= "" then
+            local menu = active_playlist_menu
+            if menu then update_search(menu.query .. event.key_text) end
+        end
+    end)
+    add_search_binding("BS", "adwisp-playlist-menu-search-backspace", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_playlist_menu
+        if menu then update_search(remove_last_utf8_character(menu.query)) end
+    end)
+    add_search_binding("CTRL+BACKSPACE", "adwisp-playlist-menu-search-clear", function(event)
+        if is_key_down(event) then open_playlist_menu(0, "", nil) end
+    end)
+    add_search_binding("ESC", "adwisp-playlist-menu-search-escape", function(event)
+        if not is_key_down(event) then return end
+        clear_track_menu()
+        mp.commandv("show-text", "", 0)
+    end)
+    add_search_binding("ENTER", "adwisp-playlist-menu-search-enter", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_playlist_menu
+        local selected = menu and menu.results[menu.selected_index]
+        if not selected then return end
+        note_activity()
+        mp.commandv("set", "playlist-pos", selected.index - 1)
+        clear_track_menu()
+        mp.commandv("show-text", "Adwisp: playing " .. selected.item.title, 2500)
+    end)
+    add_search_binding("UP", "adwisp-playlist-menu-search-up", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_playlist_menu
+        if not menu or #menu.results == 0 then return end
+        local index = math.max(1, menu.selected_index - 1)
+        open_playlist_menu(0, menu.query, menu.results[index].index)
+    end)
+    add_search_binding("DOWN", "adwisp-playlist-menu-search-down", function(event)
+        if not is_key_down(event) then return end
+        local menu = active_playlist_menu
+        if not menu or #menu.results == 0 then return end
+        local index = math.min(#menu.results, menu.selected_index + 1)
+        open_playlist_menu(0, menu.query, menu.results[index].index)
+    end)
+
     track_menu_timer = mp.add_timeout(8, clear_track_menu)
     note_activity()
     mp.commandv("show-text", table.concat(lines, "\n"), 8000)
