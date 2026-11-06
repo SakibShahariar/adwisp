@@ -638,6 +638,25 @@ local osd_calls_after_pointer_move = osd_size_calls
 key_bindings["adwisp-mouse-move"].callback()
 assert_equal(osd_size_calls, osd_calls_after_pointer_move,
     "unchanged mouse coordinates should skip OSD geometry and hit-testing")
+
+-- Playback-position updates do not change hit-test geometry, so a stationary
+-- pointer must remain on the duplicate-coordinate fast path.
+observers["time-pos"].callback("time-pos", 28)
+local playback_timer = timers[#timers]
+local calls_after_playback_update = osd_size_calls
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(osd_size_calls, calls_after_playback_update,
+    "time-pos updates should not invalidate the unchanged pointer cache")
+playback_timer.callback()
+
+-- Duration changes affect timeline preview eligibility and must re-evaluate
+-- the pointer even when its coordinates have not changed.
+observers.duration.callback("duration", 90)
+local calls_after_duration_update = osd_size_calls
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(osd_size_calls, calls_after_duration_update + 1,
+    "duration updates should invalidate the pointer cache")
+
 mp.get_osd_size = original_get_osd_size
 
 -- Mouse movement warms the OSD-size layout cache; clicks should reuse it.
