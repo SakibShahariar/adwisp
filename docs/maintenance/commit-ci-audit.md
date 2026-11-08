@@ -24,10 +24,10 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `1a992374354268bea60ea6ab829bedfa64018cd7`
+- Reviewed checkpoint SHA: `f86e88e2fe7584ea52b93e961bcb9b41eb0bdf2c`
 - Reviewed: 2026-11-08
-- Range reviewed: `9326a7ceb539fa800e221e6fb30204497e579432` through `1a992374354268bea60ea6ab829bedfa64018cd7`
-- Result: seven newer commits have exact-SHA check-run results: five green and two red. Both red attempts are diagnosed and corrected by later green commits.
+- Range reviewed: `9326a7ceb539fa800e221e6fb30204497e579432` through `f86e88e2fe7584ea52b93e961bcb9b41eb0bdf2c`
+- Result: eight newer commits have exact-SHA check-run results: six green and two red. Both red attempts are diagnosed and corrected by later green commits.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: review the history-progress commit and its exact-SHA CI result; retain all red history.
 
@@ -279,4 +279,6 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 | `e521638a0eafe47b6b65c145bdb3fcf687e1b45f` | feat(history): add backward-compatible resume progress model (#54) | red | [42499352506](https://github.com/SakibShahariar/adwisp/actions/runs/42499352506) | Lua syntax passed; Luacheck found a duplicate local declaration for `recorded` in the new history test. Removed the redundant declaration in the follow-up. |
 | `1a992374354268bea60ea6ab829bedfa64018cd7` | test(history): remove duplicate test local (#54) | green | [42499438049](https://github.com/SakibShahariar/adwisp/actions/runs/42499438049) | Lua syntax, Luacheck, and the full unit-test suite passed after removing the duplicate local declaration found in the first progress-model attempt. |
+
+| `f86e88e2fe7584ea52b93e961bcb9b41eb0bdf2c` | feat(history): add continue watching and explicit resume (#54) | green | [42500047960](https://github.com/SakibShahariar/adwisp/actions/runs/42500047960) | Lua syntax passed, Luacheck reported 0 warnings / 0 errors in 24 files, and all unit tests passed, including mocked mpv resume, Continue Watching, debounce, and completion checks. |
 

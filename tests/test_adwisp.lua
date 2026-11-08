@@ -487,6 +487,9 @@ assert_equal(#observed_state.library_menu.entries, 2,
     "browser should show folders and supported videos but filter unrelated files")
 assert_true(table.concat(observed_state.library_menu.lines, " "):find("[VID] clip.mkv", 1, true) ~= nil,
     "successful directory scans should render video rows instead of an error state")
+assert_true(table.concat(observed_state.library_menu.lines, " "):find("2.0 KB", 1, true) ~= nil
+    and table.concat(observed_state.library_menu.lines, " "):find("1970-01-01", 1, true) ~= nil,
+    "video rows should show available file size and modified date metadata")
 assert_equal(observed_state.library_menu.entries[1].kind, "directory",
     "folders should appear before video files")
 assert_equal(observed_state.library_menu.entries[2].path, "/library/clip.mkv",
@@ -631,6 +634,17 @@ assert_equal(#observed_state.library_menu.entries, 40,
 script_messages["adwisp-library-close"]()
 
 
+
+library_filesystem["/library/Unknown"] = { is_dir = true }
+library_filesystem["/library/Unknown/no-metadata.mkv"] = { is_file = true }
+library_listings["/library/Unknown"] = { "no-metadata.mkv" }
+script_messages["adwisp-library-open"]("/library/Unknown")
+local unknown_metadata_lines = table.concat(observed_state.library_menu.lines, " ")
+assert_true(unknown_metadata_lines:find("[VID] no-metadata.mkv", 1, true) ~= nil,
+    "video rows without optional metadata should remain visible")
+assert_true(unknown_metadata_lines:find("nil", 1, true) == nil,
+    "missing metadata should not leak nil placeholders into the menu")
+script_messages["adwisp-library-close"]()
 
 observers.playlist.callback("playlist", {
     { filename = "/videos/one.mkv", title = "One", current = true },

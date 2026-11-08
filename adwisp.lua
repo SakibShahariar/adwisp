@@ -2604,6 +2604,30 @@ local function refresh_library_view(menu, preferred_path)
     menu.selected_index = math.max(1, math.min(menu.selected_index, math.max(1, #menu.entries)))
 end
 
+local function format_library_file_size(size)
+    if type(size) ~= "number" or size ~= size or size < 0
+        or size == math.huge or size == -math.huge then
+        return nil
+    end
+    if size >= 1024 * 1024 * 1024 then
+        return string.format("%.1f GB", size / (1024 * 1024 * 1024))
+    elseif size >= 1024 * 1024 then
+        return string.format("%.1f MB", size / (1024 * 1024))
+    elseif size >= 1024 then
+        return string.format("%.1f KB", size / 1024)
+    end
+    return string.format("%d B", math.floor(size))
+end
+
+local function format_library_modified(timestamp)
+    if type(timestamp) ~= "number" or timestamp ~= timestamp
+        or timestamp < 0 or timestamp == math.huge or timestamp == -math.huge then
+        return nil
+    end
+    local ok, formatted = pcall(os.date, "%Y-%m-%d", timestamp)
+    return ok and formatted or nil
+end
+
 local function refresh_library_menu()
     local menu = state.library_menu
     if not menu then return end
@@ -2638,7 +2662,18 @@ local function refresh_library_menu()
             else
                 prefix = entry.kind == "directory" and "[DIR] " or "[VID] "
             end
-            lines[#lines + 1] = prefix .. (entry.label or entry.name)
+            local label = entry.label or entry.name
+            if entry.kind == "video" then
+                local details = {}
+                local size_label = format_library_file_size(entry.size)
+                local modified_label = format_library_modified(entry.mtime)
+                if size_label then details[#details + 1] = size_label end
+                if modified_label then details[#details + 1] = modified_label end
+                if #details > 0 then
+                    label = label .. " · " .. table.concat(details, " · ")
+                end
+            end
+            lines[#lines + 1] = prefix .. label
             if index == menu.selected_index then menu.selected_line = #lines end
         end
         if menu.truncated then
