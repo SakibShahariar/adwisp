@@ -487,7 +487,7 @@ assert_equal(#observed_state.library_menu.entries, 2,
     "browser should show folders and supported videos but filter unrelated files")
 assert_true(table.concat(observed_state.library_menu.lines, " "):find("[VID] clip.mkv", 1, true) ~= nil,
     "successful directory scans should render video rows instead of an error state")
-assert_true(table.concat(observed_state.library_menu.lines, " "):find("This folder: 1 videos · 1 folders", 1, true) ~= nil,
+assert_true(table.concat(observed_state.library_menu.lines, " "):find("This folder: 1 video · 1 folder", 1, true) ~= nil,
     "folder overview should count only the completed current-folder scan")
 assert_true(table.concat(observed_state.library_menu.lines, " "):find("2.0 KB", 1, true) ~= nil
     and table.concat(observed_state.library_menu.lines, " "):find("1970-01-01", 1, true) ~= nil,
@@ -520,7 +520,7 @@ assert_equal(observed_state.library_menu.query, "",
     "Ctrl+Backspace should clear the library search")
 assert_equal(#observed_state.library_menu.entries, 2,
     "clearing search should restore the full current-folder view")
-script_messages["adwisp-library-sort"]("recent")
+key_bindings["adwisp-library-sort-next"].callback()
 assert_equal(observed_state.library_menu.sort_mode, "recent",
     "Recently Added should be available as a library sort mode")
 assert_true(table.concat(observed_state.library_menu.lines, " "):find("Sort: Recently added", 1, true) ~= nil,

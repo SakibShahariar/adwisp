@@ -2639,7 +2639,10 @@ local function refresh_library_menu()
     menu.selected_line = nil
     if not menu.location_mode then
         local summary = VideoLibrary.summary(menu.source_entries or {}, menu.loading, menu.truncated)
-        local count_label = tostring(summary.videos) .. " videos · " .. tostring(summary.folders) .. " folders"
+        local video_word = summary.videos == 1 and "video" or "videos"
+        local folder_word = summary.folders == 1 and "folder" or "folders"
+        local count_label = tostring(summary.videos) .. " " .. video_word .. " · "
+            .. tostring(summary.folders) .. " " .. folder_word
         if summary.loading then
             lines[#lines + 1] = "Folder counts unavailable until scan completes"
         elseif summary.truncated then
@@ -2699,7 +2702,7 @@ local function refresh_library_menu()
         lines[#lines + 1] = "Text filtering unavailable on this mpv build"
     end
     lines[#lines + 1] = menu.location_mode and "Enter open · Ctrl+Alt+F2 locations · Esc close"
-        or "Type to search · Tab sort · R refresh · Enter open/play · A queue · Backspace up · Esc close"
+        or "Type to search · Tab sort · Ctrl+R refresh · Enter open/play · A queue · Backspace up · Esc close"
     menu.lines = lines
     render()
 end
@@ -2859,7 +2862,7 @@ local function install_library_bindings()
     end)
     add_library_binding("TAB", "adwisp-library-sort-next", function() cycle_library_sort(1) end)
     add_library_binding("SHIFT+TAB", "adwisp-library-sort-previous", function() cycle_library_sort(-1) end)
-    add_library_binding("r", "adwisp-library-refresh", function()
+    add_library_binding("CTRL+R", "adwisp-library-refresh", function()
         local menu = state.library_menu
         if menu and not menu.location_mode and not menu.loading then open_library(menu.path) end
     end)

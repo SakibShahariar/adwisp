@@ -24,12 +24,12 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `68a4d42f12ec585409cad37f8b351186a6f16ce8`
+- Reviewed checkpoint SHA: `0704f99c6a839f0e92752260073605dee394d695`
 - Reviewed: 2026-11-08
 - Range reviewed: `9326a7ceb539fa800e221e6fb30204497e579432` through `b65d7b219faafd40b08fc2372c28c3ef805fe5f2`
 - Result: nine newer commits through the previous checkpoint had exact-SHA results: seven green and two red. Subsequent cache and Matugen commits are also green; historical red attempts remain recorded.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
-- Next session: review commits after `68a4d42` by exact SHA; retain all red history.
+- Next session: review commits after `0704f99` by exact SHA; carry forward its red test result until the correction is green; retain all red history.
 
 ## Reviewed commits
 
@@ -288,3 +288,13 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 | `65cbf65cf5b2b4520f7045a517d096325d046947` | feat(library): add bounded thumbnail cache foundation (#53) | green | [42500488466](https://github.com/SakibShahariar/adwisp/actions/runs/42500488466) |
 | `68a4d42f12ec585409cad37f8b351186a6f16ce8` | feat(theme): add accessible Matugen green preset | green | [42502297911](https://github.com/SakibShahariar/adwisp/actions/runs/42502297911) |
+
+| `eb3b2c75dc9bd4f1d1ed6e365330bef2ae4fb341` | feat(library): add recently-added view and scan summaries (#55) | green | [42502609035](https://github.com/SakibShahariar/adwisp/actions/runs/42502609035) |
+| `0704f99c6a839f0e92752260073605dee394d695` | test(library): verify recent view and explicit refresh (#55) | red | [42502730915](https://github.com/SakibShahariar/adwisp/actions/runs/42502730915) |
+
+### Red result investigation — `0704f99`
+
+- Failed step: `Run unit tests` (`tests/test_adwisp.lua:524`).
+- Diagnosis: the new test invoked `adwisp-library-sort` as a script message, but the sort change is exercised through the registered keyboard binding; the message invocation left the sort mode unchanged. Syntax and Luacheck both passed (0 warnings / 0 errors).
+- Classification: test-harness mistake, not a production-code failure.
+- Correction: switch the test to invoke `adwisp-library-sort-next`; also use `Ctrl+R` for explicit refresh so the refresh shortcut does not collide with the library's Unicode search input. Corrected run pending.
