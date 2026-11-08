@@ -8,6 +8,16 @@ There is no Matugen version requirement imposed by Adwisp because the mpv script
 
 Use Matugen independently with a custom template (or another palette generator) that writes the six semantic keys below as UTF-8 `key=value` lines. Point Adwisp at that generated file. Matugen generates the file; Adwisp only reads it. If Matugen is not installed or generation fails, Adwisp continues using the last valid palette already loaded, or its built-in palette when no valid custom palette has been loaded.
 
+## Green palette preset
+
+The repository includes a ready-to-use green preset at `themes/matugen-green.conf`. It is a static semantic palette example, not a live Matugen template. You can copy it into your mpv configuration directory and set:
+
+```ini
+theme_file=/absolute/path/to/matugen-green.conf
+```
+
+The preset uses deep forest-green surfaces with mint accents. Its text/background and on-accent combinations exceed WCAG AA contrast thresholds; the automated theme test checks the actual file and its contrast values. To make the colors respond to wallpaper changes, configure Matugen separately to generate the same six-key format.
+
 ## Palette file
 
 Create a UTF-8 text file wherever you keep generated themes:
@@ -54,7 +64,7 @@ Or send the script message from another mpv script. Adwisp reparses the configur
 - **The theme does not change:** Check that `theme_file` points to the generated file, that the path is absolute, and that mpv can read it. Then send `adwisp-reload-theme` or restart mpv.
 - **The built-in colors remain active:** Check mpv console for file-open errors. An empty path or a file with no valid entries uses the built-in palette (or retains the last valid palette after a failed reload).
 - **Only some colors change:** Confirm that the file uses the six exact, case-sensitive keys and six-digit hex values. Missing roles intentionally use built-in colors.
-- **Matugen reports success but Adwisp ignores the output:** Inspect the generated file. Configure a Matugen template that emits the semantic key/value format above; Adwisp does not parse Matugen JSON or arbitrary color-scheme formats.
+- **Matugen reports success but Adwisp ignores the output:** Inspect the generated file. Configure a Matugen template that emits the six-key semantic format above; Adwisp does not parse Matugen JSON or arbitrary color-scheme formats.
 
 ## Design principles
 

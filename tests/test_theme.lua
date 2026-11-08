@@ -6,6 +6,23 @@ local fallback, source = Theme.load("")
 assert(source == "fallback", "empty path should use fallback palette")
 assert(fallback.accent == "#9B7653", "fallback accent should be available")
 
+-- Keep the shipped green preset aligned with the exact semantic palette contract.
+local green, green_source = Theme.load("themes/matugen-green.conf")
+assert(green_source == "file", "the shipped green preset should load")
+assert(green.background == "#10251B", "green preset should define its background")
+assert(green.surface == "#193528", "green preset should define its surface")
+assert(green.text == "#E4F5E9", "green preset should define readable text")
+assert(green.muted == "#B4CDBA", "green preset should define muted text")
+assert(green.accent == "#8FE3A7", "green preset should define a mint accent")
+assert(green.on_accent == "#10351E", "green preset should define accent text")
+local green_contrast = Theme.contrast_report(green)
+assert(green_contrast.text_background >= 4.5,
+    "green preset normal text should meet WCAG AA contrast")
+assert(green_contrast.muted_background >= 4.5,
+    "green preset muted text should meet WCAG AA contrast")
+assert(green_contrast.on_accent >= 4.5,
+    "green preset accent text should meet WCAG AA contrast")
+
 local path = os.tmpname()
 local file = assert(io.open(path, "w"))
 file:write([[
