@@ -57,13 +57,14 @@ function Layout.compute(width, height, options)
     local split_zones = layout_options.control_zones == "split" and not compact and position == "bottom"
     local top_zone
     local top_margin = layout_options.top_zone_margin
-    if type(top_margin) ~= "number" or top_margin ~= top_margin or top_margin == math.huge or top_margin == -math.huge or top_margin < 0 then top_margin = 24 end
+    if type(top_margin) ~= "number" or top_margin ~= top_margin
+        or top_margin == math.huge or top_margin == -math.huge or top_margin < 0 then
+        top_margin = 24
+    end
     top_margin = math.min(math.floor(top_margin), math.max(0, height - 44))
     if split_zones then
         if y >= top_margin + 56 then
             top_zone = { x = x, y = top_margin, width = panel_width, height = 44 }
-        else
-            split_zones = false
         end
     end
     local padding = math.min(22, math.floor(panel_width * 0.06))
