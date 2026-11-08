@@ -54,6 +54,18 @@ function Layout.compute(width, height, options)
     else
         y = max_y - margin
     end
+    local split_zones = layout_options.control_zones == "split" and not compact and position == "bottom"
+    local top_zone
+    local top_margin = layout_options.top_zone_margin
+    if type(top_margin) ~= "number" or top_margin ~= top_margin or top_margin == math.huge or top_margin == -math.huge or top_margin < 0 then top_margin = 24 end
+    top_margin = math.min(math.floor(top_margin), math.max(0, height - 44))
+    if split_zones then
+        if y >= top_margin + 56 then
+            top_zone = { x = x, y = top_margin, width = panel_width, height = 44 }
+        else
+            split_zones = false
+        end
+    end
     local padding = math.min(22, math.floor(panel_width * 0.06))
     local inner_x = x + padding
     local inner_width = math.max(1, panel_width - padding * 2)
@@ -92,13 +104,17 @@ function Layout.compute(width, height, options)
         x = volume_x, y = volume_track.y - 2, width = volume_width, height = 8,
     }
 
+    local title_geometry = top_zone and { x = inner_x, y = top_zone.y + 14, width = inner_width }
+        or { x = inner_x, y = y + (dense_compact and 5 or (compact and 10 or 18)), width = inner_width }
+
     return {
         width = width,
         height = height,
         compact = compact,
         position = position,
         panel = { x = x, y = y, width = panel_width, height = panel_height },
-        title = { x = inner_x, y = y + (dense_compact and 5 or (compact and 10 or 18)), width = inner_width },
+        top_zone = top_zone,
+        title = title_geometry,
         playback = { x = inner_x, y = control_y, width = playback_width,
             height = dense_compact and 18 or (compact and 24 or 32) },
         volume = {
