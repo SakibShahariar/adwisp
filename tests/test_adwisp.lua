@@ -2021,7 +2021,8 @@ assert_equal(observed_state.opacity, 0,
     "showing with idle-hide enabled should begin at transparent opacity")
 local first_idle_timer = timers[timers_before_idle + 1]
 for _ = 1, 6 do
-    end
+    timers[#timers].callback()
+end
 assert_equal(observed_state.opacity, 1,
     "fade-in should reach full opacity after its finite steps")
 assert_true(first_idle_timer.killed == false,
@@ -2049,7 +2050,8 @@ assert_equal(observed_state.visible, true,
 local final_idle_timer = timers[#timers]
 final_idle_timer.callback()
 for _ = 1, 6 do
-    end
+    timers[#timers].callback()
+end
 assert_equal(observed_state.visible, false,
     "the OSD should hide after the complete idle fade-out")
 assert_equal(observed_state.opacity, 1,
@@ -2058,7 +2060,8 @@ assert_equal(observed_state.opacity, 1,
 -- An active mouse drag suppresses the idle timeout until the pointer is released.
 script_messages["adwisp-show"]()
 for _ = 1, 6 do
-    end
+    timers[#timers].callback()
+end
 mouse_x, mouse_y = 500, 600
 key_bindings["adwisp-mouse-click"].callback({ event = "down" })
 local drag_idle_timer = timers[#timers]
