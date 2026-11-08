@@ -2587,6 +2587,8 @@ open_library = function(path)
     clear_track_menu()
     local scan, scan_error = VideoLibrary.begin_scan(path, library_dependencies,
         opts.library_max_entries)
+    local menu_error
+    if not scan then menu_error = tostring(scan_error) end
     state.library_menu = {
         path = path,
         entries = {},
@@ -2594,7 +2596,7 @@ open_library = function(path)
         page_size = 12,
         loading = scan ~= nil,
         truncated = false,
-        error = scan and nil or tostring(scan_error),
+        error = menu_error,
     }
     install_library_bindings()
     show_osd()

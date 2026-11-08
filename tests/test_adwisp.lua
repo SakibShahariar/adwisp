@@ -441,6 +441,8 @@ assert_equal(library_readdir_calls, 1, "opening the browser should scan only the
 assert_equal(observed_state.library_menu.loading, false, "small directory scan should complete")
 assert_equal(#observed_state.library_menu.entries, 2,
     "browser should show folders and supported videos but filter unrelated files")
+assert_true(table.concat(observed_state.library_menu.lines, " "):find("[VID] clip.mkv", 1, true) ~= nil,
+    "successful directory scans should render video rows instead of an error state")
 assert_equal(observed_state.library_menu.entries[1].kind, "directory",
     "folders should appear before video files")
 assert_equal(observed_state.library_menu.entries[2].path, "/library/clip.mkv",
@@ -478,6 +480,8 @@ assert_equal(observed_state.library_menu, nil,
     "opening a video should close the browser")
 
 script_messages["adwisp-library-open"]("/library/Empty")
+assert_equal(observed_state.library_menu.error, nil,
+    "readable empty directories should not retain an error")
 local empty_library_lines = table.concat(observed_state.library_menu.lines, " ")
 assert_true(empty_library_lines:find("No supported videos or folders", 1, true) ~= nil,
     "empty directory state mismatch: path=" .. tostring(observed_state.library_menu.path)
