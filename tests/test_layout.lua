@@ -332,6 +332,9 @@ local function test_split_zone_geometry()
         "title should move into the top zone")
     assert_true(split.playback.y >= split.panel.y and split.timeline.y >= split.panel.y,
         "playback controls should remain in the bottom zone")
+    assert_true(split.playlist.y >= split.top_zone.y
+        and split.playlist.y + split.playlist.height <= split.top_zone.y + split.top_zone.height,
+        "secondary playlist navigation should move into the top zone")
 
     local compact = Layout.compute(640, 220, { control_zones = "split" })
     assert_equal(compact.top_zone, nil, "compact windows should retain the single-zone fallback")

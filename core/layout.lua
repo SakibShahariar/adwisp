@@ -63,8 +63,8 @@ function Layout.compute(width, height, options)
     end
     top_margin = math.min(math.floor(top_margin), math.max(0, height - 44))
     if split_zones then
-        if y >= top_margin + 56 then
-            top_zone = { x = x, y = top_margin, width = panel_width, height = 44 }
+        if y >= top_margin + 76 then
+            top_zone = { x = x, y = top_margin, width = panel_width, height = 64 }
         end
     end
     local padding = math.min(22, math.floor(panel_width * 0.06))
@@ -105,8 +105,15 @@ function Layout.compute(width, height, options)
         x = volume_x, y = volume_track.y - 2, width = volume_width, height = 8,
     }
 
-    local title_geometry = top_zone and { x = inner_x, y = top_zone.y + 14, width = inner_width }
+    local title_geometry = top_zone and { x = inner_x, y = top_zone.y + 12, width = inner_width }
         or { x = inner_x, y = y + (dense_compact and 5 or (compact and 10 or 18)), width = inner_width }
+
+    local playlist_geometry = top_zone and {
+        x = inner_x, y = top_zone.y + 40, width = inner_width, height = 18,
+    } or {
+        x = inner_x, y = y + (dense_compact and 80 or (compact and 116 or 132)),
+        width = inner_width, height = dense_compact and 14 or 20,
+    }
 
     return {
         width = width,
@@ -134,8 +141,7 @@ function Layout.compute(width, height, options)
         },
         progress_label = progress_label,
         time_label = time_label,
-        playlist = { x = inner_x, y = y + (dense_compact and 80 or (compact and 116 or 132)),
-            width = inner_width, height = dense_compact and 14 or 20 },
+        playlist = playlist_geometry,
     }
 end
 

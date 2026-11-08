@@ -322,11 +322,12 @@ function Renderer:render()
     end
     local focus_ass = ""
     if focus_geometry then
-        local focus_x = math.max(panel.x, focus_geometry.x - 4)
-        local focus_y = math.max(panel.y, focus_geometry.y - 4)
-        local focus_right = math.min(panel.x + panel.width,
+        local focus_panel = state.focus_target == "playlist" and layout.top_zone or panel
+        local focus_x = math.max(focus_panel.x, focus_geometry.x - 4)
+        local focus_y = math.max(focus_panel.y, focus_geometry.y - 4)
+        local focus_right = math.min(focus_panel.x + focus_panel.width,
             focus_geometry.x + focus_geometry.width + 4)
-        local focus_bottom = math.min(panel.y + panel.height,
+        local focus_bottom = math.min(focus_panel.y + focus_panel.height,
             focus_geometry.y + focus_geometry.height + 4)
         local focus_width = focus_right - focus_x
         local focus_height = focus_bottom - focus_y

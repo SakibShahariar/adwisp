@@ -24,10 +24,10 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `d8af01c28d4c3b0e13cdbf2cf3156cb3a95098d8`
+- Reviewed checkpoint SHA: `0e51bcc259c4fe26d91de74fd064c6ec3059b0bf`
 - Reviewed: 2026-11-08
-- Range reviewed: `35f2c180466e55e372e1e2e332e53ec356e344e0` through `d8af01c28d4c3b0e13cdbf2cf3156cb3a95098d8`
-- Result: all eleven commits after the previous checkpoint have exact-SHA check-run results. Two are green and nine are red attempts; all nine failures are diagnosed below and have a final green correction.
+- Range reviewed: `35f2c180466e55e372e1e2e332e53ec356e344e0` through `0e51bcc259c4fe26d91de74fd064c6ec3059b0bf`
+- Result: twelve commits after the previous checkpoint have exact-SHA check-run results. Three are green and nine are red attempts; all nine failures are diagnosed below and have green corrections. The latest green commit also verifies independent zone hover behavior.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: review the substantive code/ledger commit and any newer exact-SHA runs; retain all red history.
 
@@ -203,3 +203,7 @@ The three failed attempts above are historical red entries, not current failures
 | `d8af01c28d4c3b0e13cdbf2cf3156cb3a95098d8` | fix(layout): resolve split-zone lint warnings (#48) | green | [42463391128](https://github.com/SakibShahariar/adwisp/actions/runs/42463391128) | Lua syntax, Luacheck, and the complete unit-test suite passed. This is the current reviewed checkpoint. |
 
 All red attempts in this range were caused by implementation/test-edit syntax or lint issues and were followed by the listed green corrections. No unresolved failed check remains at checkpoint `d8af01c`.
+
+
+| `96e4c172cb499b515682b80f9b596732862bc519` | test(layout): verify independent zone hover and audit CI (#48) | red | [42463508744](https://github.com/SakibShahariar/adwisp/actions/runs/42463508744) | Luacheck found two undeclared cache-key globals (`cached_layout_control_zones`, `cached_layout_top_zone_margin`); declared them local in `0e51bcc`. |
+| `0e51bcc259c4fe26d91de74fd064c6ec3059b0bf` | fix(layout): scope split-zone cache keys (#48) | green | [42463547354](https://github.com/SakibShahariar/adwisp/actions/runs/42463547354) | Lua syntax, Luacheck, and all unit tests passed, including independent top/bottom hover-state tests. This is the current reviewed checkpoint. |

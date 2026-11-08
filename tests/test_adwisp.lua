@@ -1422,6 +1422,13 @@ assert_equal(observed_state.hover_zone, "top",
     "pointer over the top panel should activate only the top hover region")
 assert_true(overlays[1].data:find("\\pos(360,24)", 1, true) ~= nil,
     "top-zone hover should retain the separate top panel")
+observed_state.playlist_count = 2
+mouse_x = split_hover_layout.playlist.x + 8
+mouse_y = split_hover_layout.playlist.y + 5
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(observed_state.hover_target, "playlist",
+    "the top-zone playlist control should retain its own mouse hit target")
+observed_state.playlist_count = 0
 mouse_x = split_hover_layout.panel.x + 8
 mouse_y = split_hover_layout.panel.y + 8
 key_bindings["adwisp-mouse-move"].callback()
