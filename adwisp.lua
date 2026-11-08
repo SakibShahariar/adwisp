@@ -11,6 +11,7 @@ package.path = script_dir .. "/?.lua;" .. script_dir .. "/?/init.lua;" .. packag
 
 local MenuFilter = require "core.menu_filter"
 local RecentHistory = require "core.recent_history"
+local Preferences = require "core.preferences"
 local I18n = require "core.i18n"
 
 local opts = {
@@ -51,6 +52,7 @@ local opts = {
     recent_history = false,
     recent_history_limit = 20,
     recent_history_file = "~~/adwisp-recent.json",
+    preferences_file = "~~/adwisp-preferences.json",
     locale_file = "",
 }
 options.read_options(opts, "adwisp")
@@ -66,6 +68,12 @@ if type(opts.recent_history_file) ~= "string"
     opts.recent_history_file = "~~/adwisp-recent.json"
 end
 opts.recent_history_file = opts.recent_history_file:sub(1, 512)
+if type(opts.preferences_file) ~= "string" or opts.preferences_file:match("^%s*$") then
+    opts.preferences_file = "~~/adwisp-preferences.json"
+end
+opts.preferences_file = opts.preferences_file:sub(1, 512)
+if type(opts.theme_file) ~= "string" then opts.theme_file = "" end
+opts.theme_file = opts.theme_file:sub(1, 512)
 if type(opts.locale_file) ~= "string" then opts.locale_file = "" end
 opts.locale_file = opts.locale_file:sub(1, 512)
 if type(opts.font_family) ~= "string" then opts.font_family = "Sans" end
@@ -107,11 +115,46 @@ if opts.thumbnail_export_prefix == "" then
 end
 
 local state = require "core.state"
-state.layout_options = opts
 local Renderer = require "core.renderer"
 local Layout = require "core.layout"
 local Theme = require "core.theme"
 local utils = require "mp.utils"
+
+local preference_defaults = {
+    seek_step = opts.seek_step,
+    volume_step = opts.volume_step,
+    thumbnail_preview = opts.thumbnail_preview,
+    theme_file = opts.theme_file,
+}
+local preference_path = opts.preferences_file
+local ok_preferences_path, expanded_preferences_path = pcall(mp.command_native,
+    { "expand-path", preference_path })
+if ok_preferences_path and type(expanded_preferences_path) == "string"
+    and expanded_preferences_path ~= "" then
+    preference_path = expanded_preferences_path
+end
+local preference_dependencies = {
+    file_info = utils.file_info,
+    open = io.open,
+    rename = os.rename,
+    remove = os.remove,
+    parse_json = utils.parse_json,
+    format_json = utils.format_json,
+}
+local stored_preferences = Preferences.load(preference_path, preference_dependencies)
+for key, value in pairs(stored_preferences) do
+    if key == "theme_file" then
+        local palette = Theme.load(value)
+        if palette then
+            opts.theme_file = value
+        else
+            mp.msg.warn("Adwisp: ignoring an invalid saved theme_file preference.")
+        end
+    else
+        opts[key] = value
+    end
+end
+state.layout_options = opts
 local locale_path = opts.locale_file
 if locale_path ~= "" then
     local ok, expanded = pcall(mp.command_native, { "expand-path", locale_path })
@@ -559,6 +602,76 @@ local function reload_theme()
 end
 
 reload_theme()
+
+local function preference_values()
+    return {
+        seek_step = opts.seek_step,
+        volume_step = opts.volume_step,
+        thumbnail_preview = opts.thumbnail_preview,
+        theme_file = opts.theme_file,
+    }
+end
+
+local function show_preferences()
+    local lines = {
+        "Adwisp preferences",
+        "seek_step = " .. tostring(opts.seek_step) .. " seconds",
+        "volume_step = " .. tostring(opts.volume_step) .. " percent",
+        "thumbnail_preview = " .. (opts.thumbnail_preview and "yes" or "no"),
+        "theme_file = " .. (opts.theme_file ~= "" and opts.theme_file or "(built-in theme)"),
+        "Set: script-message adwisp-setting-set <key> <value>",
+        "Reset: script-message adwisp-setting-reset <key>",
+    }
+    mp.commandv("show-text", table.concat(lines, "\n"), 7000)
+end
+
+local function set_preference(key, raw_value)
+    local value, validation_error = Preferences.validate(key, raw_value)
+    if value == nil then
+        mp.commandv("show-text", "Adwisp: rejected setting — " .. tostring(validation_error), 3500)
+        return false
+    end
+    if key == "theme_file" then
+        local palette, _, theme_error = Theme.load(value)
+        if not palette then
+            mp.commandv("show-text", "Adwisp: rejected theme_file — " .. tostring(theme_error), 4000)
+            return false
+        end
+    end
+
+    opts[key] = value
+    if key == "theme_file" then
+        reload_theme()
+    elseif key == "thumbnail_preview" then
+        if not value then clear_thumbnail() end
+        render()
+    end
+
+    local saved, save_error = Preferences.save(preference_path,
+        preference_values(), preference_dependencies)
+    if saved then
+        mp.commandv("show-text", "Adwisp: saved " .. key .. " = " .. tostring(value), 3000)
+    else
+        mp.msg.warn("Adwisp: preference applied for this session but could not be saved: "
+            .. tostring(save_error))
+        mp.commandv("show-text", "Adwisp: applied " .. key
+            .. " for this session; save failed.", 4000)
+    end
+    return true
+end
+
+local function reset_preference(key)
+    if preference_defaults[key] == nil then
+        mp.commandv("show-text", "Adwisp: unknown editable setting " .. tostring(key), 3000)
+        return
+    end
+    set_preference(key, preference_defaults[key])
+end
+
+mp.register_script_message("adwisp-settings", show_preferences)
+mp.register_script_message("adwisp-setting-set", set_preference)
+mp.register_script_message("adwisp-setting-reset", reset_preference)
+
 log_debug("options loaded; seek_step=" .. tostring(opts.seek_step)
     .. ", volume_step=" .. tostring(opts.volume_step)
     .. ", thumbnail_preview=" .. tostring(opts.thumbnail_preview)
@@ -2120,6 +2233,7 @@ local registered_key_bindings = {
     ["CTRL+PGUP"] = "adwisp-chapter-prev",
     ["CTRL+PGDWN"] = "adwisp-chapter-next",
     ["CTRL+ALT+F3"] = "adwisp-recent-menu",
+    ["CTRL+ALT+F4"] = "adwisp-settings",
     ["CTRL+ALT+SHIFT+F3"] = "adwisp-clear-recent",
     ["CTRL+ALT+F5"] = "adwisp-audio-cycle",
     ["CTRL+ALT+F6"] = "adwisp-subtitle-cycle",
@@ -2238,6 +2352,7 @@ end)
 mp.add_key_binding("CTRL+ALT+F11", "adwisp-subtitle-menu", function()
     open_track_menu("subtitle")
 end)
+mp.add_key_binding("CTRL+ALT+F4", "adwisp-settings", show_preferences)
 mp.add_key_binding("CTRL+ALT+F3", "adwisp-recent-menu", function()
     if active_recent_menu then
         clear_track_menu()
