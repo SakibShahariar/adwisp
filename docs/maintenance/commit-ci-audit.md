@@ -242,3 +242,6 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 
 | `4c45a6eaa906c75d342cddce188d8f8dcccc20cd` | test(library): advance the correct async scan timer (#50) | red | [42465100645](https://github.com/SakibShahariar/adwisp/actions/runs/42465100645) | The test still advanced a stale timer for the empty-directory case. Small folders now process their first (and often only) metadata chunk immediately; only larger folders schedule further asynchronous chunks. |
+
+
+| `006ec95a4e1d246d5955f5f55a570450f03584e6` | fix(library): render small folders without waiting for a timer (#50) | red | [42465163518](https://github.com/SakibShahariar/adwisp/actions/runs/42465163518) | Luacheck found that a global replacement had changed unrelated timer tests to call the library-only helper. Restored the pre-library timer assertions and removed timer calls from the now-synchronous small-folder test cases. |
