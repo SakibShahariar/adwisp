@@ -28,6 +28,7 @@ return {
     playlist_items = {},
     playlist_menu = nil,
     recent_menu = nil,
+    library_menu = nil,
     chapter = -1,
     chapter_list = {},
     chapter_title = "",

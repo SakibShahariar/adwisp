@@ -12,6 +12,7 @@ package.path = script_dir .. "/?.lua;" .. script_dir .. "/?/init.lua;" .. packag
 local MenuFilter = require "core.menu_filter"
 local RecentHistory = require "core.recent_history"
 local Preferences = require "core.preferences"
+local VideoLibrary = require "core.video_library"
 local I18n = require "core.i18n"
 
 local opts = {
@@ -54,6 +55,7 @@ local opts = {
     recent_history_file = "~~/adwisp-recent.json",
     preferences_file = "~~/adwisp-preferences.json",
     locale_file = "",
+    library_max_entries = 500,
 }
 options.read_options(opts, "adwisp")
 opts.recent_history = opts.recent_history == true
@@ -76,6 +78,12 @@ if type(opts.theme_file) ~= "string" then opts.theme_file = "" end
 opts.theme_file = opts.theme_file:sub(1, 512)
 if type(opts.locale_file) ~= "string" then opts.locale_file = "" end
 opts.locale_file = opts.locale_file:sub(1, 512)
+local library_max_entries = tonumber(opts.library_max_entries)
+if type(library_max_entries) ~= "number" or library_max_entries ~= library_max_entries
+    or library_max_entries == math.huge or library_max_entries == -math.huge then
+    library_max_entries = 500
+end
+opts.library_max_entries = math.max(50, math.min(5000, math.floor(library_max_entries)))
 if type(opts.font_family) ~= "string" then opts.font_family = "Sans" end
 opts.font_family = opts.font_family:sub(1, 48):gsub("[^%w _%-]", "")
 opts.font_family = opts.font_family:match("^%s*(.-)%s*$")
@@ -261,6 +269,7 @@ local last_mouse_x, last_mouse_y
 local active_track_menu
 local active_playlist_menu
 local active_recent_menu
+local close_library_menu
 local open_playlist_menu
 local refresh_playlist_menu
 local open_recent_menu
@@ -292,6 +301,7 @@ local function clear_track_menu()
 end
 
 local function clear_interaction_state()
+    if close_library_menu then close_library_menu(true) end
     active_drag = nil
     last_mouse_x, last_mouse_y = nil, nil
     state.hover_target = nil
@@ -1766,6 +1776,7 @@ local function clear_recent_history()
 end
 
 local function open_track_menu(kind, query, selected_source_id)
+    if close_library_menu then close_library_menu(true) end
     clear_track_menu()
     local tracks = kind == "audio" and state.audio_tracks or state.subtitle_tracks
     if type(tracks) ~= "table" or #tracks == 0 then
@@ -2232,6 +2243,7 @@ local registered_key_bindings = {
     ["CTRL+ALT+KP_SUBTRACT"] = "adwisp-image-zoom-out",
     ["CTRL+PGUP"] = "adwisp-chapter-prev",
     ["CTRL+PGDWN"] = "adwisp-chapter-next",
+    ["CTRL+ALT+F2"] = "adwisp-library",
     ["CTRL+ALT+F3"] = "adwisp-recent-menu",
     ["CTRL+ALT+F4"] = "adwisp-settings",
     ["CTRL+ALT+SHIFT+F3"] = "adwisp-clear-recent",

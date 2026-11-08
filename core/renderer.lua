@@ -106,10 +106,19 @@ local function render_menu_panel(menu, width, height, colors, font_family, font_
     )
 
     for index, line in ipairs(lines) do
-        local color = index == 1 and colors.accent
-            or (index == 2 and colors.muted or colors.text)
-        local bold = index == 1 and 1 or 0
+        local selected = menu.selected_line == index
+        local color = selected and colors.on_accent
+            or (index == 1 and colors.accent or (index == 2 and colors.muted or colors.text))
+        local bold = (index == 1 or selected) and 1 or 0
         local line_y = y + 10 + (index - 1) * line_height
+        if selected then
+            ass = ass .. string.format(
+                "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\alpha&H30&\\p1}"
+                    .. "m 0 0 l %d 0 %d %d 0 %d{\\p0}\\N",
+                x + 8, line_y - 2, colors.accent, panel_width - 16,
+                panel_width - 16, line_height, line_height
+            )
+        end
         ass = ass .. string.format(
             "{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\b%d\\1c%s}%s\\N",
             x + 14, line_y, font_family, font_size, bold, color,
@@ -454,7 +463,7 @@ function Renderer:render()
         end
     end
     ass = ass .. table.concat(chapter_markers, "\\n")
-    ass = ass .. render_menu_panel(state.playlist_menu or state.recent_menu, width, height,
+    ass = ass .. render_menu_panel(state.library_menu or state.playlist_menu or state.recent_menu, width, height,
         colors, font_family, font_scale)
 
     if state.hover_target == "playback" or state.hover_target == "volume"
