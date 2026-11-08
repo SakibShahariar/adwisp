@@ -236,3 +236,6 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 
 | `6d5559e5165c9b276a4f966bdb8b56cce0a2d95e` | test(library): add directory model and browser coverage (#50) | red | [42464948557](https://github.com/SakibShahariar/adwisp/actions/runs/42464948557) | Lua 5.2 rejected an unnecessary escaped slash in the video-extension pattern (`core/video_library.lua:20`). Simplified extension extraction because directory entry names are already validated as basenames. Also tightened the browser fixture to list only its intended initial directory entries. |
+
+
+| `e5368f13d3a85cac3adaecf70c486a63d50ac160` | fix(library): correct Lua extension pattern and fixture (#50) | red | [42465011705](https://github.com/SakibShahariar/adwisp/actions/runs/42465011705) | Lua syntax and Luacheck passed; the OSD integration test advanced a stale timer instead of the pending 10 ms directory-scan timer when checking an empty folder. The test now selects the pending scan timer explicitly. |

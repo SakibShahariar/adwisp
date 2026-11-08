@@ -421,6 +421,18 @@ os.remove(preferences_test_path)
 os.remove(preferences_test_path .. ".tmp")
 
 
+local function finish_library_scan()
+    for index = #timers, 1, -1 do
+        local timer = timers[index]
+        if timer.timeout == 0.01 and not timer.killed then
+            timer.killed = true
+            timer.callback()
+            return
+        end
+    end
+    error("expected a pending library scan timer")
+end
+
 -- The local library is on-demand, directory-scoped, and separate from the playback queue.
 assert_equal(library_readdir_calls, 0, "the library must not scan any directory at startup")
 library_filesystem["/library"] = { is_dir = true }
@@ -438,7 +450,7 @@ script_messages["adwisp-library-open"]("/library")
 assert_true(observed_state.library_menu ~= nil and observed_state.library_menu.loading,
     "opening the library should show a loading state")
 assert_equal(library_readdir_calls, 1, "opening the browser should scan only the selected directory")
-timers[#timers].callback()
+finish_library_scan()
 assert_equal(observed_state.library_menu.loading, false, "small directory scan should complete")
 assert_equal(#observed_state.library_menu.entries, 2,
     "browser should show folders and supported videos but filter unrelated files")
@@ -452,13 +464,13 @@ assert_equal(observed_state.playlist_count, 0,
 key_bindings["adwisp-library-enter"].callback()
 assert_equal(observed_state.library_menu.path, "/library/Movies",
     "Enter on a folder should navigate into that folder")
-timers[#timers].callback()
+finish_library_scan()
 assert_equal(observed_state.library_menu.entries[1].path, "/library/Movies/nested.mp4",
     "nested folder contents should be enumerated on demand")
 key_bindings["adwisp-library-parent"].callback()
 assert_equal(observed_state.library_menu.path, "/library",
     "Backspace should navigate to the parent directory")
-timers[#timers].callback()
+finish_library_scan()
 
 observed_state.library_menu.selected_index = 2
 key_bindings["adwisp-library-queue"].callback()
@@ -481,7 +493,7 @@ assert_equal(observed_state.library_menu, nil,
     "opening a video should close the browser")
 
 script_messages["adwisp-library-open"]("/library/Empty")
-timers[#timers].callback()
+finish_library_scan()
 assert_true(table.concat(observed_state.library_menu.lines, " "):find(
     "No supported videos or folders", 1, true) ~= nil,
     "empty directories should show a clear empty state")
@@ -2017,7 +2029,7 @@ assert_equal(observed_state.opacity, 0,
     "showing with idle-hide enabled should begin at transparent opacity")
 local first_idle_timer = timers[timers_before_idle + 1]
 for _ = 1, 6 do
-    timers[#timers].callback()
+    finish_library_scan()
 end
 assert_equal(observed_state.opacity, 1,
     "fade-in should reach full opacity after its finite steps")
@@ -2046,7 +2058,7 @@ assert_equal(observed_state.visible, true,
 local final_idle_timer = timers[#timers]
 final_idle_timer.callback()
 for _ = 1, 6 do
-    timers[#timers].callback()
+    finish_library_scan()
 end
 assert_equal(observed_state.visible, false,
     "the OSD should hide after the complete idle fade-out")
@@ -2056,7 +2068,7 @@ assert_equal(observed_state.opacity, 1,
 -- An active mouse drag suppresses the idle timeout until the pointer is released.
 script_messages["adwisp-show"]()
 for _ = 1, 6 do
-    timers[#timers].callback()
+    finish_library_scan()
 end
 mouse_x, mouse_y = 500, 600
 key_bindings["adwisp-mouse-click"].callback({ event = "down" })
@@ -2073,7 +2085,7 @@ assert_equal(observed_state.visible, false,
 -- Shutdown must invalidate pending callbacks and release OSD, drag, and
 -- thumbfast state without relying on an end-file event.
 script_messages["adwisp-show"]()
-for _ = 1, 6 do timers[#timers].callback() end
+for _ = 1, 6 do finish_library_scan() end
 thumbfast_payload = { width = 160, height = 90, disabled = false, available = true }
 script_messages["thumbfast-info"]("{}")
 local shutdown_layout = Layout.compute(1280, 720)
