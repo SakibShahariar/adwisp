@@ -99,4 +99,32 @@ assert(VideoLibrary.begin_scan("/media", inaccessible) == nil,
 assert(VideoLibrary.scan_chunk({}, deps, 5) == true,
     "invalid scan state should fail safely")
 
+local view_entries = {
+    { name = "Movies", kind = "directory" },
+    { name = "Winter 1080p.mkv", kind = "video", size = 400, mtime = 100 },
+    { name = "winter 4K.mkv", kind = "video", size = 900, mtime = 300 },
+    { name = "Winter unknown.mkv", kind = "video" },
+    { name = "Summer 1080p.mkv", kind = "video", size = 200, mtime = 200 },
+}
+local matching = VideoLibrary.view(view_entries, "WINTER 1080p", "name")
+assert(#matching == 1 and matching[1] == view_entries[2],
+    "multi-token search should match filenames and preserve source references")
+local modified = VideoLibrary.view(view_entries, "", "modified")
+assert(modified[1] == view_entries[1]
+    and modified[2] == view_entries[3] and modified[3] == view_entries[5]
+    and modified[4] == view_entries[2] and modified[5] == view_entries[4],
+    "modified sort should be newest-first, directories first, and missing metadata last")
+local largest = VideoLibrary.view(view_entries, "", "size")
+assert(largest[1] == view_entries[1]
+    and largest[2] == view_entries[3] and largest[3] == view_entries[2]
+    and largest[4] == view_entries[5] and largest[5] == view_entries[4],
+    "size sort should be largest-first and put missing sizes last")
+assert(#VideoLibrary.view(view_entries, "not present", "name") == 0,
+    "unmatched search should return an empty view")
+local cleared_view = VideoLibrary.view(view_entries, "  ", "name")
+assert(#cleared_view == #view_entries and cleared_view[1] == view_entries[1],
+    "clearing search should restore all entries")
+assert(view_entries[2].name == "Winter 1080p.mkv" and view_entries[2].index == nil,
+    "search and sorting must not mutate source entries")
+
 print("All video-library tests passed.")

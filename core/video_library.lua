@@ -1,4 +1,5 @@
 -- One-directory-at-a-time local video browsing model.
+local MenuFilter = require "core.menu_filter"
 local VideoLibrary = {}
 
 local extensions = {
@@ -141,6 +142,37 @@ function VideoLibrary.selection(scan, index)
         return nil
     end
     return scan.entries[math.floor(index)]
+end
+
+function VideoLibrary.sort_modes()
+    return { "name", "modified", "size" }
+end
+
+-- Return a new view containing original entry references. Directories stay
+-- first; unavailable metadata sorts after known values, with name as tie-break.
+function VideoLibrary.view(entries, query, sort_mode)
+    if type(entries) ~= "table" then return {} end
+    if sort_mode ~= "modified" and sort_mode ~= "size" then sort_mode = "name" end
+    local results = MenuFilter.filter(entries, query, { "title", "name" })
+    table.sort(results, function(left, right)
+        local a, b = left.item, right.item
+        if a.kind ~= b.kind then return a.kind == "directory" end
+        if sort_mode ~= "name" and a.kind == "video" then
+            local field = sort_mode == "modified" and "mtime" or "size"
+            local av, bv = a[field], b[field]
+            if av == nil and bv ~= nil then return false end
+            if av ~= nil and bv == nil then return true end
+            if av ~= nil and bv ~= nil and av ~= bv then return av > bv end
+        end
+        local an, bn = tostring(a.name or ""), tostring(b.name or "")
+        local af, bf = an:lower(), bn:lower()
+        if af ~= bf then return af < bf end
+        if an ~= bn then return an < bn end
+        return left.index < right.index
+    end)
+    local visible = {}
+    for index, result in ipairs(results) do visible[index] = result.item end
+    return visible
 end
 
 return VideoLibrary

@@ -453,6 +453,30 @@ assert_equal(observed_state.library_menu.entries[2].path, "/library/clip.mkv",
     "video selection should retain the original full path")
 assert_equal(observed_state.playlist_count, 0,
     "opening and browsing the library must not alter the playback queue")
+assert_true(key_bindings["adwisp-library-search-input"] ~= nil,
+    "library should register optional Unicode text search")
+local search_input = key_bindings["adwisp-library-search-input"].callback
+for _, character in ipairs({ "c", "l", "i", "p" }) do
+    search_input({ event = "down", key_name = character:upper(), key_text = character })
+end
+assert_equal(observed_state.library_menu.query, "clip",
+    "typing should update the local library search query")
+assert_equal(#observed_state.library_menu.entries, 1,
+    "typed search should filter visible library rows")
+assert_equal(observed_state.library_menu.entries[1].path, "/library/clip.mkv",
+    "filtered rows should retain the original file entry")
+search_input({ event = "down", key_name = "z", key_text = "z" })
+assert_equal(#observed_state.library_menu.entries, 0,
+    "unmatched search should return no rows")
+assert_true(table.concat(observed_state.library_menu.lines, " "):find("No matches", 1, true) ~= nil,
+    "empty search results should be explained")
+key_bindings["adwisp-library-search-clear"].callback({ event = "down" })
+assert_equal(observed_state.library_menu.query, "",
+    "Ctrl+Backspace should clear the library search")
+assert_equal(#observed_state.library_menu.entries, 2,
+    "clearing search should restore the full current-folder view")
+assert_equal(observed_state.playlist_count, 0,
+    "searching must not mutate the playback queue")
 
 key_bindings["adwisp-library-enter"].callback()
 assert_equal(observed_state.library_menu.path, "/library/Movies",

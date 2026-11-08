@@ -2429,40 +2429,90 @@ local library_dependencies = {
     split_path = utils.split_path,
 }
 
+local function refresh_library_view(menu, preferred_path)
+    if not menu then return end
+    if preferred_path == nil then
+        local selected = menu.entries and menu.entries[menu.selected_index]
+        preferred_path = selected and selected.path or nil
+    end
+    menu.entries = VideoLibrary.view(menu.source_entries or {}, menu.query, menu.sort_mode)
+    menu.selected_index = 1
+    if preferred_path then
+        for index, entry in ipairs(menu.entries) do
+            if entry.path == preferred_path then menu.selected_index = index break end
+        end
+    end
+    menu.selected_index = math.max(1, math.min(menu.selected_index, math.max(1, #menu.entries)))
+end
+
 local function refresh_library_menu()
     local menu = state.library_menu
     if not menu then return end
-    local lines = { "Video Library", menu.path }
+    local labels = { name = "Name", modified = "Recently modified", size = "Largest first" }
+    local query = type(menu.query) == "string" and menu.query or ""
+    local lines = { "Video Library", menu.path,
+        query == "" and "Search: type to filter" or "Search: " .. query,
+        "Sort: " .. (labels[menu.sort_mode] or "Name") .. " (Tab / Shift+Tab)" }
     menu.selected_line = nil
     if menu.loading then
         lines[#lines + 1] = "Scanning this folder…"
     elseif menu.error then
         lines[#lines + 1] = "Cannot browse folder: " .. tostring(menu.error)
     elseif #menu.entries == 0 then
-        lines[#lines + 1] = "No supported videos or folders"
+        lines[#lines + 1] = query ~= "" and "No matches. Ctrl+Backspace clears search."
+            or "No supported videos or folders"
     else
         local page_size = menu.page_size or 12
         local first = math.floor((menu.selected_index - 1) / page_size) * page_size + 1
         local last = math.min(#menu.entries, first + page_size - 1)
         for index = first, last do
             local entry = menu.entries[index]
-            local prefix = entry.kind == "directory" and "[DIR] " or "[VID] "
-            lines[#lines + 1] = prefix .. entry.name
-            if index == menu.selected_index then
-                menu.selected_line = #lines
-            end
+            lines[#lines + 1] = (entry.kind == "directory" and "[DIR] " or "[VID] ") .. entry.name
+            if index == menu.selected_index then menu.selected_line = #lines end
         end
         if menu.truncated then
-            lines[#lines + 1] = "Showing first " .. tostring(#menu.entries) .. " entries (limit)"
+            lines[#lines + 1] = "Showing first " .. tostring(#menu.source_entries) .. " entries (limit)"
         end
         if #menu.entries > page_size then
             lines[#lines + 1] = "Page " .. tostring(math.floor((first - 1) / page_size) + 1)
                 .. " / " .. tostring(math.ceil(#menu.entries / page_size))
         end
     end
-    lines[#lines + 1] = "Enter open/play · A queue · Backspace up · Esc close"
+    if menu.search_available == false then
+        lines[#lines + 1] = "Text filtering unavailable on this mpv build"
+    end
+    lines[#lines + 1] = "Type to search · Tab sort · Enter open/play · A queue · Backspace up · Esc close"
     menu.lines = lines
     render()
+end
+
+local function update_library_search(query)
+    local menu = state.library_menu
+    if not menu then return end
+    local selected = menu.entries and menu.entries[menu.selected_index]
+    menu.query = type(query) == "string" and query:sub(1, 256) or ""
+    refresh_library_view(menu, selected and selected.path or nil)
+    refresh_library_menu()
+end
+
+local function set_library_sort(mode)
+    local menu = state.library_menu
+    if not menu or (mode ~= "name" and mode ~= "modified" and mode ~= "size") then return end
+    local selected = menu.entries and menu.entries[menu.selected_index]
+    menu.sort_mode = mode
+    refresh_library_view(menu, selected and selected.path or nil)
+    refresh_library_menu()
+end
+
+local function cycle_library_sort(direction)
+    local menu = state.library_menu
+    if not menu then return end
+    local modes = VideoLibrary.sort_modes()
+    local current = 1
+    for index, mode in ipairs(modes) do
+        if mode == menu.sort_mode then current = index break end
+    end
+    set_library_sort(modes[((current - 1 + direction) % #modes) + 1])
 end
 
 close_library_menu = function(silent)
@@ -2560,7 +2610,41 @@ local function install_library_bindings()
     end)
     add_library_binding("ENTER", "adwisp-library-enter", play_library_selection)
     add_library_binding("a", "adwisp-library-queue", queue_library_selection)
-    add_library_binding("BS", "adwisp-library-parent", go_to_library_parent)
+    add_library_binding("BS", "adwisp-library-parent", function()
+        local menu = state.library_menu
+        if menu and menu.query ~= "" then
+            update_library_search(remove_last_utf8_character(menu.query))
+        else
+            go_to_library_parent()
+        end
+    end)
+    add_library_binding("CTRL+BACKSPACE", "adwisp-library-search-clear", function(event)
+        if type(event) == "table" and event.event and event.event ~= "down" then return end
+        update_library_search("")
+    end)
+    add_library_binding("TAB", "adwisp-library-sort-next", function() cycle_library_sort(1) end)
+    add_library_binding("SHIFT+TAB", "adwisp-library-sort-previous", function() cycle_library_sort(-1) end)
+    local search_ok = false
+    if type(mp.add_forced_key_binding) == "function" then
+        local ok = pcall(mp.add_forced_key_binding, "ANY_UNICODE",
+            "adwisp-library-search-input", function(event)
+                if type(event) ~= "table" or event.event ~= "down" then return end
+                local key_name = type(event.key_name) == "string" and event.key_name:upper() or ""
+                if key_name:find("CTRL", 1, true) or key_name:find("ALT", 1, true)
+                    or key_name:find("META", 1, true) then return end
+                if type(event.key_text) == "string" and event.key_text ~= "" then
+                    local menu = state.library_menu
+                    if menu and #menu.query < 256 then
+                        update_library_search(menu.query .. event.key_text)
+                    end
+                end
+            end, { complex = true })
+        if ok then
+            library_binding_names[#library_binding_names + 1] = "adwisp-library-search-input"
+            search_ok = true
+        end
+    end
+    if state.library_menu then state.library_menu.search_available = search_ok end
     add_library_binding("ESC", "adwisp-library-close", function()
         close_library_menu(false)
     end)
@@ -2591,7 +2675,10 @@ open_library = function(path)
     if not scan then menu_error = tostring(scan_error) end
     state.library_menu = {
         path = path,
+        source_entries = {},
         entries = {},
+        query = "",
+        sort_mode = "name",
         selected_index = 1,
         page_size = 12,
         loading = scan ~= nil,
@@ -2614,10 +2701,9 @@ open_library = function(path)
             refresh_library_menu()
         elseif done then
             state.library_menu.loading = false
-            state.library_menu.entries = scan.entries
+            state.library_menu.source_entries = scan.entries
             state.library_menu.truncated = scan.truncated
-            state.library_menu.selected_index = math.min(
-                state.library_menu.selected_index, math.max(1, #scan.entries))
+            refresh_library_view(state.library_menu)
             refresh_library_menu()
         else
             library_scan_timer = mp.add_timeout(0.01, process_chunk)
@@ -2642,6 +2728,8 @@ mp.register_script_message("adwisp-library-open", function(path) open_library(pa
 mp.register_script_message("adwisp-library-close", function() close_library_menu(false) end)
 mp.register_script_message("adwisp-library-up", go_to_library_parent)
 mp.register_script_message("adwisp-library-queue", queue_library_selection)
+mp.register_script_message("adwisp-library-search", update_library_search)
+mp.register_script_message("adwisp-library-sort", set_library_sort)
 mp.add_key_binding("CTRL+ALT+F2", "adwisp-library", function() open_library() end)
 register_no_argument_message("adwisp-clear-recent", clear_recent_history)
 register_no_argument_message("adwisp-toggle", toggle)
