@@ -214,3 +214,6 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 
 | `e6536dc995beb4738638f0a74ef44b25544d1561` | test(layout): verify independent hover-only zones (#48) | green | [42463836979](https://github.com/SakibShahariar/adwisp/actions/runs/42463836979) | Lua syntax, Luacheck, and all unit tests passed. The prior renderer failure was only a stale title fixture; corrected before the successful run. |
+
+
+| `81908243e6cf2e726bc6d891d69f641c543c9fe5` | test(layout): verify zone focus and responsive geometry (#48) | red | [42463902624](https://github.com/SakibShahariar/adwisp/actions/runs/42463902624) | Luacheck found that the split-zone matrix test was invoked but its local function definition was not inserted. Added the missing function before the invocation; no production-code failure was reported. |

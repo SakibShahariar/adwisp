@@ -344,6 +344,35 @@ local function test_split_zone_geometry()
     assert_equal(top_position.top_zone, nil, "top-positioned panels should retain the single-zone fallback")
 end
 
+local function test_split_zone_matrix()
+    for _, size in ipairs({
+        { 320, 320 }, { 640, 360 }, { 1280, 720 }, { 1920, 1080 },
+    }) do
+        local width, height = size[1], size[2]
+        local candidate = Layout.compute(width, height, {
+            control_zones = "split", osd_position = "bottom",
+        })
+        assert_true(candidate.top_zone ~= nil,
+            "split zones should fit at " .. width .. "x" .. height)
+        local top = candidate.top_zone
+        local bottom = candidate.panel
+        assert_true(top.x >= 0 and top.y >= 0
+            and top.x + top.width <= width and top.y + top.height <= height,
+            "top zone should remain within OSD bounds at " .. width .. "x" .. height)
+        assert_true(bottom.x >= 0 and bottom.y >= 0
+            and bottom.x + bottom.width <= width and bottom.y + bottom.height <= height,
+            "bottom zone should remain within OSD bounds at " .. width .. "x" .. height)
+        assert_true(top.y + top.height < bottom.y,
+            "zones should retain a gap at " .. width .. "x" .. height)
+        assert_true(candidate.playback.y >= bottom.y
+            and candidate.timeline.y >= bottom.y,
+            "main controls should stay in bottom zone at " .. width .. "x" .. height)
+        assert_true(candidate.playlist.y >= top.y
+            and candidate.playlist.y + candidate.playlist.height <= top.y + top.height,
+            "playlist navigation should stay in top zone at " .. width .. "x" .. height)
+    end
+end
+
 test_split_zone_geometry()
 test_split_zone_matrix()
 test_layout_rectangles()
