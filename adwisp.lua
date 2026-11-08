@@ -210,6 +210,7 @@ local cached_layout = nil
 local cached_layout_width, cached_layout_height
 local cached_layout_position, cached_layout_margin, cached_layout_custom_offset
 local cached_layout_minimal_timeline, cached_layout_timeline_expanded
+local cached_layout_control_zones, cached_layout_top_zone_margin
 local active_drag = nil
 local last_mouse_x, last_mouse_y
 local active_track_menu
