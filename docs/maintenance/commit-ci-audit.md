@@ -245,3 +245,7 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 
 | `006ec95a4e1d246d5955f5f55a570450f03584e6` | fix(library): render small folders without waiting for a timer (#50) | red | [42465163518](https://github.com/SakibShahariar/adwisp/actions/runs/42465163518) | Luacheck found that a global replacement had changed unrelated timer tests to call the library-only helper. Restored the pre-library timer assertions and removed timer calls from the now-synchronous small-folder test cases. |
+
+
+| `f76c6524e4301f1abf9da522f312588576f5708d` | test(library): restore unrelated timer tests (#50) | red | [42465222595](https://github.com/SakibShahariar/adwisp/actions/runs/42465222595) | The library integration test still expected a loading state after changing small-directory processing to synchronous-first-chunk behavior; corrected the expectation. |
+| `c64475a5fda49efe760cbb6c4e415119dfc7fba0` | test(library): expect immediate small-folder results (#50) | red | [42465258716](https://github.com/SakibShahariar/adwisp/actions/runs/42465258716) | The empty-folder assertion failed after the initial sync change; added the actual menu path/loading/error/entry/line values to the failure message to isolate the remaining fixture or state issue. |

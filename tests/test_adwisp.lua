@@ -478,9 +478,13 @@ assert_equal(observed_state.library_menu, nil,
     "opening a video should close the browser")
 
 script_messages["adwisp-library-open"]("/library/Empty")
-assert_true(table.concat(observed_state.library_menu.lines, " "):find(
-    "No supported videos or folders", 1, true) ~= nil,
-    "empty directories should show a clear empty state")
+local empty_library_lines = table.concat(observed_state.library_menu.lines, " ")
+assert_true(empty_library_lines:find("No supported videos or folders", 1, true) ~= nil,
+    "empty directory state mismatch: path=" .. tostring(observed_state.library_menu.path)
+        .. " loading=" .. tostring(observed_state.library_menu.loading)
+        .. " error=" .. tostring(observed_state.library_menu.error)
+        .. " entries=" .. tostring(#observed_state.library_menu.entries)
+        .. " lines=" .. empty_library_lines)
 script_messages["adwisp-library-open"]("/library/Denied")
 assert_true(observed_state.library_menu.error ~= nil,
     "permission failures should be reported without breaking the OSD")
