@@ -24,10 +24,10 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `e6536dc995beb4738638f0a74ef44b25544d1561`
+- Reviewed checkpoint SHA: `9326a7ceb539fa800e221e6fb30204497e579432`
 - Reviewed: 2026-11-08
-- Range reviewed: `a60a2b4f49e55b03112073121e07af59106e6c6b` through `e6536dc995beb4738638f0a74ef44b25544d1561`
-- Result: two commits after the previous checkpoint have exact-SHA check-run results. One is green and one is red; the hover-visibility test fixture failure is corrected by the green test/documentation follow-up.
+- Range reviewed: `e6536dc995beb4738638f0a74ef44b25544d1561` through `9326a7ceb539fa800e221e6fb30204497e579432`
+- Result: all 21 commits after the previous checkpoint have exact-SHA check-run results. Five are green and 16 are red attempts; every red attempt is diagnosed below and corrected by a later green commit.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: review the substantive code/ledger commit and any newer exact-SHA runs; retain all red history.
 
@@ -261,3 +261,8 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 | `eea3314dd7ad77a5ec15f711e871ef24901901ab` | feat(library): add browser model and OSD menu foundation (#50) | red | [42464838409](https://github.com/SakibShahariar/adwisp/actions/runs/42464838409) | Luacheck reported the library module import as unused and the forward-declared close callback as never assigned; the subsequent browser integration commit uses both. |
 | `66d23c13a565a2b92c2c2b32981904b869ac6d87` | test(library): verify chunked large-folder browsing (#50) | red | [42465558412](https://github.com/SakibShahariar/adwisp/actions/runs/42465558412) | The test expected partial scan entries to be displayed before sorting; the UI intentionally keeps the loading state until the final sorted list is ready. Changed the assertion to count the 32 metadata checks performed in the first chunk. |
+
+
+| `abf032e6b600084088910bcfa91c5ef1990abb5a` | test(layout): define split-zone responsive matrix (#48) | green | [42463959948](https://github.com/SakibShahariar/adwisp/actions/runs/42463959948) | Lua syntax, Luacheck, and all tests passed, including independent zone focus and responsive geometry. |
+| `edaa1a56e4a844e78fea06a41e51e36ab9440053` | feat(library): add folder browser interactions (#50) | red | [42464897593](https://github.com/SakibShahariar/adwisp/actions/runs/42464897593) | Unit tests could not load `core.video_library` because the browser interaction commit preceded the commit that added the new module; the module was added in the next follow-up. |
+| `9326a7ceb539fa800e221e6fb30204497e579432` | test(library): assert bounded metadata chunking (#50) | green | [42465627412](https://github.com/SakibShahariar/adwisp/actions/runs/42465627412) | Lua syntax, Luacheck, and all tests passed, including folder navigation, queue-vs-play behavior, empty/permission/remote-path handling, and 32-entry asynchronous metadata chunks. This is the current reviewed checkpoint. |
