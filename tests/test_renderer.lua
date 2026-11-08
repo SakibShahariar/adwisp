@@ -399,4 +399,11 @@ assert_true(overlay.data:find("\\{Sound 51%\\}", 1, true) ~= nil,
 state.translations = nil
 renderer:render()
 
+state.layout_options = { control_zones = "split", osd_position = "bottom", osd_margin = 42, top_zone_margin = 24 }
+renderer:render()
+assert_true(overlay.data:find("\\pos(360,24)", 1, true) ~= nil,
+    "split mode should draw a separate top-zone background")
+state.layout_options = nil
+renderer:render()
+
 print("All renderer tests passed.")

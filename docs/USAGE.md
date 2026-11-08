@@ -66,6 +66,8 @@ Adwisp uses mpv's standard script options. Edit `script-opts/adwisp.conf` in you
 
 Core bindings can be remapped independently. Duplicate Adwisp bindings are detected; the later action falls back to its default.
 
+Set `control_zones=split` to place the title and playback-status row in a separate top panel while keeping playback, volume, timeline, and playlist controls in the bottom panel. Split mode is opt-in and currently requires `osd_position=bottom`; compact or too-short windows automatically retain the original single-panel layout. `top_zone_margin` controls the top panel offset.
+
 | Option | Purpose | Default |
 | --- | --- | --- |
 | `seek_step` | Seek distance in seconds | `5` |
@@ -74,6 +76,8 @@ Core bindings can be remapped independently. Duplicate Adwisp bindings are detec
 | `thumbnail_preview` | Enable the thumbfast adapter | `yes` |
 | `minimal_timeline` | Collapse the timeline until hovered/focused | `no` |
 | `osd_position` | OSD placement: bottom, top, or custom | `bottom` |
+| `control_zones` | `single` keeps the original panel; `split` separates title/status from playback controls | `single` |
+| `top_zone_margin` | Top-edge margin for the optional split title/status zone | `24` |
 | `font_family` / `font_scale` | Font and relative scale | `Sans` / `1.0` |
 | `idle_hide_timeout` | Hide after inactivity; 0 disables it | `0` |
 | `fade_duration` | OSD fade duration in seconds | `0.25` |
