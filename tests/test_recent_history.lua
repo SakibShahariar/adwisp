@@ -57,13 +57,45 @@ local path_title = History.normalize({
 }, 1)
 assert_equal(path_title[1].title, "video.mkv",
     "path-like media titles should not expose full paths in the menu")
-assert_equal(#History.normalize({ version = 2, items = normalized }, 10), 0,
+assert_equal(#History.normalize({ version = 3, items = normalized }, 10), 0,
     "unsupported history versions should be ignored")
+assert_equal(History.normalize({ version = 1, items = {
+    { path = "/legacy.mkv", title = "Legacy", position = 75, duration = 100 },
+} }, 10)[1].position, nil,
+    "version-one history should migrate without trusting progress fields")
+
+local progress_items = History.record({}, "/resume.mkv", "Resume", 10)
+local recorded
+progress_items, recorded = History.update_progress(progress_items,
+    "/resume.mkv", 75, 200, 10)
+assert_true(recorded, "known local history entries should accept progress updates")
+assert_equal(progress_items[1].position, 75, "progress position should be stored")
+assert_equal(progress_items[1].duration, 200, "progress duration should be stored")
+assert_equal(History.resume_position(progress_items[1]), 75,
+    "resume should expose a useful position")
+progress_items = History.record(progress_items, "/resume.mkv", "Resume renamed", 10)
+assert_equal(progress_items[1].position, 75,
+    "recording a reopened file should preserve its resume position")
+progress_items, recorded = History.update_progress(progress_items,
+    "/resume.mkv", 192, 200, 10)
+assert_true(recorded, "completion should update an existing entry")
+assert_equal(progress_items[1].position, nil,
+    "completed playback should clear the resume marker")
+assert_equal(History.resume_position(progress_items[1]), nil,
+    "completed playback should not offer a resume position")
+local _, updated = History.update_progress(progress_items,
+    "https://example.test/stream", 60, 100, 10)
+assert_equal(updated, false, "network progress must be rejected")
+local _, invalid_progress = History.update_progress(progress_items,
+    "/resume.mkv", math.huge, 200, 10)
+assert_equal(invalid_progress, false, "non-finite progress must be rejected")
+assert_equal(History.resume_position({ position = 12, duration = 200 }), nil,
+    "tiny playback starts should not be offered as resume points")
 
 local store = {
     raw = "stored-history",
-    payload = { version = 1, items = {
-        { path = "/saved/one.mkv", title = "Saved One" },
+    payload = { version = 2, items = {
+        { path = "/saved/one.mkv", title = "Saved One", position = 42, duration = 100 },
         { path = "/saved/two.mkv", title = "Saved Two" },
     } },
     written = nil,
@@ -116,13 +148,16 @@ store.payload = { version = 99, items = loaded }
 assert_equal(#History.load("/history.json", 10, deps), 0,
     "unsupported stored versions should not be loaded")
 
-store.payload = { version = 1, items = loaded }
+loaded[1].position, loaded[1].duration = 42, 100
+store.payload = { version = 2, items = loaded }
 assert_true(History.save("/history.json", loaded, 10, deps),
     "history should save through a temporary file and rename")
 assert_equal(store.written, "encoded-history", "the encoded payload should be written")
 assert_equal(store.renamed[1], "/history.json.tmp", "save should use a sibling temporary file")
 assert_equal(store.renamed[2], "/history.json", "save should atomically replace the history file")
-assert_equal(store.saved_payload.version, 1, "saved history should carry a version")
+assert_equal(store.saved_payload.version, 2, "saved history should use the progress-aware version")
+assert_equal(store.saved_payload.items[1].position, 42,
+    "saving history should preserve playback progress")
 
 assert_true(History.clear("/history.json", deps), "history should be removable")
 assert_equal(store.removed, "/history.json", "clear should remove only the configured history file")

@@ -24,12 +24,12 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `9326a7ceb539fa800e221e6fb30204497e579432`
+- Reviewed checkpoint SHA: `d0cce9181741a9c7b8908cff83150afc1bfb9592`
 - Reviewed: 2026-11-08
-- Range reviewed: `e6536dc995beb4738638f0a74ef44b25544d1561` through `9326a7ceb539fa800e221e6fb30204497e579432`
-- Result: all 21 commits after the previous checkpoint have exact-SHA check-run results. Five are green and 16 are red attempts; every red attempt is diagnosed below and corrected by a later green commit.
+- Range reviewed: `9326a7ceb539fa800e221e6fb30204497e579432` through `d0cce9181741a9c7b8908cff83150afc1bfb9592`
+- Result: six newer commits have exact-SHA check-run results: four green and two red. Both red attempts are diagnosed and corrected by later green commits.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
-- Next session: review the substantive code/ledger commit and any newer exact-SHA runs; retain all red history.
+- Next session: review the history-progress commit and its exact-SHA CI result; retain all red history.
 
 ## Reviewed commits
 
@@ -269,3 +269,10 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 
 | `fb5e0e4c083877314b5bb85c8394ea7b6100cffc` | test(library): cover symlink and non-recursive browsing (#50) | red | [42465846210](https://github.com/SakibShahariar/adwisp/actions/runs/42465846210) | The added directory-symlink fixture increased the candidate count from six to seven; the incremental model test needed one additional two-entry chunk before expecting completion. |
+
+| `0660302709f29e0ff22fefc9025cc21eb9d0213d` | test(library): cover final symlink candidate chunk (#50) | green | [42465904628](https://github.com/SakibShahariar/adwisp/actions/runs/42465904628) | Lua syntax, Luacheck, and all tests passed; corrected the prior bounded-scan expectation from `fb5e0e4`. |
+| `a5256a217e653c626e8be490621f8cce1c0e891c` | feat(library): add local search and sorting (#51) | green | [42469047323](https://github.com/SakibShahariar/adwisp/actions/runs/42469047323) | Exact-SHA check completed successfully. |
+| `23440a7917b5e01912995e890afd6c4a51b81347` | feat(library): add configurable roots and pinned folders (#52) | red | [42469301581](https://github.com/SakibShahariar/adwisp/actions/runs/42469301581) | Lua syntax and Luacheck passed; `tests/test_library_config.lua:35` failed because the test attempted to pin a folder already present in favourites. Changed the fixture to a new path in `221c32c`. |
+| `221c32caceb5c5b22fc7fc34644885799fdd5ce5` | test(library): use a new path for pinning fixture (#52) | green | [42469362106](https://github.com/SakibShahariar/adwisp/actions/runs/42469362106) | Full CI passed after the pinning fixture correction. |
+| `d0cce9181741a9c7b8908cff83150afc1bfb9592` | test(library): cover root and pinned-folder workflows (#52) | green | [42469445010](https://github.com/SakibShahariar/adwisp/actions/runs/42469445010) | Full CI passed, including configured roots, pinned folders, and library configuration tests. |
+

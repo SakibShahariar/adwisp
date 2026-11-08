@@ -49,10 +49,11 @@ end
 
 function History.normalize(payload, limit)
     local items = {}
-    if type(payload) ~= "table" or payload.version ~= 1
+    if type(payload) ~= "table" or (payload.version ~= 1 and payload.version ~= 2)
         or type(payload.items) ~= "table" then
         return items
     end
+    local has_progress = payload.version == 2
 
     local seen = {}
     local maximum = normalized_limit(limit)
@@ -61,10 +62,21 @@ function History.normalize(payload, limit)
             local path = clean_path(item.path)
             if path and not seen[path] then
                 seen[path] = true
-                items[#items + 1] = {
+                local normalized = {
                     path = path,
                     title = clean_title(item.title, path),
                 }
+                if has_progress and type(item.position) == "number"
+                    and item.position == item.position and item.position >= 0
+                    and item.position < math.huge
+                    and type(item.duration) == "number"
+                    and item.duration == item.duration and item.duration > 0
+                    and item.duration < math.huge
+                    and item.position < item.duration * 0.95 then
+                    normalized.position = math.min(item.position, item.duration)
+                    normalized.duration = item.duration
+                end
+                items[#items + 1] = normalized
                 if #items >= maximum then break end
             end
         end
@@ -75,14 +87,21 @@ end
 function History.record(items, path, title, limit)
     path = clean_path(path)
     if not path then
-        return History.normalize({ version = 1, items = items }, limit), false
+        return History.normalize({ version = 2, items = items }, limit), false
     end
 
-    local result = {
-        { path = path, title = clean_title(title, path) },
-    }
+    local existing = History.normalize({ version = 2, items = items }, MAX_ITEMS)
+    local previous = nil
+    for _, item in ipairs(existing) do
+        if item.path == path then previous = item; break end
+    end
+    local first = { path = path, title = clean_title(title, path) }
+    if previous then
+        first.position = previous.position
+        first.duration = previous.duration
+    end
+    local result = { first }
     local seen = { [path] = true }
-    local existing = History.normalize({ version = 1, items = items }, MAX_ITEMS)
     local maximum = normalized_limit(limit)
     for _, item in ipairs(existing) do
         if not seen[item.path] then
@@ -92,6 +111,44 @@ function History.record(items, path, title, limit)
         end
     end
     return result, true
+end
+
+-- Update progress in memory; callers decide when to persist it. A video is
+-- considered complete at 95%, at which point its resume marker is cleared.
+function History.update_progress(items, path, position, duration, limit)
+    path = clean_path(path)
+    if not path or type(position) ~= "number" or position ~= position
+        or position < 0 or position == math.huge
+        or type(duration) ~= "number" or duration ~= duration
+        or duration <= 0 or duration == math.huge then
+        return History.normalize({ version = 2, items = items }, limit), false
+    end
+
+    local result = History.normalize({ version = 2, items = items }, limit)
+    for _, item in ipairs(result) do
+        if item.path == path then
+            if position / duration >= 0.95 then
+                item.position, item.duration = nil, nil
+                return result, true, "completed"
+            end
+            item.position = math.min(position, duration)
+            item.duration = duration
+            return result, true, "updated"
+        end
+    end
+    return result, false
+end
+
+function History.resume_position(item)
+    if type(item) ~= "table" or type(item.position) ~= "number"
+        or item.position ~= item.position or item.position < 0
+        or item.position == math.huge or type(item.duration) ~= "number"
+        or item.duration ~= item.duration or item.duration <= 0
+        or item.duration == math.huge or item.position / item.duration >= 0.95 then
+        return nil
+    end
+    if item.position < 30 then return nil end
+    return item.position
 end
 
 function History.load(path, limit, deps)
@@ -130,8 +187,8 @@ function History.save(path, items, limit, deps)
     end
 
     local payload = {
-        version = 1,
-        items = History.normalize({ version = 1, items = items }, limit),
+        version = 2,
+        items = History.normalize({ version = 2, items = items }, limit),
     }
     local ok_encode, encoded = pcall(deps.format_json, payload)
     if not ok_encode or type(encoded) ~= "string" or #encoded > MAX_FILE_SIZE then
