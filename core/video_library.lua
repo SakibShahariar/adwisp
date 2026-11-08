@@ -17,7 +17,7 @@ end
 
 function VideoLibrary.is_supported_video(name)
     if type(name) ~= "string" then return false end
-    local extension = name:match("%.([^%.\/\\]+)$")
+    local extension = name:match("%.([^%.]+)$")
     return extension ~= nil and extensions[extension:lower()] == true
 end
 

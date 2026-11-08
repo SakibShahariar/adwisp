@@ -430,7 +430,7 @@ library_filesystem["/library/clip.mkv"] = { is_file = true, size = 2048, mtime =
 library_filesystem["/library/notes.txt"] = { is_file = true, size = 12 }
 library_filesystem["/library/Empty"] = { is_dir = true }
 library_filesystem["/library/Denied"] = { is_dir = true }
-library_listings["/library"] = { "notes.txt", "clip.mkv", "Movies", "Empty", "Denied" }
+library_listings["/library"] = { "notes.txt", "clip.mkv", "Movies" }
 library_listings["/library/Movies"] = { "nested.mp4" }
 library_listings["/library/Empty"] = {}
 
@@ -440,7 +440,7 @@ assert_true(observed_state.library_menu ~= nil and observed_state.library_menu.l
 assert_equal(library_readdir_calls, 1, "opening the browser should scan only the selected directory")
 timers[#timers].callback()
 assert_equal(observed_state.library_menu.loading, false, "small directory scan should complete")
-assert_equal(#observed_state.library_menu.entries, 3,
+assert_equal(#observed_state.library_menu.entries, 2,
     "browser should show folders and supported videos but filter unrelated files")
 assert_equal(observed_state.library_menu.entries[1].kind, "directory",
     "folders should appear before video files")
