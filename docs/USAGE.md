@@ -16,7 +16,9 @@ This guide covers Adwisp's keyboard and mouse controls, configuration, and scrip
 | `m` | Toggle mute |
 | `Ctrl+Left` / `Ctrl+Right` | Previous / next playlist item |
 | `Ctrl+Page Up` / `Ctrl+Page Down` | Previous / next chapter |
+| `Ctrl+Alt+F1` | Open Continue Watching (requires opt-in history) |
 | `Ctrl+Alt+F3` | Open the recent-files menu (requires opt-in history) |
+| `Ctrl+Alt+R` | Resume the current local file from its saved position when prompted |
 | `Ctrl+Alt+Shift+F3` | Clear local recent-file history |
 | `Ctrl+Alt+F8` | Open the searchable chapter menu |
 | `Ctrl+Alt+F5` | Cycle audio tracks |
@@ -92,7 +94,7 @@ Set `control_zones=split` to place the title and playback-status row in a separa
 | `fade_duration` | OSD fade duration in seconds | `0.25` |
 | `log_level` | Logging verbosity: quiet, info, or debug | `info` |
 | `theme_file` | Absolute path to a semantic palette file | empty |
-| `recent_history` | Persist a local recently played list; off by default | `no` |
+| `recent_history` | Persist local recently played and resume progress; off by default | `no` |
 | `recent_history_limit` | Maximum recent local files to retain | `20` |
 | `recent_history_file` | Local JSON history file path | `~~/adwisp-recent.json` |
 | `library_config_file` | Local JSON file for configured roots and pinned folders | `~~/adwisp-library.json` |
@@ -103,9 +105,9 @@ Set `locale_file=/path/to/adwisp-locale.conf` to override the built-in English U
 
 Keyboard navigation is available without a mouse: Tab/Shift+Tab moves focus, Enter activates the focused control, and the playlist/track/chapter menus support arrow-key navigation. Adwisp also exposes the focused control and image-viewer state through `adwisp-query`. Custom themes are checked for text/background contrast; low-contrast combinations produce warnings rather than silently changing the user's palette.
 
-### Recently played history
+### Recently played history and Continue Watching
 
-Recent history is disabled by default. Set `recent_history=yes` to keep a local JSON list of recently opened files. Only local paths are recorded; network URLs are ignored. The menu displays media titles rather than full paths. History is stored in the configured file, is never sent to a service, and can be cleared with `Ctrl+Alt+Shift+F3` or the `adwisp-clear-recent` script message. The panel supports mouse-wheel and Up/Down selection, Enter to reopen an item, and page navigation for longer lists.
+When enabled, local playback progress is updated in memory and persisted on a 30-second debounce, plus when a file ends or mpv shuts down. A video is considered complete at 95%; files with at least 30 seconds of useful saved progress appear in Continue Watching. Reopening one offers a prompt; press `Ctrl+Alt+R` to resume explicitly. No automatic seeking occurs. Existing version-one recent-history files are read and upgraded safely when saved. Recent history is disabled by default. Set `recent_history=yes` to keep a local JSON list of recently opened files. Only local paths are recorded; network URLs are ignored. The menu displays media titles rather than full paths. History is stored in the configured file, is never sent to a service, and can be cleared with `Ctrl+Alt+Shift+F3` or the `adwisp-clear-recent` script message. The panel supports mouse-wheel and Up/Down selection, Enter to reopen an item, and page navigation for longer lists.
 
 ### Theme palette
 
@@ -145,6 +147,7 @@ Other mpv scripts and external controllers can send these messages to Adwisp. Ea
 | `adwisp-toggle` | Toggle OSD visibility |
 | `adwisp-reload-theme` | Reload the configured theme |
 | `adwisp-recent` | Open the recent-files panel (requires opt-in history) |
+| `adwisp-continue` | Open Continue Watching (requires opt-in history) |
 | `adwisp-clear-recent` | Clear the local recent-file history |
 | `adwisp-query` | Print a JSON snapshot of the current UI/playback state to mpv's log |
 

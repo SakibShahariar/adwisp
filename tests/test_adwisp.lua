@@ -164,7 +164,15 @@ package.loaded["core.recent_history"] = {
         if type(path) ~= "string" or path:find("://", 1, true) then
             return items, false
         end
-        local updated = { { path = path, title = title or path } }
+        local previous
+        for _, item in ipairs(items) do
+            if item.path == path then previous = item end
+        end
+        local first = { path = path, title = title or path }
+        if previous then
+            first.position, first.duration = previous.position, previous.duration
+        end
+        local updated = { first }
         for _, item in ipairs(items) do
             if item.path ~= path and #updated < limit then
                 updated[#updated + 1] = item
@@ -172,6 +180,25 @@ package.loaded["core.recent_history"] = {
         end
         recent_history_fixture = updated
         return updated, true
+    end,
+    update_progress = function(items, path, position, duration)
+        for _, item in ipairs(items) do
+            if item.path == path then
+                if position / duration >= 0.95 then
+                    item.position, item.duration = nil, nil
+                else
+                    item.position, item.duration = position, duration
+                end
+                recent_history_fixture = items
+                return items, true
+            end
+        end
+        return items, false
+    end,
+    resume_position = function(item)
+        if item and item.position and item.duration and item.position >= 30
+            and item.position / item.duration < 0.95 then return item.position end
+        return nil
     end,
     save = function()
         recent_history_saved = true
@@ -327,6 +354,8 @@ assert_true(key_bindings["adwisp-audio-device-menu"] ~= nil,
 assert_true(key_bindings["adwisp-subtitle-menu"] ~= nil, "subtitle-menu shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-menu"] ~= nil, "playlist-menu shortcut should be registered")
 assert_true(key_bindings["adwisp-recent-menu"] ~= nil, "recent-menu shortcut should be registered")
+assert_true(key_bindings["adwisp-continue-menu"] ~= nil, "continue-watching shortcut should be registered")
+assert_true(key_bindings["adwisp-resume-current"] ~= nil, "resume shortcut should be registered")
 assert_true(key_bindings["adwisp-library"] ~= nil, "video-library shortcut should be registered")
 assert_true(key_bindings["adwisp-clear-recent"] ~= nil, "clear-recent shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
@@ -334,6 +363,7 @@ assert_true(script_messages["adwisp-show"] ~= nil, "show message should be regis
 assert_true(script_messages["adwisp-hide"] ~= nil, "hide message should be registered")
 assert_true(script_messages["adwisp-toggle"] ~= nil, "toggle message should be registered")
 assert_true(script_messages["adwisp-recent"] ~= nil, "recent-history message should be registered")
+assert_true(script_messages["adwisp-continue"] ~= nil, "continue-watching message should be registered")
 assert_true(script_messages["adwisp-library-open"] ~= nil, "video-library open message should be registered")
 assert_true(script_messages["adwisp-library-close"] ~= nil, "video-library close message should be registered")
 assert_true(script_messages["adwisp-clear-recent"] ~= nil, "clear-history message should be registered")
@@ -2236,6 +2266,49 @@ assert_equal(recent_history_fixture[1].path, "/media/new-local-file.mkv",
 assert_equal(recent_history_fixture[1].title, "New local title",
     "file-loaded should save the media title")
 assert_true(recent_history_saved, "file-loaded should persist enabled recent history")
+
+properties.duration = 200
+observers.duration.callback("duration", 200)
+recent_history_saved = false
+observers["time-pos"].callback("time-pos", 60)
+assert_equal(recent_history_fixture[1].position, 60,
+    "time-pos updates should record progress for the current local file")
+assert_equal(recent_history_saved, false,
+    "progress updates should not synchronously write the history file")
+local progress_timer
+for _, timer in ipairs(timers) do
+    if timer.timeout == 30 and not timer.killed then progress_timer = timer end
+end
+assert_true(progress_timer ~= nil, "progress persistence should be debounced for 30 seconds")
+progress_timer.callback()
+assert_true(recent_history_saved, "the progress timer should persist dirty history")
+
+events["file-loaded"]()
+local resume_prompt_found = false
+for _, command in ipairs(commands) do
+    if command[1] == "show-text" and type(command[2]) == "string"
+        and command[2]:find("Resume New local title from 1:00", 1, true) then
+        resume_prompt_found = true
+    end
+end
+assert_true(resume_prompt_found, "eligible local playback should offer a resume prompt")
+key_bindings["adwisp-resume-current"].callback()
+assert_equal(commands[#commands][1], "show-text", "resume should provide visible confirmation")
+assert_equal(commands[#commands - 1][1], "seek", "resume should seek only after the explicit shortcut")
+assert_equal(commands[#commands - 1][2], 60, "resume should seek to the stored playback position")
+
+key_bindings["adwisp-continue-menu"].callback()
+assert_true(observed_state.recent_menu ~= nil, "Continue Watching should reuse the recent-history panel")
+assert_true(overlays[1].data:find("1:00", 1, true) ~= nil,
+    "Continue Watching should display the saved resume position")
+key_bindings["adwisp-continue-menu"].callback()
+
+observers["time-pos"].callback("time-pos", 198)
+recent_history_saved = false
+events["end-file"]()
+assert_equal(recent_history_fixture[1].position, nil, "completed playback should remove its resume marker")
+assert_true(recent_history_saved, "end-file should flush the final progress state")
+
 properties.path = "https://example.test/stream"
 recent_history_saved = false
 events["file-loaded"]()

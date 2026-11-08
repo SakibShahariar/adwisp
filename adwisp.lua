@@ -207,6 +207,12 @@ end
 
 local recent_items = {}
 local recent_history_path
+local current_history_path
+local recent_progress_dirty = false
+local recent_progress_timer
+local resume_prompt_path
+local resume_prompt_position
+local flush_recent_progress
 local history_dependencies = {
     file_info = utils.file_info,
     open = io.open,
@@ -259,20 +265,117 @@ local function resolve_recent_path(path)
     return RecentHistory.is_local_path(path) and path or nil
 end
 
+local function find_recent_item(path)
+    for _, item in ipairs(recent_items) do
+        if item.path == path then return item end
+    end
+    return nil
+end
+
+local function save_recent_history()
+    if not opts.recent_history or not recent_history_path then return false end
+    local saved = RecentHistory.save(recent_history_path, recent_items,
+        opts.recent_history_limit, history_dependencies)
+    if saved then
+        recent_progress_dirty = false
+        log_debug("saved local recent-file history")
+    else
+        mp.msg.warn("Adwisp: could not save local recent-file history.")
+    end
+    return saved
+end
+
+local function cancel_recent_progress_timer()
+    if recent_progress_timer and type(recent_progress_timer.kill) == "function" then
+        recent_progress_timer:kill()
+    end
+    recent_progress_timer = nil
+end
+
+local function schedule_recent_progress_save()
+    if recent_progress_timer or type(mp.add_timeout) ~= "function" then return end
+    recent_progress_timer = mp.add_timeout(30, function()
+        recent_progress_timer = nil
+        if recent_progress_dirty and not save_recent_history() then
+            schedule_recent_progress_save()
+        end
+    end)
+end
+
+local function update_recent_progress(force)
+    if not opts.recent_history or not current_history_path then return end
+    local position, duration = state.time_pos, state.duration
+    if type(position) ~= "number" or position ~= position or position < 0
+        or position == math.huge or position == -math.huge
+        or type(duration) ~= "number" or duration ~= duration or duration <= 0
+        or duration == math.huge or duration == -math.huge then
+        return
+    end
+    local previous = find_recent_item(current_history_path)
+    if not previous then return end
+    if not force and position / duration < 0.95 then
+        if not previous.position and position < 30 then return end
+        if previous.position and math.abs(position - previous.position) < 30 then return end
+    end
+    local updated, changed = RecentHistory.update_progress(recent_items,
+        current_history_path, position, duration, opts.recent_history_limit)
+    if changed then
+        recent_items = updated
+        recent_progress_dirty = true
+        schedule_recent_progress_save()
+    end
+end
+
+flush_recent_progress = function(force_update)
+    if force_update then update_recent_progress(true) end
+    cancel_recent_progress_timer()
+    if recent_progress_dirty then save_recent_history() end
+end
+
+local function format_resume_time(seconds)
+    seconds = math.max(0, math.floor(seconds))
+    local hours = math.floor(seconds / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local remainder = seconds % 60
+    if hours > 0 then
+        return string.format("%d:%02d:%02d", hours, minutes, remainder)
+    end
+    return string.format("%d:%02d", minutes, remainder)
+end
+
 local function record_recent_file()
     if not opts.recent_history or not recent_history_path then return end
+    flush_recent_progress(false)
     local path = resolve_recent_path(mp.get_property("path"))
+    current_history_path = path
+    resume_prompt_path, resume_prompt_position = nil, nil
     if not path then return end
     local updated, recorded = RecentHistory.record(recent_items, path,
         mp.get_property("media-title"), opts.recent_history_limit)
     if not recorded then return end
     recent_items = updated
-    if not RecentHistory.save(recent_history_path, recent_items,
-        opts.recent_history_limit, history_dependencies) then
-        mp.msg.warn("Adwisp: could not save local recent-file history.")
-    else
-        log_debug("updated local recent-file history")
+    recent_progress_dirty = true
+    if not save_recent_history() then schedule_recent_progress_save() end
+    local item = find_recent_item(path)
+    local resume_position = RecentHistory.resume_position(item)
+    if resume_position then
+        resume_prompt_path, resume_prompt_position = path, resume_position
+        mp.commandv("show-text", string.format(
+            "Adwisp: Resume %s from %s? Press Ctrl+Alt+R.",
+            item.title, format_resume_time(resume_position)), 5000)
     end
+end
+
+local function resume_current_file()
+    if not resume_prompt_path or not resume_prompt_position then return end
+    if resolve_recent_path(mp.get_property("path")) ~= resume_prompt_path then
+        resume_prompt_path, resume_prompt_position = nil, nil
+        return
+    end
+    local position = resume_prompt_position
+    resume_prompt_path, resume_prompt_position = nil, nil
+    mp.commandv("seek", position, "absolute+exact")
+    mp.commandv("show-text", "Adwisp: Resumed playback.", 1800)
 end
 
 
@@ -576,6 +679,7 @@ end
 
 -- Cancel deferred work and release UI/thumbnail state before mpv exits.
 local function cleanup_on_shutdown()
+    if flush_recent_progress then flush_recent_progress(true) end
     idle_generation = idle_generation + 1
     kill_timer(idle_timer)
     idle_timer = nil
@@ -1338,6 +1442,7 @@ for _, observer in ipairs(observers) do
             log_debug("property " .. property .. " updated")
         end
         if property == "time-pos" then
+            update_recent_progress(false)
             request_time_pos_render()
         else
             render()
@@ -1355,6 +1460,9 @@ end)
 
 mp.register_event("end-file", function()
     log_debug("file ended")
+    if flush_recent_progress then flush_recent_progress(true) end
+    current_history_path = nil
+    resume_prompt_path, resume_prompt_position = nil, nil
     hide_osd()
 end)
 
@@ -1642,7 +1750,7 @@ refresh_playlist_menu = function()
 end
 
 
-open_recent_menu = function(offset, selected_index)
+open_recent_menu = function(offset, selected_index, continue_only)
     clear_track_menu()
     if not opts.recent_history then
         mp.commandv("show-text",
@@ -1655,7 +1763,18 @@ open_recent_menu = function(offset, selected_index)
     end
     if not state.visible then show_osd() end
 
-    local items = recent_items
+    local items = {}
+    for _, item in ipairs(recent_items) do
+        if not continue_only or RecentHistory.resume_position(item) then
+            items[#items + 1] = item
+        end
+    end
+    if #items == 0 then
+        local message = continue_only and "Adwisp: nothing to continue watching."
+            or tr("recent_empty", "Adwisp: no recent local files yet.")
+        mp.commandv("show-text", message, 2500)
+        return
+    end
     local _, osd_height = mp.get_osd_size()
     osd_height = finite_property(osd_height, 720)
     local page_size = math.max(1, math.min(9, math.floor((osd_height - 40) / 22)))
@@ -1678,7 +1797,8 @@ open_recent_menu = function(offset, selected_index)
     local first = offset + 1
     local last = math.min(#items, first + page_size - 1)
     local lines = {
-        tr_format("recent_header", "Recently played  %d–%d / %d", first, last, #items),
+        continue_only and tr_format("continue_header", "Continue watching  %d–%d / %d", first, last, #items)
+            or tr_format("recent_header", "Recently played  %d–%d / %d", first, last, #items),
         tr("recent_navigation_hint", "Wheel or Up/Down moves; Enter opens; Esc closes"),
         tr("recent_clear_hint", "Ctrl+Alt+Shift+F3 clears local history"),
     }
@@ -1688,6 +1808,7 @@ open_recent_menu = function(offset, selected_index)
         offset = offset,
         page_size = page_size,
         selected_index = selected_index,
+        continue_only = continue_only == true,
     }
 
     local function add_recent_binding(key, name, callback, forced)
@@ -1718,8 +1839,11 @@ open_recent_menu = function(offset, selected_index)
         local local_index = index - offset
         local current_marker = item.path == current_path and ">" or " "
         local focus_marker = index == selected_index and "*" or " "
-        lines[#lines + 1] = string.format("%d. %s%s %s",
-            local_index, current_marker, focus_marker, item.title)
+        local resume = RecentHistory.resume_position(item)
+        local resume_label = continue_only and resume
+            and (" · " .. format_resume_time(resume)) or ""
+        lines[#lines + 1] = string.format("%d. %s%s %s%s",
+            local_index, current_marker, focus_marker, item.title, resume_label)
         local binding_name = "adwisp-recent-menu-select-" .. local_index
         local selected_index_for_binding = index
         add_recent_binding("CTRL+ALT+" .. local_index, binding_name, function()
@@ -1729,12 +1853,12 @@ open_recent_menu = function(offset, selected_index)
 
     if offset > 0 then
         add_recent_binding("CTRL+ALT+PGUP", "adwisp-recent-menu-previous", function()
-            open_recent_menu(0, math.max(1, first - page_size))
+            open_recent_menu(0, math.max(1, first - page_size), continue_only)
         end, true)
     end
     if last < #items then
         add_recent_binding("CTRL+ALT+PGDWN", "adwisp-recent-menu-next", function()
-            open_recent_menu(0, math.min(#items, last + 1))
+            open_recent_menu(0, math.min(#items, last + 1), continue_only)
         end, true)
     end
 
@@ -1742,7 +1866,7 @@ open_recent_menu = function(offset, selected_index)
         local menu = active_recent_menu
         if not menu then return end
         local index = math.max(1, math.min(#menu.items, menu.selected_index + delta))
-        if index ~= menu.selected_index then open_recent_menu(0, index) end
+        if index ~= menu.selected_index then open_recent_menu(0, index, continue_only) end
     end
     add_recent_binding("WHEEL_UP", "adwisp-recent-menu-wheel-up", function(event)
         if type(event) == "table" and event.event == "down" then move_selection(-1) end
@@ -1783,7 +1907,7 @@ refresh_recent_menu = function()
         render()
         return
     end
-    open_recent_menu(menu.offset, menu.selected_index)
+    open_recent_menu(menu.offset, menu.selected_index, menu.continue_only)
 end
 
 local function clear_recent_history()
@@ -1793,6 +1917,9 @@ local function clear_recent_history()
         return
     end
     recent_items = {}
+    cancel_recent_progress_timer()
+    recent_progress_dirty = false
+    resume_prompt_path, resume_prompt_position = nil, nil
     local cleared = RecentHistory.clear(recent_history_path, history_dependencies)
     if active_recent_menu then clear_track_menu() end
     if not cleared then
@@ -2400,6 +2527,14 @@ mp.add_key_binding("CTRL+ALT+F3", "adwisp-recent-menu", function()
     open_recent_menu(0)
 end)
 mp.add_key_binding("CTRL+ALT+SHIFT+F3", "adwisp-clear-recent", clear_recent_history)
+mp.add_key_binding("CTRL+ALT+F1", "adwisp-continue-menu", function()
+    if active_recent_menu and active_recent_menu.continue_only then
+        clear_track_menu()
+        return
+    end
+    open_recent_menu(0, nil, true)
+end)
+mp.add_key_binding("CTRL+ALT+R", "adwisp-resume-current", resume_current_file)
 mp.add_key_binding("CTRL+ALT+F12", "adwisp-playlist-menu", function()
     if active_playlist_menu then
         clear_track_menu()
@@ -2849,6 +2984,7 @@ local function register_no_argument_message(name, callback)
 end
 
 register_no_argument_message("adwisp-recent", function() open_recent_menu(0) end)
+register_no_argument_message("adwisp-continue", function() open_recent_menu(0, nil, true) end)
 mp.register_script_message("adwisp-library-open", function(path) open_library(path) end)
 mp.register_script_message("adwisp-library-close", function() close_library_menu(false) end)
 mp.register_script_message("adwisp-library-up", go_to_library_parent)
