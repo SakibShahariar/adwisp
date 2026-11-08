@@ -94,31 +94,7 @@ local function test_fractional_dimensions_are_normalized()
         "panel coordinates should remain integer pixel positions")
 end
 
-local function test_split_zone_geometry()
-    local split = Layout.compute(1280, 720, {
-        control_zones = "split", osd_position = "bottom",
-        osd_margin = 42, top_zone_margin = 24,
-    })
-    assert_true(split.top_zone ~= nil, "split mode should create a separate top zone")
-    assert_equal(split.top_zone.y, 24, "top zone should use its own margin")
-    assert_true(split.top_zone.y + split.top_zone.height < split.panel.y,
-        "top and bottom zones should not overlap")
-    assert_true(split.title.y >= split.top_zone.y
-        and split.title.y < split.top_zone.y + split.top_zone.height,
-        "title should move into the top zone")
-    assert_true(split.playback.y >= split.panel.y and split.timeline.y >= split.panel.y,
-        "playback controls should remain in the bottom zone")
-
-    local compact = Layout.compute(640, 220, { control_zones = "split" })
-    assert_equal(compact.top_zone, nil, "compact windows should retain the single-zone fallback")
-    local top_position = Layout.compute(1280, 720, {
-        control_zones = "split", osd_position = "top",
-    })
-    assert_equal(top_position.top_zone, nil, "top-positioned panels should retain the single-zone fallback")
-end
-
-test_split_zone_geometry()
-test_layout_rectangles()
+local function test_layout_rectangles()
     local layout = Layout.compute(1920, 1080)
     local panel = layout.panel
     local timeline = layout.timeline
@@ -342,6 +318,30 @@ local function test_minimal_timeline_geometry()
     end
 end
 
+local function test_split_zone_geometry()
+    local split = Layout.compute(1280, 720, {
+        control_zones = "split", osd_position = "bottom",
+        osd_margin = 42, top_zone_margin = 24,
+    })
+    assert_true(split.top_zone ~= nil, "split mode should create a separate top zone")
+    assert_equal(split.top_zone.y, 24, "top zone should use its own margin")
+    assert_true(split.top_zone.y + split.top_zone.height < split.panel.y,
+        "top and bottom zones should not overlap")
+    assert_true(split.title.y >= split.top_zone.y
+        and split.title.y < split.top_zone.y + split.top_zone.height,
+        "title should move into the top zone")
+    assert_true(split.playback.y >= split.panel.y and split.timeline.y >= split.panel.y,
+        "playback controls should remain in the bottom zone")
+
+    local compact = Layout.compute(640, 220, { control_zones = "split" })
+    assert_equal(compact.top_zone, nil, "compact windows should retain the single-zone fallback")
+    local top_position = Layout.compute(1280, 720, {
+        control_zones = "split", osd_position = "top",
+    })
+    assert_equal(top_position.top_zone, nil, "top-positioned panels should retain the single-zone fallback")
+end
+
+test_split_zone_geometry()
 test_layout_rectangles()
 test_timeline_labels_do_not_overlap()
 test_minimal_timeline_geometry()
