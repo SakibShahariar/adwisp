@@ -15,6 +15,8 @@ local recent_history_fixture = {
     { path = "/media/recent-two.mkv", title = "Recent Two" },
 }
 local recent_history_saved = false
+local preferences_test_path = os.tmpname() .. ".json"
+local preferences_payload
 local logs = { info = {}, warn = {} }
 
 local mp = {
@@ -80,8 +82,21 @@ local mp = {
 
 package.loaded.mp = mp
 package.loaded["mp.utils"] = {
-    parse_json = function() return thumbfast_payload end,
+    parse_json = function(raw)
+        if type(raw) == "string" and raw:find('"settings"', 1, true) then
+            return preferences_payload
+        end
+        return thumbfast_payload
+    end,
     format_json = function(value)
+        if type(value.settings) == "table" then
+            preferences_payload = value
+            local settings = value.settings
+            return '{"version":1,"settings":{"seek_step":' .. tostring(settings.seek_step)
+                .. ',"volume_step":' .. tostring(settings.volume_step)
+                .. ',"thumbnail_preview":' .. tostring(settings.thumbnail_preview)
+                .. ',"theme_file":"' .. tostring(settings.theme_file or "") .. '"}}'
+        end
         return '{"visible":' .. tostring(value.visible)
             .. ',"paused":' .. tostring(value.paused)
             .. ',"volume":' .. tostring(value.volume)
@@ -153,6 +168,9 @@ package.loaded["mp.options"] = {
             "logging should default to concise informational output")
         assert(options.recent_history == false,
             "recent-file history should be disabled by default")
+        assert(options.preferences_file == "~~/adwisp-preferences.json",
+            "preferences file should have a safe local default")
+        options.preferences_file = preferences_test_path
         options.recent_history = true
         options.recent_history_file = "/tmp/adwisp-recent-test.json"
         options.recent_history_limit = 20
@@ -309,6 +327,60 @@ observers.speed.callback("speed", math.huge)
 observers["playlist-count"].callback("playlist-count", 0 / 0)
 observers["playlist-pos"].callback("playlist-pos", -math.huge)
 local observed_state = require("core.state")
+
+-- Script-message preferences validate, apply immediately, and persist locally.
+script_messages["adwisp-settings"]()
+assert_true(commands[#commands][1] == "show-text"
+    and commands[#commands][2]:find("seek_step", 1, true) ~= nil,
+    "settings message should display the current editable preferences")
+script_messages["adwisp-setting-set"]("seek_step", "10")
+key_bindings["adwisp-seek-back"].callback()
+assert_equal(commands[#commands][2], -10,
+    "updated seek step should apply immediately to the seek shortcut")
+script_messages["adwisp-setting-set"]("volume_step", "8")
+observed_state.volume = 50
+key_bindings["adwisp-volume-up"].callback()
+assert_equal(commands[#commands - 1][3], 58,
+    "updated volume step should apply immediately to volume shortcuts")
+script_messages["adwisp-setting-set"]("thumbnail_preview", "no")
+assert_equal(package.loaded["mp.options"].last_options.thumbnail_preview, false,
+    "thumbnail preference should update the live option")
+script_messages["adwisp-setting-set"]("thumbnail_preview", "yes")
+
+local preference_theme_path = os.tmpname()
+local preference_theme_file = assert(io.open(preference_theme_path, "w"))
+preference_theme_file:write("background=#112233\naccent=#445566\n")
+preference_theme_file:close()
+script_messages["adwisp-setting-set"]("theme_file", preference_theme_path)
+assert_equal(observed_state.palette.background, "#112233",
+    "valid theme-file preference should reload the palette immediately")
+script_messages["adwisp-setting-set"]("theme_file", preference_theme_path .. ".missing")
+assert_equal(observed_state.palette.background, "#112233",
+    "invalid theme-file preference should preserve the active palette")
+script_messages["adwisp-setting-set"]("seek_step", "0")
+key_bindings["adwisp-seek-back"].callback()
+assert_equal(commands[#commands][2], -10,
+    "invalid preference values should be rejected without changing live settings")
+
+local saved_preferences = assert(io.open(preferences_test_path, "rb"))
+local saved_preferences_json = saved_preferences:read("*a")
+saved_preferences:close()
+assert_true(saved_preferences_json:find('"seek_step":10', 1, true) ~= nil
+    and saved_preferences_json:find('"volume_step":8', 1, true) ~= nil,
+    "valid changes should be persisted in the local preferences file")
+
+script_messages["adwisp-setting-reset"]("seek_step")
+key_bindings["adwisp-seek-back"].callback()
+assert_equal(commands[#commands][2], -5,
+    "reset should restore the configured seek-step default")
+script_messages["adwisp-setting-reset"]("volume_step")
+script_messages["adwisp-setting-reset"]("thumbnail_preview")
+script_messages["adwisp-setting-reset"]("theme_file")
+os.remove(preference_theme_path)
+os.remove(preferences_test_path)
+os.remove(preferences_test_path .. ".tmp")
+
+
 observers.playlist.callback("playlist", {
     { filename = "/videos/one.mkv", title = "One", current = true },
     { filename = "/videos/two.mkv", title = "Two", current = false },
