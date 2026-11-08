@@ -48,11 +48,16 @@ function VideoLibrary.begin_scan(path, deps, max_entries)
     local limit = finite(max_entries) and math.floor(max_entries) or 500
     limit = math.max(1, math.min(5000, limit))
     local candidates = {}
+    local truncated = false
     for _, name in ipairs(names) do
-        if safe_name(name) then candidates[#candidates + 1] = name end
+        if safe_name(name) then
+            if #candidates >= limit then
+                truncated = true
+                break
+            end
+            candidates[#candidates + 1] = name
+        end
     end
-    local truncated = #candidates > limit
-    while #candidates > limit do candidates[#candidates] = nil end
 
     return {
         path = path,

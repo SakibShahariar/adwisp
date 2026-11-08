@@ -499,6 +499,31 @@ script_messages["adwisp-library-close"]()
 assert_equal(observed_state.library_menu, nil,
     "the library close message should dismiss the browser")
 
+library_filesystem["/library/Large"] = { is_dir = true }
+local large_library_names = {}
+for index = 1, 40 do
+    local name = string.format("clip%02d.mp4", index)
+    large_library_names[#large_library_names + 1] = name
+    library_filesystem["/library/Large/" .. name] = { is_file = true, size = index * 1024 }
+end
+library_listings["/library/Large"] = large_library_names
+script_messages["adwisp-library-open"]("/library/Large")
+assert_true(observed_state.library_menu.loading,
+    "large folders should keep scanning after the first bounded chunk")
+assert_equal(#observed_state.library_menu.entries, 32,
+    "large folders should process metadata in bounded 32-entry chunks")
+local large_scan_timer = timers[#timers]
+assert_true(large_scan_timer and large_scan_timer.timeout == 0.01,
+    "remaining directory entries should be scheduled asynchronously")
+large_scan_timer.callback()
+assert_equal(observed_state.library_menu.loading, false,
+    "the final asynchronous chunk should finish the directory scan")
+assert_equal(#observed_state.library_menu.entries, 40,
+    "all entries under the per-folder cap should appear after scanning")
+script_messages["adwisp-library-close"]()
+
+
+
 observers.playlist.callback("playlist", {
     { filename = "/videos/one.mkv", title = "One", current = true },
     { filename = "/videos/two.mkv", title = "Two", current = false },
