@@ -44,7 +44,7 @@ assert_equal(codec_matches[2].index, 4, "second codec match should retain its so
 local no_matches = MenuFilter.filter(items, "not-present", { "title", "filename" })
 assert_equal(#no_matches, 0, "unmatched queries should return an empty result list")
 
-local cleared = MenuFilter.filter(items, "  \\n\\t ", { "title", "filename" })
+local cleared = MenuFilter.filter(items, "  \n\t ", { "title", "filename" })
 assert_equal(#cleared, #items, "clearing the query should restore every source item")
 for index, result in ipairs(cleared) do
     assert_equal(result.index, index, "cleared results should preserve original ordering")
