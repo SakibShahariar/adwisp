@@ -230,3 +230,6 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 
 | `90736133b328e456652092a453ecc563f589a7b3` | test(settings): restore shared volume fixture (#4) | green | [42464542572](https://github.com/SakibShahariar/adwisp/actions/runs/42464542572) | Lua syntax, Luacheck, and all unit tests passed, including live script-message preference updates and local persistence. This is the current reviewed checkpoint. |
+
+
+| `2f80ec7c46faeb712f0cc46b34da6e6bd36216c9` | test(settings): verify persisted preferences reload (#4) | green | [42464622654](https://github.com/SakibShahariar/adwisp/actions/runs/42464622654) | Lua syntax, Luacheck, and all tests passed, including persistence reload and configured-default reset. This is the current reviewed checkpoint. |

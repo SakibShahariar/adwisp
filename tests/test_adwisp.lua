@@ -17,6 +17,9 @@ local recent_history_fixture = {
 local recent_history_saved = false
 local preferences_test_path = os.tmpname() .. ".json"
 local preferences_payload
+local library_filesystem = {}
+local library_listings = {}
+local library_readdir_calls = 0
 local logs = { info = {}, warn = {} }
 
 local mp = {
@@ -108,7 +111,22 @@ package.loaded["mp.utils"] = {
             .. '","image_mode":' .. tostring(value.image_mode)
             .. ',"image_zoom":' .. tostring(value.image_zoom) .. '}'
     end,
+    readdir = function(path, filter)
+        library_readdir_calls = library_readdir_calls + 1
+        assert(filter == "normal", "library should request normal entries only")
+        local listing = library_listings[path]
+        if type(listing) ~= "table" then return nil, "permission denied" end
+        return listing
+    end,
+    join_path = function(parent, name) return parent .. "/" .. name end,
+    split_path = function(path)
+        if path == "/" then return "/", "" end
+        local parent = path:match("^(.*)/[^/]+$")
+        if parent == "" then parent = "/" end
+        return parent or path, path:match("([^/]+)$") or ""
+    end,
     file_info = function(path)
+        if library_filesystem[path] ~= nil then return library_filesystem[path] or nil end
         if path == "." then return { is_dir = true } end
         local file = io.open(path, "rb")
         if not file then return nil end
@@ -295,12 +313,15 @@ assert_true(key_bindings["adwisp-audio-device-menu"] ~= nil,
 assert_true(key_bindings["adwisp-subtitle-menu"] ~= nil, "subtitle-menu shortcut should be registered")
 assert_true(key_bindings["adwisp-playlist-menu"] ~= nil, "playlist-menu shortcut should be registered")
 assert_true(key_bindings["adwisp-recent-menu"] ~= nil, "recent-menu shortcut should be registered")
+assert_true(key_bindings["adwisp-library"] ~= nil, "video-library shortcut should be registered")
 assert_true(key_bindings["adwisp-clear-recent"] ~= nil, "clear-recent shortcut should be registered")
 assert_true(key_bindings["adwisp-mute-toggle"] ~= nil, "mute toggle shortcut should be registered")
 assert_true(script_messages["adwisp-show"] ~= nil, "show message should be registered")
 assert_true(script_messages["adwisp-hide"] ~= nil, "hide message should be registered")
 assert_true(script_messages["adwisp-toggle"] ~= nil, "toggle message should be registered")
 assert_true(script_messages["adwisp-recent"] ~= nil, "recent-history message should be registered")
+assert_true(script_messages["adwisp-library-open"] ~= nil, "video-library open message should be registered")
+assert_true(script_messages["adwisp-library-close"] ~= nil, "video-library close message should be registered")
 assert_true(script_messages["adwisp-clear-recent"] ~= nil, "clear-history message should be registered")
 assert_true(script_messages["adwisp-reload-theme"] ~= nil, "theme reload message should be registered")
 assert_true(script_messages["adwisp-query"] ~= nil, "state query message should be registered")
@@ -399,6 +420,80 @@ os.remove(preference_theme_path)
 os.remove(preferences_test_path)
 os.remove(preferences_test_path .. ".tmp")
 
+
+-- The local library is on-demand, directory-scoped, and separate from the playback queue.
+assert_equal(library_readdir_calls, 0, "the library must not scan any directory at startup")
+library_filesystem["/library"] = { is_dir = true }
+library_filesystem["/library/Movies"] = { is_dir = true }
+library_filesystem["/library/Movies/nested.mp4"] = { is_file = true, size = 4096, mtime = 200 }
+library_filesystem["/library/clip.mkv"] = { is_file = true, size = 2048, mtime = 100 }
+library_filesystem["/library/notes.txt"] = { is_file = true, size = 12 }
+library_filesystem["/library/Empty"] = { is_dir = true }
+library_filesystem["/library/Denied"] = { is_dir = true }
+library_listings["/library"] = { "notes.txt", "clip.mkv", "Movies", "Empty", "Denied" }
+library_listings["/library/Movies"] = { "nested.mp4" }
+library_listings["/library/Empty"] = {}
+
+script_messages["adwisp-library-open"]("/library")
+assert_true(observed_state.library_menu ~= nil and observed_state.library_menu.loading,
+    "opening the library should show a loading state")
+assert_equal(library_readdir_calls, 1, "opening the browser should scan only the selected directory")
+timers[#timers].callback()
+assert_equal(observed_state.library_menu.loading, false, "small directory scan should complete")
+assert_equal(#observed_state.library_menu.entries, 3,
+    "browser should show folders and supported videos but filter unrelated files")
+assert_equal(observed_state.library_menu.entries[1].kind, "directory",
+    "folders should appear before video files")
+assert_equal(observed_state.library_menu.entries[2].path, "/library/clip.mkv",
+    "video selection should retain the original full path")
+assert_equal(observed_state.playlist_count, 0,
+    "opening and browsing the library must not alter the playback queue")
+
+key_bindings["adwisp-library-enter"].callback()
+assert_equal(observed_state.library_menu.path, "/library/Movies",
+    "Enter on a folder should navigate into that folder")
+timers[#timers].callback()
+assert_equal(observed_state.library_menu.entries[1].path, "/library/Movies/nested.mp4",
+    "nested folder contents should be enumerated on demand")
+key_bindings["adwisp-library-parent"].callback()
+assert_equal(observed_state.library_menu.path, "/library",
+    "Backspace should navigate to the parent directory")
+timers[#timers].callback()
+
+observed_state.library_menu.selected_index = 2
+key_bindings["adwisp-library-queue"].callback()
+assert_equal(commands[#commands][1], "loadfile",
+    "queue action should use mpv loadfile")
+assert_equal(commands[#commands][2], "/library/clip.mkv",
+    "queue action should target the selected original file")
+assert_equal(commands[#commands][3], "append",
+    "queue action must append rather than replace the current queue")
+assert_true(observed_state.library_menu ~= nil,
+    "queueing should leave the browser open")
+key_bindings["adwisp-library-enter"].callback()
+assert_equal(commands[#commands][1], "loadfile",
+    "opening a video should use mpv loadfile")
+assert_equal(commands[#commands][2], "/library/clip.mkv",
+    "opening should play the selected file")
+assert_equal(commands[#commands][3], "replace",
+    "opening a file should be distinct from queueing")
+assert_equal(observed_state.library_menu, nil,
+    "opening a video should close the browser")
+
+script_messages["adwisp-library-open"]("/library/Empty")
+timers[#timers].callback()
+assert_true(table.concat(observed_state.library_menu.lines, " "):find(
+    "No supported videos or folders", 1, true) ~= nil,
+    "empty directories should show a clear empty state")
+script_messages["adwisp-library-open"]("/library/Denied")
+assert_true(observed_state.library_menu.error ~= nil,
+    "permission failures should be reported without breaking the OSD")
+script_messages["adwisp-library-open"]("https://example.com")
+assert_true(observed_state.library_menu.error ~= nil,
+    "remote URLs should be rejected by the local library browser")
+script_messages["adwisp-library-close"]()
+assert_equal(observed_state.library_menu, nil,
+    "the library close message should dismiss the browser")
 
 observers.playlist.callback("playlist", {
     { filename = "/videos/one.mkv", title = "One", current = true },
