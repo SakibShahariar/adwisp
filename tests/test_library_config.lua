@@ -31,9 +31,9 @@ assert(not invalid_added and #invalid.roots == 3, "invalid roots should be rejec
 local removed, did_remove = LibraryConfig.remove_root(config, "/mnt/USB")
 assert(did_remove and #removed.roots == 2, "configured roots should be removable")
 
-local pinned, did_pin = LibraryConfig.toggle_favorite(removed, "/media/Movies/Drama")
+local pinned, did_pin = LibraryConfig.toggle_favorite(removed, "/media/Movies/Comedy")
 assert(did_pin and #pinned.favorites == 2, "folders should be pinnable")
-local unpinned, did_unpin = LibraryConfig.toggle_favorite(pinned, "/media/Movies/Drama")
+local unpinned, did_unpin = LibraryConfig.toggle_favorite(pinned, "/media/Movies/Comedy")
 assert(not did_unpin and #unpinned.favorites == 1,
     "toggling an existing favorite should unpin it")
 
