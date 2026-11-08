@@ -2641,7 +2641,7 @@ local function refresh_library_menu()
         local summary = VideoLibrary.summary(menu.source_entries or {}, menu.loading, menu.truncated)
         local count_label = tostring(summary.videos) .. " videos · " .. tostring(summary.folders) .. " folders"
         if summary.loading then
-            lines[#lines + 1] = "Current scan snapshot: " .. count_label .. " so far (not final)"
+            lines[#lines + 1] = "Folder counts unavailable until scan completes"
         elseif summary.truncated then
             lines[#lines + 1] = "Partial scan: at least " .. count_label .. " (entry limit reached)"
         else

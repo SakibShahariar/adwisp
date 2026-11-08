@@ -487,6 +487,8 @@ assert_equal(#observed_state.library_menu.entries, 2,
     "browser should show folders and supported videos but filter unrelated files")
 assert_true(table.concat(observed_state.library_menu.lines, " "):find("[VID] clip.mkv", 1, true) ~= nil,
     "successful directory scans should render video rows instead of an error state")
+assert_true(table.concat(observed_state.library_menu.lines, " "):find("This folder: 1 videos · 1 folders", 1, true) ~= nil,
+    "folder overview should count only the completed current-folder scan")
 assert_true(table.concat(observed_state.library_menu.lines, " "):find("2.0 KB", 1, true) ~= nil
     and table.concat(observed_state.library_menu.lines, " "):find("1970-01-01", 1, true) ~= nil,
     "video rows should show available file size and modified date metadata")
@@ -518,6 +520,19 @@ assert_equal(observed_state.library_menu.query, "",
     "Ctrl+Backspace should clear the library search")
 assert_equal(#observed_state.library_menu.entries, 2,
     "clearing search should restore the full current-folder view")
+script_messages["adwisp-library-sort"]("recent")
+assert_equal(observed_state.library_menu.sort_mode, "recent",
+    "Recently Added should be available as a library sort mode")
+assert_true(table.concat(observed_state.library_menu.lines, " "):find("Sort: Recently added", 1, true) ~= nil,
+    "the active recently-added sort should be visible")
+local reads_before_refresh = library_readdir_calls
+key_bindings["adwisp-library-refresh"].callback()
+assert_equal(library_readdir_calls, reads_before_refresh + 1,
+    "the explicit refresh key should rescan only the current folder")
+assert_equal(observed_state.library_menu.loading, false,
+    "refresh should finish a small folder scan before returning")
+assert_equal(observed_state.library_menu.sort_mode, "name",
+    "a fresh scan should start with the default name sort")
 assert_equal(observed_state.playlist_count, 0,
     "searching must not mutate the playback queue")
 
