@@ -840,6 +840,15 @@ local function handle_mouse_move()
         seek_at(mouse_x, layout.timeline)
     end
 
+    local hover_zone
+    if layout.top_zone and contains(layout.top_zone, mouse_x, mouse_y) then
+        hover_zone = "top"
+    elseif layout.top_zone and contains(layout.panel, mouse_x, mouse_y) then
+        hover_zone = "bottom"
+    end
+    local zone_changed = state.hover_zone ~= hover_zone
+    state.hover_zone = hover_zone
+
     local hover_target
     if contains(layout.playback, mouse_x, mouse_y) then
         hover_target = "playback"
@@ -889,7 +898,7 @@ local function handle_mouse_move()
     if state.hover_target ~= hover_target then
         state.hover_target = hover_target
         render()
-    elseif preview_changed or preview_cleared then
+    elseif zone_changed or preview_changed or preview_cleared then
         render()
     end
 end

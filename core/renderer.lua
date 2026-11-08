@@ -349,11 +349,14 @@ function Renderer:render()
     local top_zone_ass = ""
     if layout.top_zone then
         local top = layout.top_zone
+        local top_color = state.hover_zone == "top" and colors.surface or colors.background
         top_zone_ass = string.format(
             "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\alpha&H18&\\p1}m 0 0 l %d 0 %d %d 0 %d{\\p0}\\n",
-            top.x, top.y, colors.background, top.width, top.width, top.height, top.height
+            top.x, top.y, top_color, top.width, top.width, top.height, top.height
         )
     end
+    local panel_background = layout.top_zone and state.hover_zone == "bottom"
+        and colors.surface or colors.background
     local ass = top_zone_ass .. string.format([[
 {\an7\pos(%d,%d)\bord0\shad0\1c%s\alpha&H18&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
 %s
@@ -368,7 +371,7 @@ function Renderer:render()
 {\an7\pos(%d,%d)\fnSans\fs%d\b1\1c%s}%s
 {\an7\pos(%d,%d)\fnSans\fs15\1c%s}%s
 ]],
-        panel.x, panel.y, colors.background, panel.width, panel.width, panel.height, panel.height,
+        panel.x, panel.y, panel_background, panel.width, panel.width, panel.height, panel.height,
         focus_ass,
         title_pos.x, title_pos.y, colors.text, title,
         title_pos.x + title_pos.width, title_pos.y, colors.accent, buffering_label,
