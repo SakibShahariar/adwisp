@@ -270,6 +270,9 @@ local active_track_menu
 local active_playlist_menu
 local active_recent_menu
 local close_library_menu
+local library_scan_timer
+local library_scan_generation = 0
+local library_binding_names = {}
 local open_playlist_menu
 local refresh_playlist_menu
 local open_recent_menu
@@ -2419,6 +2422,209 @@ end, "CTRL+ALT+S")
 mp.add_key_binding("MBTN_LEFT", "adwisp-mouse-click", handle_mouse_click, { complex = true })
 mp.add_key_binding("mouse_move", "adwisp-mouse-move", handle_mouse_move, { complex = true })
 
+local library_dependencies = {
+    readdir = utils.readdir,
+    file_info = utils.file_info,
+    join_path = utils.join_path,
+    split_path = utils.split_path,
+}
+
+local function refresh_library_menu()
+    local menu = state.library_menu
+    if not menu then return end
+    local lines = { "Video Library", menu.path }
+    menu.selected_line = nil
+    if menu.loading then
+        lines[#lines + 1] = "Scanning this folder…"
+    elseif menu.error then
+        lines[#lines + 1] = "Cannot browse folder: " .. tostring(menu.error)
+    elseif #menu.entries == 0 then
+        lines[#lines + 1] = "No supported videos or folders"
+    else
+        local page_size = menu.page_size or 12
+        local first = math.floor((menu.selected_index - 1) / page_size) * page_size + 1
+        local last = math.min(#menu.entries, first + page_size - 1)
+        for index = first, last do
+            local entry = menu.entries[index]
+            local prefix = entry.kind == "directory" and "[DIR] " or "[VID] "
+            lines[#lines + 1] = prefix .. entry.name
+            if index == menu.selected_index then
+                menu.selected_line = #lines
+            end
+        end
+        if menu.truncated then
+            lines[#lines + 1] = "Showing first " .. tostring(#menu.entries) .. " entries (limit)"
+        end
+        if #menu.entries > page_size then
+            lines[#lines + 1] = "Page " .. tostring(math.floor((first - 1) / page_size) + 1)
+                .. " / " .. tostring(math.ceil(#menu.entries / page_size))
+        end
+    end
+    lines[#lines + 1] = "Enter open/play · A queue · Backspace up · Esc close"
+    menu.lines = lines
+    render()
+end
+
+close_library_menu = function(silent)
+    library_scan_generation = library_scan_generation + 1
+    if library_scan_timer and type(library_scan_timer.kill) == "function" then
+        library_scan_timer:kill()
+    end
+    library_scan_timer = nil
+    for _, name in ipairs(library_binding_names) do
+        if type(mp.remove_key_binding) == "function" then
+            mp.remove_key_binding(name)
+        end
+    end
+    library_binding_names = {}
+    state.library_menu = nil
+    if not silent then render() end
+end
+
+local function add_library_binding(key, name, callback)
+    mp.add_forced_key_binding(key, name, function(event)
+        if type(event) == "table" and event.event and event.event ~= "down" then
+            return
+        end
+        callback(event)
+    end, { repeatable = true })
+    library_binding_names[#library_binding_names + 1] = name
+end
+
+local open_library
+
+local function move_library_selection(delta)
+    local menu = state.library_menu
+    if not menu or menu.loading or #menu.entries == 0 then return end
+    menu.selected_index = math.max(1, math.min(#menu.entries, menu.selected_index + delta))
+    refresh_library_menu()
+end
+
+local function queue_library_selection()
+    local menu = state.library_menu
+    local entry = menu and VideoLibrary.selection({ entries = menu.entries }, menu.selected_index)
+    if not entry then return end
+    if entry.kind ~= "video" then
+        mp.commandv("show-text", "Select a video file to add to the playlist.", 2500)
+        return
+    end
+    note_activity()
+    mp.commandv("loadfile", entry.path, "append")
+end
+
+local function play_library_selection()
+    local menu = state.library_menu
+    local entry = menu and VideoLibrary.selection({ entries = menu.entries }, menu.selected_index)
+    if not entry then return end
+    if entry.kind == "directory" then
+        open_library(entry.path)
+        return
+    end
+    close_library_menu(true)
+    note_activity()
+    mp.commandv("loadfile", entry.path, "replace")
+end
+
+local function go_to_library_parent()
+    local menu = state.library_menu
+    if not menu then return end
+    local parent = VideoLibrary.parent_path(menu.path, library_dependencies)
+    if not parent then
+        mp.commandv("show-text", "Already at the filesystem root.", 2500)
+        return
+    end
+    open_library(parent)
+end
+
+local function install_library_bindings()
+    if #library_binding_names > 0 then return end
+    add_library_binding("UP", "adwisp-library-up-selection", function()
+        move_library_selection(-1)
+    end)
+    add_library_binding("DOWN", "adwisp-library-down-selection", function()
+        move_library_selection(1)
+    end)
+    add_library_binding("WHEEL_UP", "adwisp-library-wheel-up", function()
+        move_library_selection(-1)
+    end)
+    add_library_binding("WHEEL_DOWN", "adwisp-library-wheel-down", function()
+        move_library_selection(1)
+    end)
+    add_library_binding("CTRL+ALT+PGUP", "adwisp-library-page-up", function()
+        local menu = state.library_menu
+        if menu then move_library_selection(-(menu.page_size or 12)) end
+    end)
+    add_library_binding("CTRL+ALT+PGDWN", "adwisp-library-page-down", function()
+        local menu = state.library_menu
+        if menu then move_library_selection(menu.page_size or 12) end
+    end)
+    add_library_binding("ENTER", "adwisp-library-enter", play_library_selection)
+    add_library_binding("a", "adwisp-library-queue", queue_library_selection)
+    add_library_binding("BS", "adwisp-library-parent", go_to_library_parent)
+    add_library_binding("ESC", "adwisp-library-close", function()
+        close_library_menu(false)
+    end)
+end
+
+open_library = function(path)
+    if type(path) ~= "string" or path == "" then
+        path = mp.get_property("working-directory")
+        if type(path) ~= "string" or path == "" then
+            local ok_cwd, cwd = pcall(utils.getcwd)
+            path = ok_cwd and cwd or nil
+        end
+    end
+    if type(path) ~= "string" or path == "" then
+        mp.commandv("show-text", "Adwisp: no local directory was supplied.", 3000)
+        return false
+    end
+    local ok_expand, expanded = pcall(mp.command_native, { "expand-path", path })
+    if ok_expand and type(expanded) == "string" and expanded ~= "" then
+        path = expanded
+    end
+
+    close_library_menu(true)
+    clear_track_menu()
+    local scan, scan_error = VideoLibrary.begin_scan(path, library_dependencies,
+        opts.library_max_entries)
+    state.library_menu = {
+        path = path,
+        entries = {},
+        selected_index = 1,
+        page_size = 12,
+        loading = scan ~= nil,
+        truncated = false,
+        error = scan and nil or tostring(scan_error),
+    }
+    install_library_bindings()
+    show_osd()
+    refresh_library_menu()
+    if not scan then return false end
+
+    local generation = library_scan_generation
+    local function process_chunk()
+        if generation ~= library_scan_generation or not state.library_menu then return end
+        library_scan_timer = nil
+        local done, chunk_error = VideoLibrary.scan_chunk(scan, library_dependencies, 32)
+        if chunk_error then
+            state.library_menu.loading = false
+            state.library_menu.error = chunk_error
+            refresh_library_menu()
+        elseif done then
+            state.library_menu.loading = false
+            state.library_menu.entries = scan.entries
+            state.library_menu.truncated = scan.truncated
+            state.library_menu.selected_index = math.min(
+                state.library_menu.selected_index, math.max(1, #scan.entries))
+            refresh_library_menu()
+        else
+            library_scan_timer = mp.add_timeout(0.01, process_chunk)
+        end
+    end
+    library_scan_timer = mp.add_timeout(0.01, process_chunk)
+    return true
+end
+
 local function register_no_argument_message(name, callback)
     mp.register_script_message(name, function(...)
         if select("#", ...) > 0 then
@@ -2430,6 +2636,11 @@ local function register_no_argument_message(name, callback)
 end
 
 register_no_argument_message("adwisp-recent", function() open_recent_menu(0) end)
+mp.register_script_message("adwisp-library-open", function(path) open_library(path) end)
+mp.register_script_message("adwisp-library-close", function() close_library_menu(false) end)
+mp.register_script_message("adwisp-library-up", go_to_library_parent)
+mp.register_script_message("adwisp-library-queue", queue_library_selection)
+mp.add_key_binding("CTRL+ALT+F2", "adwisp-library", function() open_library() end)
 register_no_argument_message("adwisp-clear-recent", clear_recent_history)
 register_no_argument_message("adwisp-toggle", toggle)
 register_no_argument_message("adwisp-show", show_osd)
