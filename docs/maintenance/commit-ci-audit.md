@@ -217,3 +217,6 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 
 | `81908243e6cf2e726bc6d891d69f641c543c9fe5` | test(layout): verify zone focus and responsive geometry (#48) | red | [42463902624](https://github.com/SakibShahariar/adwisp/actions/runs/42463902624) | Luacheck found that the split-zone matrix test was invoked but its local function definition was not inserted. Added the missing function before the invocation; no production-code failure was reported. |
+
+
+| `e7a1e529e925be5f60823b9761fd0d9dbb266c9d` | feat(settings): expose runtime preference messages (#4) | red | [42464283394](https://github.com/SakibShahariar/adwisp/actions/runs/42464283394) | Unit tests could not load the new `core.preferences` module because its file/test blobs had not yet been added to the commit tree. Added the module and its unit test in the follow-up. |
