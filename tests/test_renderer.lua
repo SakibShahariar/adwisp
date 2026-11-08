@@ -399,10 +399,30 @@ assert_true(overlay.data:find("\\{Sound 51%\\}", 1, true) ~= nil,
 state.translations = nil
 renderer:render()
 
-state.layout_options = { control_zones = "split", osd_position = "bottom", osd_margin = 42, top_zone_margin = 24 }
+state.layout_options = {
+    control_zones = "split", osd_position = "bottom", osd_margin = 42,
+    top_zone_margin = 24, top_zone_visibility = "hover",
+    bottom_zone_visibility = "hover",
+}
+state.hover_zone = "top"
 renderer:render()
 assert_true(overlay.data:find("\\pos(360,24)", 1, true) ~= nil,
-    "split mode should draw a separate top-zone background")
+    "hover-only top zone should draw its own panel")
+assert_true(overlay.data:find("Demo", 1, true) ~= nil,
+    "hover-only top zone should show the title while hovered")
+assert_true(overlay.data:find("Pause", 1, true) == nil,
+    "top-zone hover should not reveal bottom playback controls")
+state.hover_zone = "bottom"
+renderer:render()
+assert_true(overlay.data:find("Pause", 1, true) ~= nil,
+    "bottom-zone hover should reveal playback controls")
+assert_true(overlay.data:find("Demo", 1, true) == nil,
+    "bottom-zone hover should not reveal the top title")
+state.hover_zone = nil
+renderer:render()
+assert_true(overlay.data:find("Pause", 1, true) == nil
+    and overlay.data:find("Demo", 1, true) == nil,
+    "independent hover-only zones should both hide outside their activation regions")
 state.layout_options = nil
 renderer:render()
 

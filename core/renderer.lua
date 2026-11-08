@@ -163,8 +163,17 @@ function Renderer:render()
         progress = math.max(0, math.min(1, time_pos / duration))
     end
 
-    local layout = Layout.compute(width, height, state.layout_options)
+    local layout_options = type(state.layout_options) == "table"
+        and state.layout_options or {}
+    local layout = Layout.compute(width, height, layout_options)
     if not layout then return end
+    local top_zone_visible = not layout.top_zone
+        or layout_options.top_zone_visibility ~= "hover"
+        or state.hover_zone == "top" or state.focus_target == "playlist"
+    local bottom_zone_visible = not layout.top_zone
+        or layout_options.bottom_zone_visibility ~= "hover"
+        or state.hover_zone == "bottom" or state.focus_target == "playback"
+        or state.focus_target == "volume" or state.focus_target == "timeline"
     local panel = layout.panel
     local title_pos = layout.title
     local title_font_size = layout.compact and 18 or 22
@@ -297,8 +306,6 @@ function Renderer:render()
         end
     end
 
-    local layout_options = type(state.layout_options) == "table"
-        and state.layout_options or {}
     local font_family = safe_font_family(layout_options.font_family)
     local font_scale = layout_options.font_scale
     if not is_finite_number(font_scale) then font_scale = 1 end
@@ -321,7 +328,8 @@ function Renderer:render()
         }
     end
     local focus_ass = ""
-    if focus_geometry then
+    if focus_geometry and ((state.focus_target == "playlist" and top_zone_visible)
+        or (state.focus_target ~= "playlist" and bottom_zone_visible)) then
         local focus_panel = state.focus_target == "playlist" and layout.top_zone or panel
         local focus_x = math.max(focus_panel.x, focus_geometry.x - 4)
         local focus_y = math.max(focus_panel.y, focus_geometry.y - 4)
@@ -345,14 +353,26 @@ function Renderer:render()
             )
         end
     end
+    if not top_zone_visible then
+        title = ""
+        buffering_label = ""
+        playlist_label = ""
+    end
+    if not bottom_zone_visible then
+        playback_label = ""
+        volume_label = ""
+        progress_text = ""
+        time_text = ""
+        preview_label = ""
+    end
     local volume_label_color = (state.mute or volume_value <= 20)
         and colors.accent or colors.muted
     local top_zone_ass = ""
-    if layout.top_zone then
+    if layout.top_zone and top_zone_visible then
         local top = layout.top_zone
         local top_color = state.hover_zone == "top" and colors.surface or colors.background
         top_zone_ass = string.format(
-            "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\alpha&H18&\\p1}m 0 0 l %d 0 %d %d 0 %d{\\p0}\\n",
+            "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\alpha&H1A&\\p1}m 0 0 l %d 0 %d %d 0 %d{\\p0}\\n",
             top.x, top.y, top_color, top.width, top.width, top.height, top.height
         )
     end
@@ -409,11 +429,12 @@ function Renderer:render()
         volume_track_geometry.height, volume_track_geometry.height,
         volume_track_geometry.x, volume_track_geometry.y, colors.accent,
         volume_fill, volume_fill, volume_track_geometry.height, volume_track_geometry.height)
-    ass = ass .. volume_track_ass
+    if bottom_zone_visible then ass = ass .. volume_track_ass end
 
     local chapter_markers = {}
     local chapters = type(state.chapter_list) == "table" and state.chapter_list or {}
-    if not timeline.minimal and is_finite_number(duration) and duration > 0 then
+    if bottom_zone_visible and not timeline.minimal
+        and is_finite_number(duration) and duration > 0 then
         local seen_markers = {}
         for _, chapter in ipairs(chapters) do
             local chapter_time = type(chapter) == "table" and chapter.time or nil
@@ -463,11 +484,13 @@ function Renderer:render()
     local opacity = is_finite_number(state.opacity)
         and math.max(0, math.min(1, state.opacity)) or 1
     local fade_alpha = math.floor((1 - opacity) * 255 + 0.5)
-    local panel_alpha = math.min(255, 24 + fade_alpha)
+    local panel_alpha = bottom_zone_visible and math.min(255, 24 + fade_alpha) or 255
+    local top_panel_alpha = top_zone_visible and math.min(255, 24 + fade_alpha) or 255
     local hover_alpha = math.min(255, 48 + fade_alpha)
     local focus_alpha = math.min(255, 64 + fade_alpha)
     ass = ass:gsub("{\\", "{\\alpha&H" .. string.format("%02X", fade_alpha) .. "&\\")
     ass = ass:gsub("\\alpha&H18&", "\\alpha&H" .. string.format("%02X", panel_alpha) .. "&")
+    ass = ass:gsub("\\alpha&H1A&", "\\alpha&H" .. string.format("%02X", top_panel_alpha) .. "&")
     ass = ass:gsub("\\alpha&H30&", "\\alpha&H" .. string.format("%02X", hover_alpha) .. "&")
     ass = ass:gsub("\\alpha&H40&", "\\alpha&H" .. string.format("%02X", focus_alpha) .. "&")
 

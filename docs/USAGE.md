@@ -78,6 +78,7 @@ Set `control_zones=split` to place the title and playback-status row in a separa
 | `osd_position` | OSD placement: bottom, top, or custom | `bottom` |
 | `control_zones` | `single` keeps the original panel; `split` separates title/status from playback controls | `single` |
 | `top_zone_margin` | Top-edge margin for the optional split title/status zone | `24` |
+| `top_zone_visibility` / `bottom_zone_visibility` | `always` keeps a split zone visible; `hover` shows it only while hovered or keyboard-focused | `always` / `always` |
 | `font_family` / `font_scale` | Font and relative scale | `Sans` / `1.0` |
 | `idle_hide_timeout` | Hide after inactivity; 0 disables it | `0` |
 | `fade_duration` | OSD fade duration in seconds | `0.25` |
