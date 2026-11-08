@@ -65,7 +65,6 @@ assert_equal(History.normalize({ version = 1, items = {
     "version-one history should migrate without trusting progress fields")
 
 local progress_items = History.record({}, "/resume.mkv", "Resume", 10)
-local recorded
 progress_items, recorded = History.update_progress(progress_items,
     "/resume.mkv", 75, 200, 10)
 assert_true(recorded, "known local history entries should accept progress updates")

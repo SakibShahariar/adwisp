@@ -276,3 +276,5 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 | `221c32caceb5c5b22fc7fc34644885799fdd5ce5` | test(library): use a new path for pinning fixture (#52) | green | [42469362106](https://github.com/SakibShahariar/adwisp/actions/runs/42469362106) | Full CI passed after the pinning fixture correction. |
 | `d0cce9181741a9c7b8908cff83150afc1bfb9592` | test(library): cover root and pinned-folder workflows (#52) | green | [42469445010](https://github.com/SakibShahariar/adwisp/actions/runs/42469445010) | Full CI passed, including configured roots, pinned folders, and library configuration tests. |
 
+
+| `e521638a0eafe47b6b65c145bdb3fcf687e1b45f` | feat(history): add backward-compatible resume progress model (#54) | red | [42499352506](https://github.com/SakibShahariar/adwisp/actions/runs/42499352506) | Lua syntax passed; Luacheck found a duplicate local declaration for `recorded` in the new history test. Removed the redundant declaration in the follow-up. |
