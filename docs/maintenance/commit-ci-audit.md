@@ -24,10 +24,10 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `a60a2b4f49e55b03112073121e07af59106e6c6b`
+- Reviewed checkpoint SHA: `e6536dc995beb4738638f0a74ef44b25544d1561`
 - Reviewed: 2026-11-08
-- Range reviewed: `35f2c180466e55e372e1e2e332e53ec356e344e0` through `a60a2b4f49e55b03112073121e07af59106e6c6b`
-- Result: thirteen commits after the previous checkpoint have exact-SHA check-run results. Four are green and nine are red attempts; all nine failures are diagnosed below and have green corrections. The latest green commit adds separate top-zone playlist navigation and verifies hover hit-testing.
+- Range reviewed: `a60a2b4f49e55b03112073121e07af59106e6c6b` through `e6536dc995beb4738638f0a74ef44b25544d1561`
+- Result: two commits after the previous checkpoint have exact-SHA check-run results. One is green and one is red; the hover-visibility test fixture failure is corrected by the green test/documentation follow-up.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: review the substantive code/ledger commit and any newer exact-SHA runs; retain all red history.
 
@@ -211,3 +211,6 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 | `a60a2b4f49e55b03112073121e07af59106e6c6b` | feat(layout): move playlist navigation into top zone (#48) | green | [42463651565](https://github.com/SakibShahariar/adwisp/actions/runs/42463651565) | Geometry, renderer, and mocked mpv interaction tests passed. Playlist navigation is now a real top-zone control and retains its own hit target/focus geometry. |
 | `0d0c40000291468fe4a63478706f903cc1bf8eb9` | feat(layout): add independent zone visibility modes (#48) | red | [42463757638](https://github.com/SakibShahariar/adwisp/actions/runs/42463757638) | Renderer test expected the old title fixture `Demo`, but an earlier ASS-escaping test had left the title as `Folder\\clip Next {line}`. Corrected the fixture before testing hover-only zone visibility; syntax and Luacheck passed. |
+
+
+| `e6536dc995beb4738638f0a74ef44b25544d1561` | test(layout): verify independent hover-only zones (#48) | green | [42463836979](https://github.com/SakibShahariar/adwisp/actions/runs/42463836979) | Lua syntax, Luacheck, and all unit tests passed. The prior renderer failure was only a stale title fixture; corrected before the successful run. |

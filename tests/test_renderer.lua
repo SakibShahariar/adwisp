@@ -420,6 +420,20 @@ assert_true(overlay.data:find("Pause", 1, true) ~= nil,
 assert_true(overlay.data:find("Demo", 1, true) == nil,
     "bottom-zone hover should not reveal the top title")
 state.hover_zone = nil
+state.focus_target = "playlist"
+renderer:render()
+assert_true(overlay.data:find("\\pos(378,60)", 1, true) ~= nil,
+    "keyboard focus should outline the playlist control in the top zone")
+assert_true(overlay.data:find("Demo", 1, true) ~= nil
+    and overlay.data:find("Pause", 1, true) == nil,
+    "playlist focus should reveal only the top zone")
+state.focus_target = "playback"
+renderer:render()
+assert_true(overlay.data:find("Pause", 1, true) ~= nil
+    and overlay.data:find("Demo", 1, true) == nil,
+    "playback focus should reveal only the bottom zone")
+state.focus_target = nil
+state.hover_zone = nil
 renderer:render()
 assert_true(overlay.data:find("Pause", 1, true) == nil
     and overlay.data:find("Demo", 1, true) == nil,

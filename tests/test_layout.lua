@@ -345,6 +345,7 @@ local function test_split_zone_geometry()
 end
 
 test_split_zone_geometry()
+test_split_zone_matrix()
 test_layout_rectangles()
 test_timeline_labels_do_not_overlap()
 test_minimal_timeline_geometry()
