@@ -49,6 +49,8 @@ assert(done == false and scan.next_index == 3,
 done = VideoLibrary.scan_chunk(scan, deps, 2)
 assert(done == false, "scan should remain pending while candidates remain")
 done = VideoLibrary.scan_chunk(scan, deps, 2)
+assert(done == false, "directory symlink target should be handled as a normal bounded entry")
+done = VideoLibrary.scan_chunk(scan, deps, 2)
 assert(done == true and scan.done == true, "scan should finish after bounded chunks")
 
 assert(#scan.entries == 5, "only directories and supported video files should be retained")
