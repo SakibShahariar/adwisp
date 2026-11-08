@@ -94,7 +94,6 @@ local function test_fractional_dimensions_are_normalized()
         "panel coordinates should remain integer pixel positions")
 end
 
-local function 
 local function test_split_zone_geometry()
     local split = Layout.compute(1280, 720, {
         control_zones = "split", osd_position = "bottom",
