@@ -800,6 +800,8 @@ local function get_layout(width, height)
         or opts.osd_position ~= cached_layout_position
         or opts.osd_margin ~= cached_layout_margin
         or opts.osd_custom_offset ~= cached_layout_custom_offset
+        or opts.control_zones ~= cached_layout_control_zones
+        or opts.top_zone_margin ~= cached_layout_top_zone_margin
         or opts.minimal_timeline ~= cached_layout_minimal_timeline
         or opts.timeline_expanded ~= cached_layout_timeline_expanded then
         cached_layout = Layout.compute(width, height, opts)
@@ -807,6 +809,8 @@ local function get_layout(width, height)
         cached_layout_position = opts.osd_position
         cached_layout_margin = opts.osd_margin
         cached_layout_custom_offset = opts.osd_custom_offset
+        cached_layout_control_zones = opts.control_zones
+        cached_layout_top_zone_margin = opts.top_zone_margin
         cached_layout_minimal_timeline = opts.minimal_timeline
         cached_layout_timeline_expanded = opts.timeline_expanded
     end

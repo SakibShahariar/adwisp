@@ -24,10 +24,10 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `35f2c180466e55e372e1e2e332e53ec356e344e0`
+- Reviewed checkpoint SHA: `d8af01c28d4c3b0e13cdbf2cf3156cb3a95098d8`
 - Reviewed: 2026-11-08
-- Range reviewed: `7595691120ec768be21fe9fcaca4d221118f9ded` through `35f2c180466e55e372e1e2e332e53ec356e344e0`
-- Result: all seven commits after the previous checkpoint have exact-SHA check-run results. Four are green; three localization-related failures are retained below and have later green corrective commits.
+- Range reviewed: `35f2c180466e55e372e1e2e332e53ec356e344e0` through `d8af01c28d4c3b0e13cdbf2cf3156cb3a95098d8`
+- Result: all eleven commits after the previous checkpoint have exact-SHA check-run results. Two are green and nine are red attempts; all nine failures are diagnosed below and have a final green correction.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: review the substantive code/ledger commit and any newer exact-SHA runs; retain all red history.
 
@@ -184,3 +184,22 @@ The five pre-session historical red entries have later corrective/test commits w
 | `35f2c180466e55e372e1e2e332e53ec356e344e0` | docs(a11y): clarify links and test accessible state query (#18) | green | [42277273566](https://github.com/SakibShahariar/adwisp/actions/runs/42277273566) | Final commit in the reviewed range passed Lua syntax, Luacheck, and the complete unit-test suite. |
 
 The three failed attempts above are historical red entries, not current failures. Their later commits are green; the failure details were verified from the corresponding job logs. The current checkpoint is the last commit in this reviewed range.
+
+
+## Follow-up review after the 2026-11-08 checkpoint
+
+| Commit SHA | Subject | CI result | Run | Diagnosis / resolution |
+|---|---|---|---|---|
+| `702c783d31c6a86fb72b21e45fc4dc4cb16b9c77` | feat(menus): add full Unicode case folding (#44) | red | [42460898162](https://github.com/SakibShahariar/adwisp/actions/runs/42460898162) | Lua syntax: `core/unicode_casefold.lua:41`, unexpected symbol near `:`. Corrected in follow-up commits; final Unicode implementation passed in `8360f3f`. |
+| `120be4c26b7214dcc75dce0e87c49f2feba49d47` | test(menus): correct whitespace search fixture (#44) | red | [42460938218](https://github.com/SakibShahariar/adwisp/actions/runs/42460938218) | Same Lua 5.2 long-string method-call syntax error at line 41; the data-string expressions were parenthesized in the subsequent fix. |
+| `6a4bacc4b5872884d2c066be192436d2e9bb1987` | fix(menus): parenthesize casefold data strings (#44) | red | [42460961467](https://github.com/SakibShahariar/adwisp/actions/runs/42460961467) | Second long-string call still had an unmatched parenthesis near line 60. Corrected in `8360f3f`. |
+| `8360f3fed050f4a158fc28ead17e782fc0c29076` | fix(menus): close expansion data string call (#44) | green | [42461011259](https://github.com/SakibShahariar/adwisp/actions/runs/42461011259) | Final Unicode 15.1 case-fold implementation and regression suite passed Lua syntax, Luacheck, and all unit tests. |
+| `f6ed6a0bf4ebee2711355aa4984a7831f6019532` | feat(layout): add split-zone geometry foundation (#48) | red | [42463176094](https://github.com/SakibShahariar/adwisp/actions/runs/42463176094) | Lua syntax: malformed test insertion at `tests/test_layout.lua:98`. Reconstructed the test file from the pre-change version and placed the new test with the other test invocations. |
+| `e12560456e54ea01e611d96141b10bd90a22f080` | feat(layout): render independent top zone background (#48) | red | [42463191383](https://github.com/SakibShahariar/adwisp/actions/runs/42463191383) | Inherited the same malformed layout-test declaration from the previous commit. |
+| `3079147982718dd423828a455b0c51fcf6e57011` | feat(layout): expose split control-zone setting (#48) | red | [42463219254](https://github.com/SakibShahariar/adwisp/actions/runs/42463219254) | Inherited the same `tests/test_layout.lua:98` syntax error. |
+| `9f6517e9e9474fe0f865caa2175aced9b50142c3` | feat(layout): track independent zone hover state (#48) | red | [42463257307](https://github.com/SakibShahariar/adwisp/actions/runs/42463257307) | Inherited the same `tests/test_layout.lua:98` syntax error. |
+| `e51a866c238f006205c575cebdee42684cff78ca` | test(layout): repair split-zone test declaration (#48) | red | [42463286059](https://github.com/SakibShahariar/adwisp/actions/runs/42463286059) | Follow-up test repair left duplicate/orphaned test-body statements; Lua parser reported `tests/test_layout.lua:150: <eof> expected near 'end'`. |
+| `eb5d01583faab75ccac227dfb7307bf870fcfc15` | test(layout): restore and place split-zone tests correctly (#48) | red | [42463342389](https://github.com/SakibShahariar/adwisp/actions/runs/42463342389) | Syntax passed, but Luacheck found a 161-character line and an unused reassignment to `split_zones`; both were corrected in `d8af01c`. |
+| `d8af01c28d4c3b0e13cdbf2cf3156cb3a95098d8` | fix(layout): resolve split-zone lint warnings (#48) | green | [42463391128](https://github.com/SakibShahariar/adwisp/actions/runs/42463391128) | Lua syntax, Luacheck, and the complete unit-test suite passed. This is the current reviewed checkpoint. |
+
+All red attempts in this range were caused by implementation/test-edit syntax or lint issues and were followed by the listed green corrections. No unresolved failed check remains at checkpoint `d8af01c`.

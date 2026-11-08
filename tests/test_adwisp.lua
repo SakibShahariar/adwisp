@@ -1411,6 +1411,26 @@ key_bindings["adwisp-mouse-move"].callback()
 assert_true(overlays[1].data:find("\\alpha&H30&", 1, true) == nil,
     "moving outside controls should remove the highlight")
 
+-- Split zones have separate hover regions and retain their own geometry.
+observed_state.layout_options.control_zones = "split"
+observed_state.layout_options.top_zone_margin = 24
+local split_hover_layout = Layout.compute(1280, 720, observed_state.layout_options)
+mouse_x = split_hover_layout.top_zone.x + 8
+mouse_y = split_hover_layout.top_zone.y + 8
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(observed_state.hover_zone, "top",
+    "pointer over the top panel should activate only the top hover region")
+assert_true(overlays[1].data:find("\\pos(360,24)", 1, true) ~= nil,
+    "top-zone hover should retain the separate top panel")
+mouse_x = split_hover_layout.panel.x + 8
+mouse_y = split_hover_layout.panel.y + 8
+key_bindings["adwisp-mouse-move"].callback()
+assert_equal(observed_state.hover_zone, "bottom",
+    "pointer over the bottom panel should activate only the bottom hover region")
+mouse_x, mouse_y = 10, 10
+key_bindings["adwisp-mouse-move"].callback()
+observed_state.layout_options.control_zones = "single"
+
 -- Malformed dimensions and missing status flags must disable previews safely.
 thumbfast_payload = { width = math.huge, height = 90, disabled = false, available = true }
 script_messages["thumbfast-info"]("{}")
