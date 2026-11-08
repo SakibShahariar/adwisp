@@ -222,6 +222,8 @@ end
 assert_equal(#overlays, 1, "entry point should create one OSD overlay")
 assert_equal(overlays[1].kind, "ass-events", "renderer should use ASS events")
 assert_equal(key_bindings["adwisp-toggle"].key, "g", "toggle should keep its default binding")
+assert_equal(key_bindings["adwisp-settings"].key, "CTRL+ALT+F4",
+    "settings surface should have a convenient default shortcut")
 assert_equal(key_bindings["adwisp-seek-back"].key, "ALT+LEFT",
     "seek-back should accept a custom binding")
 assert_equal(key_bindings["adwisp-seek-forward"].key, "RIGHT",
@@ -369,6 +371,15 @@ saved_preferences:close()
 assert_true(saved_preferences_json:find('"seek_step":10', 1, true) ~= nil
     and saved_preferences_json:find('"volume_step":8', 1, true) ~= nil,
     "valid changes should be persisted in the local preferences file")
+local reloaded_preferences = require("core.preferences").load(preferences_test_path, {
+    file_info = package.loaded["mp.utils"].file_info,
+    open = io.open,
+    parse_json = package.loaded["mp.utils"].parse_json,
+})
+assert_equal(reloaded_preferences.seek_step, 10,
+    "persisted preferences should load on the next script session")
+assert_equal(reloaded_preferences.volume_step, 8,
+    "all saved settings should survive a preferences reload")
 
 script_messages["adwisp-setting-reset"]("seek_step")
 key_bindings["adwisp-seek-back"].callback()
@@ -377,6 +388,13 @@ assert_equal(commands[#commands][2], -5,
 script_messages["adwisp-setting-reset"]("volume_step")
 script_messages["adwisp-setting-reset"]("thumbnail_preview")
 script_messages["adwisp-setting-reset"]("theme_file")
+local reset_preferences = require("core.preferences").load(preferences_test_path, {
+    file_info = package.loaded["mp.utils"].file_info,
+    open = io.open,
+    parse_json = package.loaded["mp.utils"].parse_json,
+})
+assert_equal(reset_preferences.seek_step, 5,
+    "reset values should also be persisted for the next session")
 os.remove(preference_theme_path)
 os.remove(preferences_test_path)
 os.remove(preferences_test_path .. ".tmp")

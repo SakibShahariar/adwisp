@@ -227,3 +227,6 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 | `873e299f8815b18c5c121ad0086b4345f11f19ff` | test(settings): verify live preference updates (#4) | red | [42464420623](https://github.com/SakibShahariar/adwisp/actions/runs/42464420623) | Luacheck found an unused `path` parameter in the storage mock; changed it to `_` in `6c03b59`. |
 | `6c03b59e98c3d6987091448fb058a1c991d17ce1` | test(settings): fix preference mock lint warning (#4) | red | [42464473041](https://github.com/SakibShahariar/adwisp/actions/runs/42464473041) | Integration test left the mocked volume at 58 before the existing non-finite-property assertion; restored the original state immediately after testing the new volume step. |
+
+
+| `90736133b328e456652092a453ecc563f589a7b3` | test(settings): restore shared volume fixture (#4) | green | [42464542572](https://github.com/SakibShahariar/adwisp/actions/runs/42464542572) | Lua syntax, Luacheck, and all unit tests passed, including live script-message preference updates and local persistence. This is the current reviewed checkpoint. |
