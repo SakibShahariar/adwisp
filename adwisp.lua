@@ -13,6 +13,7 @@ local MenuFilter = require "core.menu_filter"
 local RecentHistory = require "core.recent_history"
 local Preferences = require "core.preferences"
 local VideoLibrary = require "core.video_library"
+local LibraryConfig = require "core.library_config"
 local I18n = require "core.i18n"
 
 local opts = {
@@ -56,6 +57,7 @@ local opts = {
     preferences_file = "~~/adwisp-preferences.json",
     locale_file = "",
     library_max_entries = 500,
+    library_config_file = "~~/adwisp-library.json",
 }
 options.read_options(opts, "adwisp")
 opts.recent_history = opts.recent_history == true
@@ -84,6 +86,10 @@ if type(library_max_entries) ~= "number" or library_max_entries ~= library_max_e
     library_max_entries = 500
 end
 opts.library_max_entries = math.max(50, math.min(5000, math.floor(library_max_entries)))
+if type(opts.library_config_file) ~= "string" or opts.library_config_file:match("^%s*$") then
+    opts.library_config_file = "~~/adwisp-library.json"
+end
+opts.library_config_file = opts.library_config_file:sub(1, 512)
 if type(opts.font_family) ~= "string" then opts.font_family = "Sans" end
 opts.font_family = opts.font_family:sub(1, 48):gsub("[^%w _%-]", "")
 opts.font_family = opts.font_family:match("^%s*(.-)%s*$")
@@ -209,6 +215,24 @@ local history_dependencies = {
     parse_json = utils.parse_json,
     format_json = utils.format_json,
 }
+
+local library_config_path = opts.library_config_file
+local ok_library_config_path, expanded_library_config_path = pcall(mp.command_native,
+    { "expand-path", library_config_path })
+if ok_library_config_path and type(expanded_library_config_path) == "string"
+    and expanded_library_config_path ~= "" then
+    library_config_path = expanded_library_config_path
+end
+local library_config_dependencies = history_dependencies
+local library_config = LibraryConfig.load(library_config_path, library_config_dependencies)
+local function save_library_config()
+    local saved, err = LibraryConfig.save(library_config_path, library_config,
+        library_config_dependencies)
+    if not saved then
+        mp.msg.warn("Adwisp: could not save local library configuration: " .. tostring(err))
+    end
+    return saved
+end
 
 if opts.recent_history then
     local ok, expanded = pcall(mp.command_native, { "expand-path", opts.recent_history_file })
@@ -2450,7 +2474,7 @@ local function refresh_library_menu()
     if not menu then return end
     local labels = { name = "Name", modified = "Recently modified", size = "Largest first" }
     local query = type(menu.query) == "string" and menu.query or ""
-    local lines = { "Video Library", menu.path,
+    local lines = { menu.location_mode and "Library locations" or "Video Library", menu.path,
         query == "" and "Search: type to filter" or "Search: " .. query,
         "Sort: " .. (labels[menu.sort_mode] or "Name") .. " (Tab / Shift+Tab)" }
     menu.selected_line = nil
@@ -2459,15 +2483,27 @@ local function refresh_library_menu()
     elseif menu.error then
         lines[#lines + 1] = "Cannot browse folder: " .. tostring(menu.error)
     elseif #menu.entries == 0 then
-        lines[#lines + 1] = query ~= "" and "No matches. Ctrl+Backspace clears search."
-            or "No supported videos or folders"
+        if menu.location_mode then
+            lines[#lines + 1] = "No configured roots or pinned folders. Add one with adwisp-library-root-add."
+        else
+            lines[#lines + 1] = query ~= "" and "No matches. Ctrl+Backspace clears search."
+                or "No supported videos or folders"
+        end
     else
         local page_size = menu.page_size or 12
         local first = math.floor((menu.selected_index - 1) / page_size) * page_size + 1
         local last = math.min(#menu.entries, first + page_size - 1)
         for index = first, last do
             local entry = menu.entries[index]
-            lines[#lines + 1] = (entry.kind == "directory" and "[DIR] " or "[VID] ") .. entry.name
+            local prefix
+            if entry.location_type == "root" then
+                prefix = entry.available == false and "[OFFLINE] " or "[ROOT] "
+            elseif entry.location_type == "favorite" then
+                prefix = entry.available == false and "[OFFLINE] " or "[PIN] "
+            else
+                prefix = entry.kind == "directory" and "[DIR] " or "[VID] "
+            end
+            lines[#lines + 1] = prefix .. (entry.label or entry.name)
             if index == menu.selected_index then menu.selected_line = #lines end
         end
         if menu.truncated then
@@ -2481,7 +2517,8 @@ local function refresh_library_menu()
     if menu.search_available == false then
         lines[#lines + 1] = "Text filtering unavailable on this mpv build"
     end
-    lines[#lines + 1] = "Type to search · Tab sort · Enter open/play · A queue · Backspace up · Esc close"
+    lines[#lines + 1] = menu.location_mode and "Enter open · Ctrl+Alt+F2 locations · Esc close"
+        or "Type to search · Tab sort · Enter open/play · A queue · Backspace up · Esc close"
     menu.lines = lines
     render()
 end
@@ -2542,6 +2579,7 @@ local function add_library_binding(key, name, callback)
 end
 
 local open_library
+local open_library_locations
 
 local function move_library_selection(delta)
     local menu = state.library_menu
@@ -2578,6 +2616,10 @@ end
 local function go_to_library_parent()
     local menu = state.library_menu
     if not menu then return end
+    if menu.location_mode then
+        close_library_menu(false)
+        return
+    end
     local parent = VideoLibrary.parent_path(menu.path, library_dependencies)
     if not parent then
         mp.commandv("show-text", "Already at the filesystem root.", 2500)
@@ -2607,6 +2649,18 @@ local function install_library_bindings()
     add_library_binding("CTRL+ALT+PGDWN", "adwisp-library-page-down", function()
         local menu = state.library_menu
         if menu then move_library_selection(menu.page_size or 12) end
+    end)
+    add_library_binding("CTRL+ALT+P", "adwisp-library-favorite-toggle", function()
+        local menu = state.library_menu
+        if not menu or menu.location_mode then return end
+        local updated, pinned, err = LibraryConfig.toggle_favorite(library_config, menu.path)
+        if err then
+            mp.commandv("show-text", "Adwisp: " .. err, 2500)
+            return
+        end
+        library_config = updated
+        save_library_config()
+        mp.commandv("show-text", pinned and "Adwisp: folder pinned." or "Adwisp: folder unpinned.", 2500)
     end)
     add_library_binding("ENTER", "adwisp-library-enter", play_library_selection)
     add_library_binding("a", "adwisp-library-queue", queue_library_selection)
@@ -2650,7 +2704,78 @@ local function install_library_bindings()
     end)
 end
 
+open_library_locations = function()
+    close_library_menu(true)
+    clear_track_menu()
+    local entries = LibraryConfig.locations(library_config)
+    for _, entry in ipairs(entries) do
+        local ok_info, info = pcall(utils.file_info, entry.path)
+        entry.available = ok_info and type(info) == "table" and info.is_dir == true
+    end
+    state.library_menu = {
+        path = "Configured roots and pinned folders",
+        source_entries = entries,
+        entries = entries,
+        query = "",
+        sort_mode = "name",
+        selected_index = 1,
+        page_size = 12,
+        loading = false,
+        truncated = false,
+        location_mode = true,
+    }
+    install_library_bindings()
+    show_osd()
+    refresh_library_menu()
+    return true
+end
+
+local function add_library_root(path)
+    if type(path) ~= "string" or path == "" then
+        mp.commandv("show-text", "Adwisp: supply an absolute local directory path.", 3000)
+        return false
+    end
+    local ok_expand, expanded = pcall(mp.command_native, { "expand-path", path })
+    if ok_expand and type(expanded) == "string" and expanded ~= "" then path = expanded end
+    if not LibraryConfig.is_valid_path(path) then
+        mp.commandv("show-text", "Adwisp: library roots must be absolute local paths.", 3000)
+        return false
+    end
+    local ok_info, info = pcall(utils.file_info, path)
+    if not ok_info or type(info) ~= "table" or info.is_dir ~= true then
+        mp.commandv("show-text", "Adwisp: library root is unavailable or not a directory.", 3000)
+        return false
+    end
+    local updated, added, err = LibraryConfig.add_root(library_config, path)
+    if not added then
+        mp.commandv("show-text", "Adwisp: " .. tostring(err or "root was not added"), 2500)
+        return false
+    end
+    library_config = updated
+    if not save_library_config() then return false end
+    mp.commandv("show-text", "Adwisp: library root added.", 2500)
+    if state.library_menu and state.library_menu.location_mode then open_library_locations() end
+    return true
+end
+
+local function remove_library_root(path)
+    local updated, removed = LibraryConfig.remove_root(library_config, path)
+    if not removed then
+        mp.commandv("show-text", "Adwisp: configured library root was not found.", 2500)
+        return false
+    end
+    library_config = updated
+    if not save_library_config() then return false end
+    mp.commandv("show-text", "Adwisp: library root removed.", 2500)
+    if state.library_menu and state.library_menu.location_mode then open_library_locations() end
+    return true
+end
+
 open_library = function(path)
+    if (type(path) ~= "string" or path == "")
+        and (#library_config.roots > 0 or #library_config.favorites > 0) then
+        return open_library_locations()
+    end
     if type(path) ~= "string" or path == "" then
         path = mp.get_property("working-directory")
         if type(path) ~= "string" or path == "" then
@@ -2730,6 +2855,9 @@ mp.register_script_message("adwisp-library-up", go_to_library_parent)
 mp.register_script_message("adwisp-library-queue", queue_library_selection)
 mp.register_script_message("adwisp-library-search", update_library_search)
 mp.register_script_message("adwisp-library-sort", set_library_sort)
+mp.register_script_message("adwisp-library-locations", open_library_locations)
+mp.register_script_message("adwisp-library-root-add", add_library_root)
+mp.register_script_message("adwisp-library-root-remove", remove_library_root)
 mp.add_key_binding("CTRL+ALT+F2", "adwisp-library", function() open_library() end)
 register_no_argument_message("adwisp-clear-recent", clear_recent_history)
 register_no_argument_message("adwisp-toggle", toggle)
