@@ -17,6 +17,8 @@ local recent_history_fixture = {
 local recent_history_saved = false
 local preferences_test_path = os.tmpname() .. ".json"
 local preferences_payload
+local library_config_test_path = os.tmpname() .. ".library.json"
+local library_config_payload = { version = 1, roots = {}, favorites = {} }
 local library_filesystem = {}
 local library_listings = {}
 local library_readdir_calls = 0
@@ -50,6 +52,7 @@ local mp = {
     command_native = function(args)
         if args[1] == "expand-path" then
             if args[2] == "~~/" then return "." end
+            if args[2] == "~~/adwisp-library.json" then return library_config_test_path end
             return args[2]
         end
         return nil
@@ -90,9 +93,16 @@ package.loaded["mp.utils"] = {
         if type(raw) == "string" and raw:find('"settings"', 1, true) then
             return preferences_payload
         end
+        if type(raw) == "string" and raw:find('"roots"', 1, true) then
+            return library_config_payload
+        end
         return thumbfast_payload
     end,
     format_json = function(value)
+        if type(value.roots) == "table" and type(value.favorites) == "table" then
+            library_config_payload = value
+            return '{"version":1,"roots":[],"favorites":[]}'
+        end
         if type(value.settings) == "table" then
             preferences_payload = value
             local settings = value.settings
@@ -526,6 +536,44 @@ assert_true(observed_state.library_menu.error ~= nil,
 script_messages["adwisp-library-close"]()
 assert_equal(observed_state.library_menu, nil,
     "the library close message should dismiss the browser")
+
+assert_true(script_messages["adwisp-library-root-add"] ~= nil
+    and script_messages["adwisp-library-root-remove"] ~= nil,
+    "library root management messages should be registered")
+assert_true(script_messages["adwisp-library-locations"] ~= nil,
+    "the configured-locations menu message should be registered")
+script_messages["adwisp-library-root-add"]("/library")
+assert_equal(library_config_payload.roots[1], "/library",
+    "adding a root should persist its absolute path")
+script_messages["adwisp-library-root-add"]("https://example.com")
+assert_equal(#library_config_payload.roots, 1,
+    "remote URLs should not be accepted as library roots")
+script_messages["adwisp-library-open"]("/library/Movies")
+key_bindings["adwisp-library-favorite-toggle"].callback()
+assert_equal(library_config_payload.favorites[1], "/library/Movies",
+    "the current folder should be pinnable")
+script_messages["adwisp-library-locations"]()
+assert_true(observed_state.library_menu.location_mode,
+    "the locations command should show configured roots and pinned folders")
+assert_equal(#observed_state.library_menu.entries, 2,
+    "the locations menu should list the root and pinned subfolder")
+observed_state.library_menu.selected_index = 2
+key_bindings["adwisp-library-enter"].callback()
+assert_equal(observed_state.library_menu.path, "/library/Movies",
+    "selecting a pinned folder should reopen it")
+key_bindings["adwisp-library-favorite-toggle"].callback()
+assert_equal(#library_config_payload.favorites, 0,
+    "the favorite shortcut should unpin the current folder")
+library_filesystem["/library"] = nil
+script_messages["adwisp-library-locations"]()
+assert_true(table.concat(observed_state.library_menu.lines, " "):find("[OFFLINE]", 1, true) ~= nil,
+    "unavailable removable roots should remain listed as offline")
+library_filesystem["/library"] = { is_dir = true }
+script_messages["adwisp-library-root-remove"]("/library")
+assert_equal(#library_config_payload.roots, 0,
+    "configured roots should be removable")
+os.remove(library_config_test_path)
+os.remove(library_config_test_path .. ".tmp")
 
 library_filesystem["/library/Large"] = { is_dir = true }
 local large_library_names = {}
