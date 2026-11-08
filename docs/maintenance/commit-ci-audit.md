@@ -24,10 +24,10 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `0e51bcc259c4fe26d91de74fd064c6ec3059b0bf`
+- Reviewed checkpoint SHA: `a60a2b4f49e55b03112073121e07af59106e6c6b`
 - Reviewed: 2026-11-08
-- Range reviewed: `35f2c180466e55e372e1e2e332e53ec356e344e0` through `0e51bcc259c4fe26d91de74fd064c6ec3059b0bf`
-- Result: twelve commits after the previous checkpoint have exact-SHA check-run results. Three are green and nine are red attempts; all nine failures are diagnosed below and have green corrections. The latest green commit also verifies independent zone hover behavior.
+- Range reviewed: `35f2c180466e55e372e1e2e332e53ec356e344e0` through `a60a2b4f49e55b03112073121e07af59106e6c6b`
+- Result: thirteen commits after the previous checkpoint have exact-SHA check-run results. Four are green and nine are red attempts; all nine failures are diagnosed below and have green corrections. The latest green commit adds separate top-zone playlist navigation and verifies hover hit-testing.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
 - Next session: review the substantive code/ledger commit and any newer exact-SHA runs; retain all red history.
 
@@ -207,3 +207,7 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 | `96e4c172cb499b515682b80f9b596732862bc519` | test(layout): verify independent zone hover and audit CI (#48) | red | [42463508744](https://github.com/SakibShahariar/adwisp/actions/runs/42463508744) | Luacheck found two undeclared cache-key globals (`cached_layout_control_zones`, `cached_layout_top_zone_margin`); declared them local in `0e51bcc`. |
 | `0e51bcc259c4fe26d91de74fd064c6ec3059b0bf` | fix(layout): scope split-zone cache keys (#48) | green | [42463547354](https://github.com/SakibShahariar/adwisp/actions/runs/42463547354) | Lua syntax, Luacheck, and all unit tests passed, including independent top/bottom hover-state tests. This is the current reviewed checkpoint. |
+
+
+| `a60a2b4f49e55b03112073121e07af59106e6c6b` | feat(layout): move playlist navigation into top zone (#48) | green | [42463651565](https://github.com/SakibShahariar/adwisp/actions/runs/42463651565) | Geometry, renderer, and mocked mpv interaction tests passed. Playlist navigation is now a real top-zone control and retains its own hit target/focus geometry. |
+| `0d0c40000291468fe4a63478706f903cc1bf8eb9` | feat(layout): add independent zone visibility modes (#48) | red | [42463757638](https://github.com/SakibShahariar/adwisp/actions/runs/42463757638) | Renderer test expected the old title fixture `Demo`, but an earlier ASS-escaping test had left the title as `Folder\\clip Next {line}`. Corrected the fixture before testing hover-only zone visibility; syntax and Luacheck passed. |

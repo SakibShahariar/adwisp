@@ -405,6 +405,7 @@ state.layout_options = {
     bottom_zone_visibility = "hover",
 }
 state.hover_zone = "top"
+state.title = "Demo {x}"
 renderer:render()
 assert_true(overlay.data:find("\\pos(360,24)", 1, true) ~= nil,
     "hover-only top zone should draw its own panel")
