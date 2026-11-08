@@ -223,3 +223,7 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 
 | `bc8b1f80ebfaaf2cbfdb9f663238587b8cde7aef` | feat(settings): add preference storage and docs (#4) | red | [42464364441](https://github.com/SakibShahariar/adwisp/actions/runs/42464364441) | Luacheck reported one unused `path` parameter in the preferences unit-test mock; changed the unused parameter to `_` in the next test follow-up. |
+
+
+| `873e299f8815b18c5c121ad0086b4345f11f19ff` | test(settings): verify live preference updates (#4) | red | [42464420623](https://github.com/SakibShahariar/adwisp/actions/runs/42464420623) | Luacheck found an unused `path` parameter in the storage mock; changed it to `_` in `6c03b59`. |
+| `6c03b59e98c3d6987091448fb058a1c991d17ce1` | test(settings): fix preference mock lint warning (#4) | red | [42464473041](https://github.com/SakibShahariar/adwisp/actions/runs/42464473041) | Integration test left the mocked volume at 58 before the existing non-finite-property assertion; restored the original state immediately after testing the new volume step. |

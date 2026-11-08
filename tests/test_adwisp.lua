@@ -342,6 +342,7 @@ observed_state.volume = 50
 key_bindings["adwisp-volume-up"].callback()
 assert_equal(commands[#commands - 1][3], 58,
     "updated volume step should apply immediately to volume shortcuts")
+observed_state.volume = 100
 script_messages["adwisp-setting-set"]("thumbnail_preview", "no")
 assert_equal(package.loaded["mp.options"].last_options.thumbnail_preview, false,
     "thumbnail preference should update the live option")
