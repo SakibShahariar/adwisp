@@ -346,7 +346,15 @@ function Renderer:render()
     end
     local volume_label_color = (state.mute or volume_value <= 20)
         and colors.accent or colors.muted
-    local ass = string.format([[
+    local top_zone_ass = ""
+    if layout.top_zone then
+        local top = layout.top_zone
+        top_zone_ass = string.format(
+            "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\alpha&H18&\\p1}m 0 0 l %d 0 %d %d 0 %d{\\p0}\\n",
+            top.x, top.y, colors.background, top.width, top.width, top.height, top.height
+        )
+    end
+    local ass = top_zone_ass .. string.format([[
 {\an7\pos(%d,%d)\bord0\shad0\1c%s\alpha&H18&\p1}m 0 0 l %d 0 %d %d 0 %d{\p0}
 %s
 {\an7\pos(%d,%d)\fnSans\fs22\b1\1c%s}%s
