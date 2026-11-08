@@ -1,5 +1,6 @@
 -- Pure filtering for Adwisp selection menus.
--- string.lower folds ASCII in the mpv Lua runtime and preserves non-ASCII UTF-8 bytes.
+-- Unicode Default Full Case Folding is shared by menu text and queries.
+local UnicodeCasefold = require "core.unicode_casefold"
 local MenuFilter = {}
 
 local DEFAULT_FIELDS = {
@@ -21,7 +22,7 @@ local function normalize(value)
         :gsub("[%c]", " ")
         :gsub("%s+", " ")
     normalized = normalized:match("^%s*(.-)%s*$") or ""
-    return normalized:lower()
+    return UnicodeCasefold.fold(normalized)
 end
 
 local function searchable_text(item, fields)

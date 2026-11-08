@@ -24,12 +24,12 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `7595691120ec768be21fe9fcaca4d221118f9ded`
-- Reviewed: 2026-11-06
-- Range reviewed: `107549915369fa46dab2c2bceab25b2102f820f8` through `7595691120ec768be21fe9fcaca4d221118f9ded`
-- Result: all commits through the checkpoint have terminal CI results. The follow-up range contains five green commits and eleven red attempts, all diagnosed and corrected by later commits; the final timeline commit is green.
+- Reviewed checkpoint SHA: `35f2c180466e55e372e1e2e332e53ec356e344e0`
+- Reviewed: 2026-11-08
+- Range reviewed: `7595691120ec768be21fe9fcaca4d221118f9ded` through `35f2c180466e55e372e1e2e332e53ec356e344e0`
+- Result: all seven commits after the previous checkpoint have exact-SHA check-run results. Four are green; three localization-related failures are retained below and have later green corrective commits.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
-- Next session: review this ledger update commit and any newer exact-SHA runs; retain all red history.
+- Next session: review the substantive code/ledger commit and any newer exact-SHA runs; retain all red history.
 
 ## Reviewed commits
 
@@ -169,3 +169,18 @@ The five pre-session historical red entries have later corrective/test commits w
 | 2026-11-06 | `400f463b87b6e4c8e0e637a16190193ab3b0492d` through `63f0b8acc7e0e942ddcf77f09daaac75e1545b28` | Five commits green; eleven red attempts diagnosed and corrected by later commits. Thumbfast lifecycle, audio-device selection, minimal timeline, and the Lua 5.2 CI setup have final green verification. |
 | 2026-11-06 | `63f0b8acc7e0e942ddcf77f09daaac75e1545b28` through `67c19dd3948a8516afb79cebc4baeb6fec0732e6` | Three green commits and two red attempts corrected; playlist search now supports filtering, original-index selection, keyboard navigation, clear/dismiss, and safe fallback when ANY_UNICODE is unsupported. |
 | 2026-11-06 | `67c19dd3948a8516afb79cebc4baeb6fec0732e6` through `376a4c32faf99026cfbfc6cfd0d0694b692b302b` | One green documentation/ledger commit; playlist-search compatibility fallback is documented and the ledger checkpoint is current. |
+
+
+## Follow-up review after the 2026-11-06 recent-history checkpoint
+
+| Commit SHA | Subject | CI result | Run | Diagnosis / resolution |
+|---|---|---|---|---|
+| `d8b6f2630aa25ba27482d83ec575c8cc226441cc` | docs(ci): record recent history verification | green | [42275842215](https://github.com/SakibShahariar/adwisp/actions/runs/42275842215) | CI ledger/history documentation passed. |
+| `916e6173fbc0c1715ef75622908091832e00c820` | feat(i18n): add bounded UTF-8 locale loader (#18) | red | [42276001317](https://github.com/SakibShahariar/adwisp/actions/runs/42276001317) | `tests/test_i18n.lua:76`: default script options lacked the locale-file setting. The follow-up locale/a11y work corrected the test/configuration state. |
+| `cc70a2cfba59d1af8db8f38d49fcd88394267a30` | feat(a11y): add locale overrides and theme contrast checks (#18) | red | [42276437905](https://github.com/SakibShahariar/adwisp/actions/runs/42276437905) | `tests/test_renderer.lua:379`: playback labels did not use locale overrides as expected. Corrected by the later renderer/i18n test follow-up. |
+| `e3c739c45554c86c11601e8177c6d583ed7e66be` | test(i18n): exercise translated playback state labels (#18) | red | [42276620684](https://github.com/SakibShahariar/adwisp/actions/runs/42276620684) | `tests/test_renderer.lua:382`: formatted volume labels did not use locale overrides as expected. Corrected by the subsequent fixture reset and accessibility documentation commits. |
+| `0c17567b96d2148e403ce0ac2168ac2c30b9b70e` | test(i18n): reset volume state before locale assertions (#18) | green | [42276893775](https://github.com/SakibShahariar/adwisp/actions/runs/42276893775) | Reset renderer volume state before localized-label assertions; full CI passed. |
+| `365b29b7aa3dda3400fbc4b84616ef9cac328548` | fix(a11y): escape localized OSD text and polish docs (#18) | green | [42276991994](https://github.com/SakibShahariar/adwisp/actions/runs/42276991994) | Corrected localized OSD text handling and documentation; full CI passed. |
+| `35f2c180466e55e372e1e2e332e53ec356e344e0` | docs(a11y): clarify links and test accessible state query (#18) | green | [42277273566](https://github.com/SakibShahariar/adwisp/actions/runs/42277273566) | Final commit in the reviewed range passed Lua syntax, Luacheck, and the complete unit-test suite. |
+
+The three failed attempts above are historical red entries, not current failures. Their later commits are green; the failure details were verified from the corresponding job logs. The current checkpoint is the last commit in this reviewed range.
