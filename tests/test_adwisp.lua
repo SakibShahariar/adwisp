@@ -20,6 +20,7 @@ local preferences_payload
 local library_filesystem = {}
 local library_listings = {}
 local library_readdir_calls = 0
+local library_entry_info_calls = 0
 local logs = { info = {}, warn = {} }
 
 local mp = {
@@ -126,6 +127,9 @@ package.loaded["mp.utils"] = {
         return parent or path, path:match("([^/]+)$") or ""
     end,
     file_info = function(path)
+        if path:match("^/library/Large/") then
+            library_entry_info_calls = library_entry_info_calls + 1
+        end
         if library_filesystem[path] ~= nil then return library_filesystem[path] or nil end
         if path == "." then return { is_dir = true } end
         local file = io.open(path, "rb")
@@ -510,8 +514,10 @@ library_listings["/library/Large"] = large_library_names
 script_messages["adwisp-library-open"]("/library/Large")
 assert_true(observed_state.library_menu.loading,
     "large folders should keep scanning after the first bounded chunk")
-assert_equal(#observed_state.library_menu.entries, 32,
-    "large folders should process metadata in bounded 32-entry chunks")
+assert_equal(library_entry_info_calls, 32,
+    "large folders should inspect metadata in bounded 32-entry chunks")
+assert_equal(#observed_state.library_menu.entries, 0,
+    "partial scan entries should remain hidden until the directory is fully sorted")
 local large_scan_timer = timers[#timers]
 assert_true(large_scan_timer and large_scan_timer.timeout == 0.01,
     "remaining directory entries should be scheduled asynchronously")
