@@ -24,6 +24,7 @@ local library_listings = {}
 local library_readdir_calls = 0
 local library_entry_info_calls = 0
 local logs = { info = {}, warn = {} }
+local script_options
 
 local mp = {
     get_script_directory = function() return "." end,
@@ -212,6 +213,7 @@ package.loaded["core.recent_history"] = {
 
 package.loaded["mp.options"] = {
     read_options = function(options)
+        script_options = options
         assert(options.seek_step == 5, "default seek step should be five seconds")
         assert(options.time_pos_render_interval == 0.15,
             "playback render interval should default to 150 milliseconds")
@@ -2354,6 +2356,16 @@ assert_equal(recent_history_fixture[1].path, "/media/new-local-file.mkv",
     "network URLs should not replace local recent history")
 assert_equal(recent_history_saved, false,
     "network URLs should not trigger a recent-history write")
+script_options.recent_history = false
+properties.path = "/media/opt-out.mkv"
+recent_history_saved = false
+local history_before_opt_out = recent_history_fixture[1].path
+events["file-loaded"]()
+assert_equal(recent_history_fixture[1].path, history_before_opt_out,
+    "disabling recent history should prevent recording newly loaded local files")
+assert_equal(recent_history_saved, false,
+    "disabling recent history should prevent persistence")
+script_options.recent_history = true
 
 script_messages["adwisp-query"]()
 local query_output = logs.info[#logs.info]
