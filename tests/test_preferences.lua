@@ -64,7 +64,7 @@ local deps = {
         end
         return nil
     end,
-    open = function(path, mode)
+    open = function(_, mode)
         if mode == "rb" then
             return {
                 read = function() return store.raw end,

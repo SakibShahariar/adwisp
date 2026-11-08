@@ -220,3 +220,6 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 
 | `e7a1e529e925be5f60823b9761fd0d9dbb266c9d` | feat(settings): expose runtime preference messages (#4) | red | [42464283394](https://github.com/SakibShahariar/adwisp/actions/runs/42464283394) | Unit tests could not load the new `core.preferences` module because its file/test blobs had not yet been added to the commit tree. Added the module and its unit test in the follow-up. |
+
+
+| `bc8b1f80ebfaaf2cbfdb9f663238587b8cde7aef` | feat(settings): add preference storage and docs (#4) | red | [42464364441](https://github.com/SakibShahariar/adwisp/actions/runs/42464364441) | Luacheck reported one unused `path` parameter in the preferences unit-test mock; changed the unused parameter to `_` in the next test follow-up. |
