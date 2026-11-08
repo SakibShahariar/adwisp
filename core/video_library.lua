@@ -145,20 +145,34 @@ function VideoLibrary.selection(scan, index)
 end
 
 function VideoLibrary.sort_modes()
-    return { "name", "modified", "size" }
+    return { "name", "recent", "modified", "size" }
+end
+
+-- Counts describe only this scan snapshot; they never trigger another scan.
+function VideoLibrary.summary(entries, loading, truncated)
+    local summary = { videos = 0, folders = 0, complete = loading ~= true and truncated ~= true,
+        loading = loading == true, truncated = truncated == true }
+    if type(entries) ~= "table" then return summary end
+    for _, entry in ipairs(entries) do
+        if type(entry) == "table" then
+            if entry.kind == "video" then summary.videos = summary.videos + 1
+            elseif entry.kind == "directory" then summary.folders = summary.folders + 1 end
+        end
+    end
+    return summary
 end
 
 -- Return a new view containing original entry references. Directories stay
 -- first; unavailable metadata sorts after known values, with name as tie-break.
 function VideoLibrary.view(entries, query, sort_mode)
     if type(entries) ~= "table" then return {} end
-    if sort_mode ~= "modified" and sort_mode ~= "size" then sort_mode = "name" end
+    if sort_mode ~= "modified" and sort_mode ~= "recent" and sort_mode ~= "size" then sort_mode = "name" end
     local results = MenuFilter.filter(entries, query, { "title", "name" })
     table.sort(results, function(left, right)
         local a, b = left.item, right.item
         if a.kind ~= b.kind then return a.kind == "directory" end
         if sort_mode ~= "name" and a.kind == "video" then
-            local field = sort_mode == "modified" and "mtime" or "size"
+            local field = (sort_mode == "modified" or sort_mode == "recent") and "mtime" or "size"
             local av, bv = a[field], b[field]
             if av == nil and bv ~= nil then return false end
             if av ~= nil and bv == nil then return true end

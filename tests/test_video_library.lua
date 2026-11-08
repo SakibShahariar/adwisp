@@ -109,6 +109,18 @@ local view_entries = {
 local matching = VideoLibrary.view(view_entries, "WINTER 1080p", "name")
 assert(#matching == 1 and matching[1] == view_entries[2],
     "multi-token search should match filenames and preserve source references")
+local recent = VideoLibrary.view(view_entries, "", "recent")
+assert(recent[1] == view_entries[1] and recent[2] == view_entries[3]
+    and recent[3] == view_entries[5] and recent[4] == view_entries[2]
+    and recent[5] == view_entries[4], "recent sort should put newest known timestamps first")
+local summary = VideoLibrary.summary(view_entries, false, false)
+assert(summary.videos == 4 and summary.folders == 1 and summary.complete,
+    "summary should count only the supplied completed snapshot")
+local partial = VideoLibrary.summary(view_entries, false, true)
+assert(partial.videos == 4 and partial.folders == 1 and not partial.complete and partial.truncated,
+    "truncated snapshots must be marked partial")
+local loading = VideoLibrary.summary(view_entries, true, false)
+assert(loading.loading and not loading.complete, "loading counts must not be presented as final")
 local modified = VideoLibrary.view(view_entries, "", "modified")
 assert(modified[1] == view_entries[1]
     and modified[2] == view_entries[3] and modified[3] == view_entries[5]

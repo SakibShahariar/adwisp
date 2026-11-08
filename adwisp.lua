@@ -2631,12 +2631,23 @@ end
 local function refresh_library_menu()
     local menu = state.library_menu
     if not menu then return end
-    local labels = { name = "Name", modified = "Recently modified", size = "Largest first" }
+    local labels = { name = "Name", recent = "Recently added", modified = "Recently modified", size = "Largest first" }
     local query = type(menu.query) == "string" and menu.query or ""
     local lines = { menu.location_mode and "Library locations" or "Video Library", menu.path,
         query == "" and "Search: type to filter" or "Search: " .. query,
         "Sort: " .. (labels[menu.sort_mode] or "Name") .. " (Tab / Shift+Tab)" }
     menu.selected_line = nil
+    if not menu.location_mode then
+        local summary = VideoLibrary.summary(menu.source_entries or {}, menu.loading, menu.truncated)
+        local count_label = tostring(summary.videos) .. " videos · " .. tostring(summary.folders) .. " folders"
+        if summary.loading then
+            lines[#lines + 1] = "Current scan snapshot: " .. count_label .. " so far (not final)"
+        elseif summary.truncated then
+            lines[#lines + 1] = "Partial scan: at least " .. count_label .. " (entry limit reached)"
+        else
+            lines[#lines + 1] = "This folder: " .. count_label
+        end
+    end
     if menu.loading then
         lines[#lines + 1] = "Scanning this folder…"
     elseif menu.error then
@@ -2688,7 +2699,7 @@ local function refresh_library_menu()
         lines[#lines + 1] = "Text filtering unavailable on this mpv build"
     end
     lines[#lines + 1] = menu.location_mode and "Enter open · Ctrl+Alt+F2 locations · Esc close"
-        or "Type to search · Tab sort · Enter open/play · A queue · Backspace up · Esc close"
+        or "Type to search · Tab sort · R refresh · Enter open/play · A queue · Backspace up · Esc close"
     menu.lines = lines
     render()
 end
@@ -2848,6 +2859,10 @@ local function install_library_bindings()
     end)
     add_library_binding("TAB", "adwisp-library-sort-next", function() cycle_library_sort(1) end)
     add_library_binding("SHIFT+TAB", "adwisp-library-sort-previous", function() cycle_library_sort(-1) end)
+    add_library_binding("r", "adwisp-library-refresh", function()
+        local menu = state.library_menu
+        if menu and not menu.location_mode and not menu.loading then open_library(menu.path) end
+    end)
     local search_ok = false
     if type(mp.add_forced_key_binding) == "function" then
         local ok = pcall(mp.add_forced_key_binding, "ANY_UNICODE",
