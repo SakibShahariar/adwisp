@@ -295,6 +295,6 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 ### Red result investigation — `0704f99`
 
 - Failed step: `Run unit tests` (`tests/test_adwisp.lua:524`).
-- Diagnosis: the new test invoked `adwisp-library-sort` as a script message, but the sort change is exercised through the registered keyboard binding; the message invocation left the sort mode unchanged. Syntax and Luacheck both passed (0 warnings / 0 errors).
-- Classification: test-harness mistake, not a production-code failure.
-- Correction: switch the test to invoke `adwisp-library-sort-next`; also use `Ctrl+R` for explicit refresh so the refresh shortcut does not collide with the library's Unicode search input. Corrected run pending.
+- Diagnosis: the production `set_library_sort()` validator omitted the newly added `recent` mode, so the sort-cycle callback silently rejected it. The integration test correctly exposed this behavior. Syntax and Luacheck passed (0 warnings / 0 errors).
+- Classification: production logic regression found by the new integration test.
+- Correction: allow `recent` in the sort-mode validator; invoke the registered sort-cycle binding in the test; use `Ctrl+R` for explicit refresh so it does not collide with Unicode search. Corrected run pending.

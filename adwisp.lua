@@ -2718,7 +2718,7 @@ end
 
 local function set_library_sort(mode)
     local menu = state.library_menu
-    if not menu or (mode ~= "name" and mode ~= "modified" and mode ~= "size") then return end
+    if not menu or (mode ~= "name" and mode ~= "recent" and mode ~= "modified" and mode ~= "size") then return end
     local selected = menu.entries and menu.entries[menu.selected_index]
     menu.sort_mode = mode
     refresh_library_view(menu, selected and selected.path or nil)
