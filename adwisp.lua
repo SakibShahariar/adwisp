@@ -1829,6 +1829,11 @@ open_recent_menu = function(offset, selected_index, continue_only)
         local menu = active_recent_menu
         local selected = menu and menu.items[index]
         if not selected then return end
+        local ok_info, info = pcall(utils.file_info, selected.path)
+        if not ok_info or type(info) ~= "table" or info.is_file ~= true then
+            mp.commandv("show-text", "Adwisp: this recent file is unavailable.", 2500)
+            return
+        end
         note_activity()
         clear_track_menu()
         mp.commandv("loadfile", selected.path, "replace")

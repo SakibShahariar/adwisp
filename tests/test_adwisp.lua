@@ -794,6 +794,15 @@ assert_true(overlays[1].data:find("Recently played", 1, true) ~= nil
     "recent panel should display saved titles")
 assert_true(overlays[1].data:find("/media/recent-one.mkv", 1, true) == nil,
     "recent panel should not expose stored full paths")
+local loads_before_unavailable = #commands
+key_bindings["adwisp-recent-menu-select-1"].callback()
+assert_equal(#commands, loads_before_unavailable + 1,
+    "unavailable recent files should report a message instead of loading")
+assert_true(commands[#commands][2]:find("recent file is unavailable", 1, true) ~= nil,
+    "unavailable recent entries should show clear feedback")
+assert_true(observed_state.recent_menu ~= nil,
+    "an unavailable recent file should leave the menu available for another choice")
+library_filesystem["/media/recent-two.mkv"] = { is_file = true }
 key_bindings["adwisp-recent-menu-wheel-down"].callback({ event = "down" })
 assert_true(overlays[1].data:find("2.  * Recent Two", 1, true) ~= nil,
     "recent menu wheel navigation should move the focused item")

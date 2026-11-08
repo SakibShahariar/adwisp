@@ -24,12 +24,12 @@ Persistent repository-specific record of commit-level CI checks and red-cross in
 
 - Repository: `SakibShahariar/adwisp`
 - Default branch: `main`
-- Reviewed checkpoint SHA: `0704f99c6a839f0e92752260073605dee394d695`
+- Reviewed checkpoint SHA: `173fcf10e35ae7b3e6e0c403f86ab8e119559da6`
 - Reviewed: 2026-11-08
 - Range reviewed: `9326a7ceb539fa800e221e6fb30204497e579432` through `b65d7b219faafd40b08fc2372c28c3ef805fe5f2`
 - Result: nine newer commits through the previous checkpoint had exact-SHA results: seven green and two red. Subsequent cache and Matugen commits are also green; historical red attempts remain recorded.
 - Resolved: workflow run [42261670543](https://github.com/SakibShahariar/adwisp/actions/runs/42261670543) for `522dba926fddb34463d38061281b4cad2e8f644d` completed successfully on rerun; the earlier Set up Lua delay was not a code failure.
-- Next session: review commits after `0704f99` by exact SHA; carry forward its red test result until the correction is green; retain all red history.
+- Next session: review commits after `173fcf1` by exact SHA; retain the diagnosed red test attempt and its green correction; retain all red history.
 
 ## Reviewed commits
 
@@ -298,3 +298,11 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 - Diagnosis: the production `set_library_sort()` validator omitted the newly added `recent` mode, so the sort-cycle callback silently rejected it. The integration test correctly exposed this behavior. Syntax and Luacheck passed (0 warnings / 0 errors).
 - Classification: production logic regression found by the new integration test.
 - Correction: allow `recent` in the sort-mode validator; invoke the registered sort-cycle binding in the test; use `Ctrl+R` for explicit refresh so it does not collide with Unicode search. Corrected run pending.
+
+| `173fcf10e35ae7b3e6e0c403f86ab8e119559da6` | fix(library): accept recently-added sort mode (#55) | green | [42503032273](https://github.com/SakibShahariar/adwisp/actions/runs/42503032273) |
+
+### Red result resolution — `0704f99`
+
+- Corrected by `173fcf10`: `set_library_sort()` now accepts `recent`; the integration test exercises the actual sort-cycle key binding.
+- Final verification: run [42503032273](https://github.com/SakibShahariar/adwisp/actions/runs/42503032273) completed successfully; Lua syntax, Luacheck, and all unit tests passed.
+- The red run [42502730915](https://github.com/SakibShahariar/adwisp/actions/runs/42502730915) remains recorded as historical evidence; it is not erased.
