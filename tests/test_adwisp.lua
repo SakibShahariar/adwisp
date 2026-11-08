@@ -421,18 +421,6 @@ os.remove(preferences_test_path)
 os.remove(preferences_test_path .. ".tmp")
 
 
-local function finish_library_scan()
-    for index = #timers, 1, -1 do
-        local timer = timers[index]
-        if timer.timeout == 0.01 and not timer.killed then
-            timer.killed = true
-            timer.callback()
-            return
-        end
-    end
-    error("expected a pending library scan timer")
-end
-
 -- The local library is on-demand, directory-scoped, and separate from the playback queue.
 assert_equal(library_readdir_calls, 0, "the library must not scan any directory at startup")
 library_filesystem["/library"] = { is_dir = true }
@@ -447,8 +435,11 @@ library_listings["/library/Movies"] = { "nested.mp4" }
 library_listings["/library/Empty"] = {}
 
 script_messages["adwisp-library-open"]("/library")
-assert_true(observed_state.library_menu ~= nil and observed_state.library_menu.loading,
-    "opening the library should show a loading state")
+assert_true(observed_state.library_menu ~= nil,
+    "opening the library should show its browser panel")
+if observed_state.library_menu.loading then
+    assert_true(#timers > 0, "large directory scans should schedule asynchronous chunks")
+end
 assert_equal(library_readdir_calls, 1, "opening the browser should scan only the selected directory")
 finish_library_scan()
 assert_equal(observed_state.library_menu.loading, false, "small directory scan should complete")

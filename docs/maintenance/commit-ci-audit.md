@@ -239,3 +239,6 @@ All red attempts in this range were caused by implementation/test-edit syntax or
 
 
 | `e5368f13d3a85cac3adaecf70c486a63d50ac160` | fix(library): correct Lua extension pattern and fixture (#50) | red | [42465011705](https://github.com/SakibShahariar/adwisp/actions/runs/42465011705) | Lua syntax and Luacheck passed; the OSD integration test advanced a stale timer instead of the pending 10 ms directory-scan timer when checking an empty folder. The test now selects the pending scan timer explicitly. |
+
+
+| `4c45a6eaa906c75d342cddce188d8f8dcccc20cd` | test(library): advance the correct async scan timer (#50) | red | [42465100645](https://github.com/SakibShahariar/adwisp/actions/runs/42465100645) | The test still advanced a stale timer for the empty-directory case. Small folders now process their first (and often only) metadata chunk immediately; only larger folders schedule further asynchronous chunks. |

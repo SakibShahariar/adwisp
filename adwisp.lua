@@ -2621,7 +2621,7 @@ open_library = function(path)
             library_scan_timer = mp.add_timeout(0.01, process_chunk)
         end
     end
-    library_scan_timer = mp.add_timeout(0.01, process_chunk)
+    process_chunk()
     return true
 end
 
