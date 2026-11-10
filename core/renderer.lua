@@ -233,7 +233,7 @@ function Renderer:render()
         status_labels[#status_labels + 1] = translate_format(state, "subtitle_status", "S: %s", truncate_title(subtitle_label, 10))
     end
     local buffering_status_width = 0
-    if buffering_label ~= "" and title_pos.width >= 140 then
+    if #status_labels > 0 and title_pos.width >= 140 then
         buffering_status_width = math.min(140,
             math.max(64, math.floor(title_pos.width * 0.38)))
     elseif title_pos.width < 140 then
