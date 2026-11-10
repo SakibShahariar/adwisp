@@ -472,4 +472,16 @@ state.audio_track_label = "eng English AAC"
 width, height = 1280, 720
 renderer:render()
 
+-- Without status metadata, the title should reclaim the entire title row.
+state.chapter_title = nil
+state.audio_track_count = 0
+state.subtitle_track_count = 0
+state.buffering = false
+state.loop_file = nil
+state.image_mode = false
+state.title = string.rep("T", 100)
+renderer:render()
+assert_true(overlay.data:find(string.rep("T", 35), 1, true) ~= nil,
+    "title should use the full row when no status metadata needs reserved space")
+
 print("All renderer tests passed.")
