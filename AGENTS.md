@@ -59,6 +59,14 @@ These instructions apply to the entire repository. Follow any more specific `AGE
 - Keep commits logically coherent. Never bundle unrelated changes merely to avoid an administrative-only commit.
 - Do not rewrite or force-push published history to remove administrative commits that already exist.
 
+## Interface Design Requirements
+
+- For OSD/UI work, follow current GNOME Human Interface Guidelines and Libadwaita design conventions. Read `docs/OSD_DESIGN.md` before changing interface layout, controls, menus, typography, spacing, or interaction patterns.
+- Treat this as an mpv ASS OSD, not a native GTK application. Apply the underlying Adwaita interaction and visual principles within ASS/mpv constraints; do not claim native widget behavior or accessibility semantics that the implementation cannot provide.
+- Solve hierarchy, layout, typography, spacing, affordances, focus, and responsive behavior before treating color changes as a UI fix.
+- Use the active semantic palette for all rendered colors. Matugen-generated palettes are the intended dynamic color source when configured; built-in colors are fallback only. Never hard-code per-widget colors that bypass the palette.
+- Preserve video as the primary content, keep hit targets stable and usable, and validate layout at multiple OSD sizes. Automated geometry tests do not replace real-mpv visual and interaction inspection.
+
 ## Documentation and Dependencies
 
 - Keep documentation accurate, concise, and consistent with the actual implementation.
