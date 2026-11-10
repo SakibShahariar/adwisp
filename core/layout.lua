@@ -109,7 +109,7 @@ function Layout.compute(width, height, options)
 
     local volume_x = inner_x + playback_width + control_gap
     local volume_track = {
-        x = volume_x, y = control_y + (dense_compact and 17 or 25),
+        x = volume_x, y = control_y + (dense_compact and panel_offset(17, 104) or 25),
         width = volume_width, height = 4,
     }
     local volume_hit = {
@@ -117,13 +117,18 @@ function Layout.compute(width, height, options)
     }
 
     local title_geometry = top_zone and { x = inner_x, y = top_zone.y + 12, width = inner_width }
-        or { x = inner_x, y = y + (dense_compact and 5 or (compact and 10 or 18)), width = inner_width }
+        or { x = inner_x, y = y + (dense_compact and panel_offset(5, 104)
+            or (compact and panel_offset(10, 156) or 18)), width = inner_width }
 
     local playlist_geometry = top_zone and {
         x = inner_x, y = top_zone.y + 40, width = inner_width, height = 18,
     } or {
-        x = inner_x, y = y + (dense_compact and 80 or (compact and 116 or 132)),
-        width = inner_width, height = dense_compact and 14 or 20,
+        x = inner_x,
+        y = y + (dense_compact and panel_offset(80, 104)
+            or (compact and panel_offset(116, 156) or 132)),
+        width = inner_width,
+        height = dense_compact and panel_offset(14, 104)
+            or (compact and panel_offset(20, 156) or 20),
     }
 
     return {
@@ -135,12 +140,13 @@ function Layout.compute(width, height, options)
         top_zone = top_zone,
         title = title_geometry,
         playback = { x = inner_x, y = control_y, width = playback_width,
-            height = dense_compact and 18 or (compact and 24 or 32) },
+            height = dense_compact and panel_offset(18, 104)
+                or (compact and panel_offset(24, 156) or 32) },
         volume = {
             x = volume_x,
             y = control_y,
             width = volume_width,
-            height = dense_compact and 24 or 32,
+            height = dense_compact and panel_offset(24, 104) or 32,
             track = volume_track,
             hit = volume_hit,
         },
