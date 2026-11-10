@@ -81,7 +81,7 @@ function Layout.compute(width, height, options)
     local bar_y = y + (dense_compact and 59 or (compact and 78 or math.min(104, math.floor(panel_height * 0.67))))
     local bar_x = inner_x
     local bar_width = inner_width
-    local label_y = bar_y + (dense_compact and 8 or (compact and 14 or 22))
+    local label_y = bar_y + (dense_compact and 8 or (compact and 14 or 12))
     local labels_have_room = bar_width >= 164
     local progress_label = {
         x = bar_x, y = label_y, width = 36, visible = labels_have_room and not minimal_timeline,
