@@ -13,7 +13,8 @@ local function assert_true(value, message)
     if not value then error(message or "expected true", 2) end
 end
 
-local function test_standard_layout()
+local function test_vertical_rows_scale_with_panel_height()
+test_standard_layout()
     local layout = Layout.compute(1280, 720)
     assert_true(layout ~= nil, "layout should exist for valid dimensions")
     assert_equal(layout.panel.width, 560, "panel should respect max width")
@@ -212,6 +213,38 @@ local function test_dense_compact_layout_stays_inside_panel()
             assert_true(candidate.progress_label.y + 11 <= candidate.playlist.y,
                 "timeline labels should precede playlist at " .. width .. "x" .. height)
         end
+    end
+end
+
+
+local function test_vertical_rows_scale_with_panel_height()
+    local standard = Layout.compute(640, 180)
+    local compact_short = Layout.compute(640, 160)
+    assert_true(compact_short.panel.height < standard.panel.height,
+        "short compact panels should expose their reduced available height")
+    assert_true(compact_short.playback.y - compact_short.panel.y
+        < standard.playback.y - standard.panel.y,
+        "compact control row should scale with the reduced panel height")
+    assert_true(compact_short.timeline.y - compact_short.panel.y
+        < standard.timeline.y - standard.panel.y,
+        "compact timeline row should scale with the reduced panel height")
+
+    local dense = Layout.compute(640, 120)
+    local dense_taller = Layout.compute(640, 140)
+    assert_true(dense_taller.panel.height > dense.panel.height,
+        "dense panel height should track available OSD height")
+    assert_true(dense_taller.playback.y - dense_taller.panel.y
+        > dense.playback.y - dense.panel.y,
+        "dense control row should expand with the available panel height")
+    assert_true(dense_taller.timeline.y - dense_taller.panel.y
+        > dense.timeline.y - dense.panel.y,
+        "dense timeline row should expand with the available panel height")
+    for _, candidate in ipairs({ compact_short, dense, dense_taller }) do
+        local panel_bottom = candidate.panel.y + candidate.panel.height
+        assert_true(candidate.playback.y + candidate.playback.height <= candidate.timeline.y,
+            "scaled controls should remain above the timeline")
+        assert_true(candidate.playlist.y + candidate.playlist.height <= panel_bottom,
+            "scaled playlist should remain inside the panel")
     end
 end
 
