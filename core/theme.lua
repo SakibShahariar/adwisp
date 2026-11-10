@@ -4,12 +4,12 @@
 local Theme = {}
 
 Theme.fallback = {
-    background = "#30251E",
-    surface = "#30251E",
-    text = "#FAF7F3",
-    muted = "#DBD2C8",
-    accent = "#9B7653",
-    on_accent = "#FFFFFF",
+    background = "#171A20",
+    surface = "#242A34",
+    text = "#F1F3F9",
+    muted = "#B8C1D1",
+    accent = "#A8C7FA",
+    on_accent = "#102F52",
 }
 
 local allowed = {
