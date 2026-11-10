@@ -454,4 +454,22 @@ assert_true(overlay.data:find("Previous      5 / 12      Next", 1, true) == nil,
 assert_true(not overlay.data:find(string.rep(" ", 12), 1, true),
     "narrow playlist navigation should not preserve excessive desktop spacing")
 
+-- Status metadata uses the remaining title-row width instead of a fixed character cap.
+state.buffering = true
+state.buffering_progress = 45
+state.chapter_title = string.rep("Long chapter metadata ", 4)
+state.audio_track_label = string.rep("English audio track ", 3)
+state.audio_track_count = 2
+width, height = 200, 720
+renderer:render()
+assert_true(overlay.data:find("Buffering", 1, true) ~= nil,
+    "narrow title rows should retain a recognizable buffering status")
+assert_true(overlay.data:find("Buffering 45%", 1, true) == nil,
+    "narrow title rows should truncate status metadata to its allocated width")
+state.buffering = false
+state.chapter_title = "Opening Scene"
+state.audio_track_label = "eng English AAC"
+width, height = 1280, 720
+renderer:render()
+
 print("All renderer tests passed.")
