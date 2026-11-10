@@ -361,6 +361,37 @@ local function test_split_zone_geometry()
 end
 
 test_standard_timeline_labels_clear_playlist_row()
+local function test_width_adaptive_layout()
+    local narrow = Layout.compute(320, 720)
+    local threshold = Layout.compute(464, 720)
+    local wide = Layout.compute(1280, 720)
+
+    assert_true(narrow.compact,
+        "narrow tall windows should select the compact arrangement")
+    assert_true(not threshold.compact,
+        "layouts with at least 420px of panel width should use the standard arrangement")
+    assert_true(not wide.compact,
+        "wide desktop windows should retain the standard arrangement")
+
+    for _, size in ipairs({ { 200, 720 }, { 320, 720 }, { 400, 900 },
+        { 464, 720 }, { 640, 360 }, { 1280, 720 } }) do
+        local candidate = Layout.compute(size[1], size[2])
+        local panel = candidate.panel
+        local right = panel.x + panel.width
+        local bottom = panel.y + panel.height
+        assert_true(candidate.title.x >= panel.x
+            and candidate.title.x + candidate.title.width <= right,
+            "title should fit panel at " .. size[1] .. "x" .. size[2])
+        assert_true(candidate.playback.x >= panel.x
+            and candidate.playback.x + candidate.playback.width <= right,
+            "playback should fit panel at " .. size[1] .. "x" .. size[2])
+        assert_true(candidate.playback.y + candidate.playback.height <= candidate.timeline.y,
+            "controls should precede timeline at " .. size[1] .. "x" .. size[2])
+        assert_true(candidate.playlist.y + candidate.playlist.height <= bottom,
+            "playlist should fit panel at " .. size[1] .. "x" .. size[2])
+    end
+end
+
 local function test_split_zone_matrix()
     for _, size in ipairs({
         { 320, 320 }, { 640, 360 }, { 1280, 720 }, { 1920, 1080 },
@@ -369,8 +400,14 @@ local function test_split_zone_matrix()
         local candidate = Layout.compute(width, height, {
             control_zones = "split", osd_position = "bottom",
         })
-        assert_true(candidate.top_zone ~= nil,
-            "split zones should fit at " .. width .. "x" .. height)
+        if candidate.compact then
+            assert_true(candidate.top_zone == nil,
+                "split zones should collapse in compact layouts at " .. width .. "x" .. height)
+        else
+            assert_true(candidate.top_zone ~= nil,
+                "split zones should fit at " .. width .. "x" .. height)
+        end
+        if candidate.top_zone then
         local top = candidate.top_zone
         local bottom = candidate.panel
         assert_true(top.x >= 0 and top.y >= 0
@@ -387,10 +424,12 @@ local function test_split_zone_matrix()
         assert_true(candidate.playlist.y >= top.y
             and candidate.playlist.y + candidate.playlist.height <= top.y + top.height,
             "playlist navigation should stay in top zone at " .. width .. "x" .. height)
+        end
     end
 end
 
 test_split_zone_geometry()
+test_width_adaptive_layout()
 test_split_zone_matrix()
 test_layout_rectangles()
 test_timeline_labels_do_not_overlap()
