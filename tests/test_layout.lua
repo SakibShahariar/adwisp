@@ -318,7 +318,24 @@ local function test_minimal_timeline_geometry()
     end
 end
 
-local function test_split_zone_geometry()
+local function local function test_standard_timeline_labels_clear_playlist_row()
+    for _, size in ipairs({
+        { 320, 320 }, { 640, 360 }, { 1280, 720 }, { 1920, 1080 },
+    }) do
+        local width, height = size[1], size[2]
+        local candidate = Layout.compute(width, height)
+        assert_true(candidate.progress_label.y + 11 <= candidate.playlist.y,
+            "timeline labels should clear playlist navigation at "
+                .. width .. "x" .. height)
+        assert_true(candidate.playlist.y + candidate.playlist.height
+            <= candidate.panel.y + candidate.panel.height,
+            "playlist navigation should remain inside the panel at "
+                .. width .. "x" .. height)
+    end
+end
+
+test_standard_timeline_labels_clear_playlist_row()
+test_split_zone_geometry()
     local split = Layout.compute(1280, 720, {
         control_zones = "split", osd_position = "bottom",
         osd_margin = 42, top_zone_margin = 24,
