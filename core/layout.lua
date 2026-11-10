@@ -18,7 +18,9 @@ function Layout.compute(width, height, options)
     if width < 1 or height < 1 then return nil end
 
     local panel_width = math.min(560, math.max(1, width - 32))
-    local compact = height < 240
+    -- Switch to the compact arrangement when either axis is constrained.
+    -- This keeps narrow, tall player windows from retaining desktop-sized rows.
+    local compact = height < 240 or panel_width < 420
     local panel_height = math.min(156, math.max(1, height - (compact and 16 or 32)))
     -- Very short windows need a denser row arrangement, not merely a shorter panel.
     local dense_compact = compact and panel_height < 144
