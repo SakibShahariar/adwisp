@@ -13,8 +13,7 @@ local function assert_true(value, message)
     if not value then error(message or "expected true", 2) end
 end
 
-local function test_vertical_rows_scale_with_panel_height()
-test_standard_layout()
+local function test_standard_layout()
     local layout = Layout.compute(1280, 720)
     assert_true(layout ~= nil, "layout should exist for valid dimensions")
     assert_equal(layout.panel.width, 560, "panel should respect max width")
