@@ -125,6 +125,30 @@ local function test_layout_rectangles()
     assert_volume_geometry(Layout.compute(640, 180), "compact")
 end
 
+local function test_volume_geometry_scales_with_panel_height()
+    for _, height in ipairs({ 120, 140, 160, 180, 240, 360, 720 }) do
+        local candidate = Layout.compute(640, height)
+        local volume = candidate.volume
+        local track = volume.track
+        local hit = volume.hit
+        local label = "volume geometry at 640x" .. height
+
+        assert_true(track.height >= 2,
+            label .. " should retain a visible track thickness")
+        assert_true(track.y >= volume.y
+            and track.y + track.height <= volume.y + volume.height,
+            label .. " track should stay inside its control")
+        assert_true(hit.y <= track.y
+            and hit.y + hit.height >= track.y + track.height,
+            label .. " hit target should cover the track")
+        assert_true(hit.y >= volume.y
+            and hit.y + hit.height <= volume.y + volume.height,
+            label .. " hit target should stay inside its control")
+        assert_true(hit.y + hit.height <= candidate.timeline.hit_y,
+            label .. " hit target should clear the timeline hit area")
+    end
+end
+
 local function test_configurable_vertical_position()
     local default = Layout.compute(1280, 720)
     assert_equal(default.panel.y, 522, "default bottom placement should remain unchanged")
@@ -464,6 +488,7 @@ test_split_zone_geometry()
 test_width_adaptive_layout()
 test_split_zone_matrix()
 test_layout_rectangles()
+test_volume_geometry_scales_with_panel_height()
 test_timeline_labels_do_not_overlap()
 test_minimal_timeline_geometry()
 test_configurable_vertical_position()
