@@ -267,7 +267,13 @@ function Renderer:render()
             end
         end
     end
-    playlist_label = escape_ass(playlist_label)
+    -- Estimate the available character budget from the actual playlist row width.
+    -- ASS has no clipping container, so truncate before rendering rather than letting
+    -- long localized navigation labels spill beyond narrow OSD panels.
+    local playlist_font_size = layout.compact and 12 or 15
+    local playlist_max_chars = math.max(1,
+        math.floor(playlist.width / (playlist_font_size * 0.56)))
+    playlist_label = escape_ass(truncate_title(playlist_label, playlist_max_chars))
     local filled = math.floor(timeline.width * progress)
     local pause_label = state.paused and translate(state, "play", "Play") or translate(state, "pause", "Pause")
     local playback_label = escape_ass(string.format("%s  %.2g×", pause_label,
