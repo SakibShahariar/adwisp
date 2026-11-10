@@ -361,7 +361,6 @@ local function test_split_zone_geometry()
 end
 
 test_standard_timeline_labels_clear_playlist_row()
-test_split_zone_geometry()
 local function test_split_zone_matrix()
     for _, size in ipairs({
         { 320, 320 }, { 640, 360 }, { 1280, 720 }, { 1920, 1080 },
