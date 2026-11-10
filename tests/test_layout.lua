@@ -318,7 +318,7 @@ local function test_minimal_timeline_geometry()
     end
 end
 
-local function local function test_standard_timeline_labels_clear_playlist_row()
+local function test_standard_timeline_labels_clear_playlist_row()
     for _, size in ipairs({
         { 320, 320 }, { 640, 360 }, { 1280, 720 }, { 1920, 1080 },
     }) do
@@ -334,8 +334,7 @@ local function local function test_standard_timeline_labels_clear_playlist_row()
     end
 end
 
-test_standard_timeline_labels_clear_playlist_row()
-test_split_zone_geometry()
+local function test_split_zone_geometry()
     local split = Layout.compute(1280, 720, {
         control_zones = "split", osd_position = "bottom",
         osd_margin = 42, top_zone_margin = 24,
@@ -361,6 +360,8 @@ test_split_zone_geometry()
     assert_equal(top_position.top_zone, nil, "top-positioned panels should retain the single-zone fallback")
 end
 
+test_standard_timeline_labels_clear_playlist_row()
+test_split_zone_geometry()
 local function test_split_zone_matrix()
     for _, size in ipairs({
         { 320, 320 }, { 640, 360 }, { 1280, 720 }, { 1920, 1080 },
