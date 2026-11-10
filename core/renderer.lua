@@ -232,14 +232,19 @@ function Renderer:render()
         end
         status_labels[#status_labels + 1] = translate_format(state, "subtitle_status", "S: %s", truncate_title(subtitle_label, 10))
     end
-    local buffering_label = escape_ass(truncate_title(table.concat(status_labels, " · "), 54))
     local buffering_status_width = 0
     if buffering_label ~= "" and title_pos.width >= 140 then
         buffering_status_width = math.min(140,
             math.max(64, math.floor(title_pos.width * 0.38)))
     elseif title_pos.width < 140 then
-        buffering_label = ""
+        status_labels = {}
     end
+    local buffering_font_size = layout.compact and 11 or 13
+    local buffering_max_chars = buffering_status_width > 0 and math.max(1,
+        math.floor(buffering_status_width / (buffering_font_size * 0.56))) or 1
+    local buffering_label = escape_ass(truncate_title(
+        table.concat(status_labels, " · "), buffering_max_chars
+    ))
     local available_title_width = math.max(1,
         title_pos.width - buffering_status_width - (buffering_status_width > 0 and 12 or 0))
     local title_chars = math.max(buffering_status_width > 0 and 4 or 8,
