@@ -79,11 +79,20 @@ function Layout.compute(width, height, options)
         math.max(1, math.floor((inner_width - control_gap) * 0.45)))
     local volume_width = math.min(120,
         math.max(1, inner_width - playback_width - control_gap))
-    local control_y = y + (dense_compact and 22 or (compact and 34 or 51))
-    local bar_y = y + (dense_compact and 59 or (compact and 78 or math.min(104, math.floor(panel_height * 0.67))))
+    -- Position rows as proportions of the actual panel height. The reference
+    -- profiles preserve the established 156px, compact, and dense arrangements,
+    -- while allowing short panels to compress without unrelated fixed offsets.
+    local function panel_offset(reference_offset, reference_height)
+        return math.floor(reference_offset * panel_height / reference_height + 0.5)
+    end
+    local control_y = y + (dense_compact and panel_offset(22, 104)
+        or (compact and panel_offset(34, 156) or panel_offset(51, 156)))
+    local bar_y = y + (dense_compact and panel_offset(59, 104)
+        or (compact and panel_offset(78, 156) or panel_offset(104, 156)))
     local bar_x = inner_x
     local bar_width = inner_width
-    local label_y = bar_y + (dense_compact and 8 or (compact and 14 or 12))
+    local label_y = bar_y + (dense_compact and panel_offset(8, 104)
+        or (compact and panel_offset(14, 156) or panel_offset(12, 156)))
     local labels_have_room = bar_width >= 164
     local progress_label = {
         x = bar_x, y = label_y, width = 36, visible = labels_have_room and not minimal_timeline,
