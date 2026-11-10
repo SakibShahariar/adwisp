@@ -441,4 +441,17 @@ assert_true(overlay.data:find("Pause", 1, true) == nil
 state.layout_options = nil
 renderer:render()
 
+-- Playlist navigation is bounded by the responsive row width at narrow sizes.
+state.playlist_count = 12
+state.playlist_pos = 4
+width, height = 200, 720
+state.layout_options = nil
+renderer:render()
+assert_true(overlay.data:find("‹", 1, true) ~= nil,
+    "narrow playlist navigation should retain its leading navigation affordance")
+assert_true(overlay.data:find("Previous      5 / 12      Next", 1, true) == nil,
+    "narrow playlist navigation should not render the full-width desktop label")
+assert_true(not overlay.data:find(string.rep(" ", 12), 1, true),
+    "narrow playlist navigation should not preserve excessive desktop spacing")
+
 print("All renderer tests passed.")
