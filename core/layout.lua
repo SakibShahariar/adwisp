@@ -108,12 +108,24 @@ function Layout.compute(width, height, options)
     }
 
     local volume_x = inner_x + playback_width + control_gap
+    local volume_reference_height = dense_compact and 104 or 156
+    local volume_track_offset = dense_compact and panel_offset(17, 104)
+        or panel_offset(25, 156)
+    local volume_track_height = math.max(2,
+        panel_offset(4, volume_reference_height))
+    local volume_hit_inset = math.max(1,
+        panel_offset(2, volume_reference_height))
     local volume_track = {
-        x = volume_x, y = control_y + (dense_compact and panel_offset(17, 104) or 25),
-        width = volume_width, height = 4,
+        x = volume_x,
+        y = control_y + volume_track_offset,
+        width = volume_width,
+        height = volume_track_height,
     }
     local volume_hit = {
-        x = volume_x, y = volume_track.y - 2, width = volume_width, height = 8,
+        x = volume_x,
+        y = volume_track.y - volume_hit_inset,
+        width = volume_width,
+        height = volume_track_height + volume_hit_inset * 2,
     }
 
     local title_geometry = top_zone and { x = inner_x, y = top_zone.y + 12, width = inner_width }
@@ -146,7 +158,8 @@ function Layout.compute(width, height, options)
             x = volume_x,
             y = control_y,
             width = volume_width,
-            height = dense_compact and panel_offset(24, 104) or 32,
+            height = dense_compact and panel_offset(24, 104)
+                or panel_offset(32, 156),
             track = volume_track,
             hit = volume_hit,
         },
