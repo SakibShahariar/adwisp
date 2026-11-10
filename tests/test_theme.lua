@@ -4,7 +4,12 @@ local Theme = require "core.theme"
 
 local fallback, source = Theme.load("")
 assert(source == "fallback", "empty path should use fallback palette")
-assert(fallback.accent == "#9B7653", "fallback accent should be available")
+assert(fallback.background == "#171A20", "fallback should use a neutral dark background")
+assert(fallback.surface == "#242A34", "fallback should use a distinct raised surface")
+assert(fallback.text == "#F1F3F9", "fallback should provide clear primary text")
+assert(fallback.muted == "#B8C1D1", "fallback should provide readable secondary text")
+assert(fallback.accent == "#A8C7FA", "fallback should use a clear Material-inspired blue accent")
+assert(fallback.on_accent == "#102F52", "fallback should provide dark text for accent surfaces")
 
 -- Keep the shipped green preset aligned with the exact semantic palette contract.
 local green, green_source = Theme.load("themes/matugen-green.conf")
@@ -57,12 +62,12 @@ assert(diagnostics[2]:find("invalid color for 'accent'", 1, true) ~= nil,
 local ass = Theme.to_ass(palette)
 assert(ass.background == "&H332211&", "ASS color should convert RGB to BGR")
 assert(ass.accent == "&HFFBCD0&", "accent should convert RGB to BGR")
-assert(Theme.to_ass({ accent = "invalid" }).accent == "&H53769B&",
-    "invalid colors should use fallback")
-assert(Theme.to_ass({ accent = "#GG0000" }).accent == "&H53769B&",
-    "non-hex palette colors should use fallback")
-assert(Theme.to_ass({ accent = "#12345" }).accent == "&H53769B&",
-    "short palette colors should use fallback")
+assert(Theme.to_ass({ accent = "invalid" }).accent == "&HFAC7A8&",
+    "invalid colors should use the modern fallback accent")
+assert(Theme.to_ass({ accent = "#GG0000" }).accent == "&HFAC7A8&",
+    "non-hex palette colors should use the modern fallback accent")
+assert(Theme.to_ass({ accent = "#12345" }).accent == "&HFAC7A8&",
+    "short palette colors should use the modern fallback accent")
 
 -- Entirely invalid files should be rejected with actionable diagnostics.
 local invalid_path = os.tmpname()
@@ -71,7 +76,7 @@ invalid_file:write("not a palette entry\nunknown=#000000\naccent=invalid\n")
 invalid_file:close()
 local invalid_palette, invalid_source, invalid_error, invalid_diagnostics = Theme.load(invalid_path)
 assert(invalid_palette == nil, "files without valid colors should not replace the active palette")
-assert(invalid_source == "invalid", "invalid content should be distinguished from file errors")
+assert(invalid_source == "invalid", "invalid content should be distinguished from invalid content")
 assert(invalid_error == "no valid palette entries found",
     "invalid-only files should explain why they were rejected")
 assert(#invalid_diagnostics == 3, "every malformed entry should be reported")
@@ -91,7 +96,9 @@ assert(Theme.contrast_ratio("#777777", "#FFFFFF") < 4.5,
 local fallback_contrast = Theme.contrast_report(Theme.fallback)
 assert(fallback_contrast.text_background >= 4.5,
     "fallback text should meet normal-text contrast")
-assert(fallback_contrast.on_accent >= 3,
-    "fallback accent labels should meet large-text contrast")
+assert(fallback_contrast.muted_background >= 4.5,
+    "fallback secondary text should meet normal-text contrast")
+assert(fallback_contrast.on_accent >= 4.5,
+    "fallback accent labels should meet normal-text contrast")
 
 print("All theme tests passed.")
