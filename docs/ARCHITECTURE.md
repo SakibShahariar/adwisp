@@ -2,7 +2,7 @@
 
 ## Current prototype
 
-`adwisp.lua` is the mpv entry point. It reads script options, observes playback properties, updates shared state, and routes render requests to the renderer. Project-local modules are loaded relative to the script directory.
+`main.lua` is the directory-script entry point and simply loads `adwisp.lua`, which reads script options, observes playback properties, updates shared state, and routes render requests to the renderer. Project-local modules are loaded relative to the script directory.
 
 - `core/state.lua`: defaults for the shared playback state.
 - `core/renderer.lua`: ASS OSD overlay creation, time formatting, drawing, and duplicate-frame suppression.

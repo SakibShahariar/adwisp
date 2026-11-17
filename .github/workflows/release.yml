@@ -36,17 +36,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          find adwisp.lua core tests -type f -name '*.lua' -print0 |
+          find main.lua adwisp.lua core tests -type f -name '*.lua' -print0 |
             while IFS= read -r -d '' file; do
               luac5.2 -p "$file"
             done
 
       - name: Run Luacheck
-        run: luacheck adwisp.lua core tests --no-color
+        run: luacheck main.lua adwisp.lua core tests --no-color
 
       - name: Run unit tests
         run: |
           lua5.2 tests/test_layout.lua
+          lua5.2 tests/test_main.lua
           lua5.2 tests/test_adwisp.lua
           lua5.2 tests/test_renderer.lua
           lua5.2 tests/test_theme.lua
@@ -61,6 +62,7 @@ jobs:
           archive="dist/adwisp-$GITHUB_REF_NAME.zip"
           archive_contents=$(unzip -Z1 "$archive")
           for path in \
+            scripts/adwisp/main.lua \
             scripts/adwisp/adwisp.lua \
             scripts/adwisp/core/bmp.lua \
             scripts/adwisp/core/layout.lua \

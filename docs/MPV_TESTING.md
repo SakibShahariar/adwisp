@@ -22,7 +22,7 @@ Use **PASS**, **FAIL**, **BLOCKED**, or **NOT RUN** for each case. For failures,
 
 ## Preparation
 
-- [ ] Install Adwisp from the exact commit being tested, preserving the `adwisp.lua` and `core/` directory structure.
+- [ ] Install Adwisp from the exact commit being tested, preserving the `main.lua`, `adwisp.lua`, and `core/` directory structure (mpv loads the script directory through `main.lua`).
 - [ ] Keep mpv's console or a log file available. For example, start mpv with `--log-file=adwisp-mpv.log` and the test media file.
 - [ ] Prepare a short local video, a longer video, and a playlist containing at least two entries.
 - [ ] Test once without thumbfast and, when available, once with the supported thumbfast script installed.

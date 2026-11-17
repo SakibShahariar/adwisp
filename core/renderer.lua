@@ -310,6 +310,9 @@ function Renderer:render()
             local vertical_margin = math.min(8, height / 2)
             preview_label_y = math.max(vertical_margin, math.min(
                 height - vertical_margin, preview_label_y))
+            -- ASS positions are integer pixels; mouse-derived values may be fractional.
+            preview_label_x = math.floor(preview_label_x + 0.5)
+            preview_label_y = math.floor(preview_label_y + 0.5)
         else
             preview_label = ""
         end

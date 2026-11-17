@@ -15,6 +15,7 @@ work_dir=$(mktemp -d)
 trap 'rm -rf "$work_dir"' EXIT
 
 mkdir -p "$work_dir/scripts/adwisp" "$work_dir/script-opts"
+cp "$repo_root/main.lua" "$work_dir/scripts/adwisp/"
 cp "$repo_root/adwisp.lua" "$work_dir/scripts/adwisp/"
 cp -R "$repo_root/core" "$work_dir/scripts/adwisp/"
 cp "$repo_root/script-opts/adwisp.conf" "$work_dir/script-opts/"

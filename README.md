@@ -32,7 +32,7 @@ Download the ZIP asset when a release is published: https://github.com/SakibShah
 
 To install from source, copy:
 
-- `adwisp.lua` and the complete `core/` directory to `~/.config/mpv/scripts/adwisp/`.
+- `main.lua`, `adwisp.lua`, and the complete `core/` directory to `~/.config/mpv/scripts/adwisp/`. mpv needs `main.lua` to load a script directory.
 - `script-opts/adwisp.conf` to `~/.config/mpv/script-opts/adwisp.conf`.
 
 Restart mpv and open a media file. Press `g` to show or hide Adwisp (the default binding).

@@ -6,7 +6,17 @@ local mp = require "mp"
 local options = require "mp.options"
 
 -- Allow project-local modules to be loaded when this script is installed as a folder.
+-- mpv only returns a directory for directory-style scripts, so fall back to the
+-- loaded chunk's path when adwisp.lua is passed directly to --script or dofile'd.
 local script_dir = mp.get_script_directory()
+if not script_dir then
+    local info = debug and debug.getinfo and debug.getinfo(1, "S")
+    local source = info and info.source
+    if type(source) == "string" and source:sub(1, 1) == "@" then
+        script_dir = source:sub(2):match("^(.*[/\\])[^/\\]+$")
+    end
+end
+if type(script_dir) ~= "string" or script_dir == "" then script_dir = "." end
 package.path = script_dir .. "/?.lua;" .. script_dir .. "/?/init.lua;" .. package.path
 
 local MenuFilter = require "core.menu_filter"
@@ -1690,7 +1700,7 @@ open_playlist_menu = function(offset, query, selected_source_index)
         local menu = active_playlist_menu
         if menu then update_search(remove_last_utf8_character(menu.query)) end
     end)
-    add_search_binding("CTRL+BACKSPACE", "adwisp-playlist-menu-search-clear", function(event)
+    add_search_binding("CTRL+BS", "adwisp-playlist-menu-search-clear", function(event)
         if is_key_down(event) then open_playlist_menu(0, "", nil) end
     end)
     add_search_binding("ESC", "adwisp-playlist-menu-search-escape", function(event)
@@ -2064,7 +2074,7 @@ local function open_track_menu(kind, query, selected_source_id)
         local menu = active_track_menu
         if menu then update_search(remove_last_utf8_character(menu.query)) end
     end)
-    add_search_binding("CTRL+BACKSPACE", "adwisp-track-menu-search-clear", function(event)
+    add_search_binding("CTRL+BS", "adwisp-track-menu-search-clear", function(event)
         if is_key_down(event) then open_track_menu(kind, "", nil) end
     end)
     add_search_binding("ESC", "adwisp-track-menu-search-escape", function(event)
@@ -2344,7 +2354,7 @@ local function open_chapter_menu(offset, query, selected_source_index)
             update_search(remove_last_utf8_character(menu.query))
         end
     end)
-    add_search_binding("CTRL+BACKSPACE", "adwisp-chapter-menu-search-clear", function(event)
+    add_search_binding("CTRL+BS", "adwisp-chapter-menu-search-clear", function(event)
         if is_key_down(event) then open_chapter_menu(0, "", nil) end
     end)
     add_search_binding("ESC", "adwisp-chapter-menu-search-escape", function(event)
@@ -2396,7 +2406,7 @@ local registered_key_bindings = {
     ["SPACE"] = "adwisp-play-pause",
     ["CTRL+ALT+UP"] = "adwisp-speed-up",
     ["CTRL+ALT+DOWN"] = "adwisp-speed-down",
-    ["CTRL+ALT+BACKSPACE"] = "adwisp-speed-reset",
+    ["CTRL+ALT+BS"] = "adwisp-speed-reset",
     ["CTRL+ALT+HOME"] = "adwisp-image-fit",
     ["CTRL+ALT+KP_ADD"] = "adwisp-image-zoom-in",
     ["CTRL+ALT+KP_SUBTRACT"] = "adwisp-image-zoom-out",
@@ -2559,7 +2569,7 @@ end)
 mp.add_key_binding("CTRL+ALT+DOWN", "adwisp-speed-down", function()
     change_speed(-1)
 end)
-mp.add_key_binding("CTRL+ALT+BACKSPACE", "adwisp-speed-reset", function()
+mp.add_key_binding("CTRL+ALT+BS", "adwisp-speed-reset", function()
     if not fit_image_to_window() then reset_speed() end
 end)
 mp.add_key_binding("CTRL+ALT+HOME", "adwisp-image-fit", fit_image_to_window)
@@ -2861,7 +2871,7 @@ local function install_library_bindings()
             go_to_library_parent()
         end
     end)
-    add_library_binding("CTRL+BACKSPACE", "adwisp-library-search-clear", function(event)
+    add_library_binding("CTRL+BS", "adwisp-library-search-clear", function(event)
         if type(event) == "table" and event.event and event.event ~= "down" then return end
         update_library_search("")
     end)

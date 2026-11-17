@@ -11,8 +11,8 @@ function I18n.parse(contents)
         return translations
     end
 
-    for line in (contents .. "\n"):gmatch("(.-)\n") do
-        line = line:gsub("\r$", "")
+    for raw_line in (contents .. "\n"):gmatch("(.-)\n") do
+        local line = raw_line:gsub("\r$", "")
         local trimmed = line:match("^%s*(.-)%s*$") or ""
         if trimmed ~= "" and not trimmed:match("^[#;]") then
             local key, value = trimmed:match("^([%w_.%-]+)%s*=%s*(.*)$")

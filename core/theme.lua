@@ -55,9 +55,9 @@ function Theme.load(path)
     local valid_entries = 0
     local line_number = 0
 
-    for line in file:lines() do
+    for raw_line in file:lines() do
         line_number = line_number + 1
-        line = line:gsub("^%s+", ""):gsub("%s+$", "")
+        local line = raw_line:gsub("^%s+", ""):gsub("%s+$", "")
         if line ~= "" and not line:match("^#") and not line:match("^;") then
             local key, value = line:match("^([%w_]+)%s*=%s*(.-)%s*$")
             if not key then
