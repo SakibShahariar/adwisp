@@ -132,10 +132,16 @@ local function shape(x, y, color, alpha_marker, path)
         px(x), px(y), color, alpha_marker, path)
 end
 
-local function outline(x, y, w, h, radius, color, alpha_marker, stroke)
-    return string.format("{\\an7\\pos(%d,%d)\\bord%d\\shad0\\1a&HFE&\\alpha%s\\3c%s\\3a%s\\p1}%s{\\p0}\n",
-        px(x), px(y), math.max(1, px(stroke or 2)), alpha_marker, color, alpha_marker,
-        rounded_rect_path(w, h, radius))
+-- A deterministic ring: an outer border shape and an inner fill shape.
+-- ASS/libass do not reliably honour 1a + 3c for drawing outlines, so nested
+-- filled shapes are used instead.
+local function ring(x, y, w, h, radius, border_color, border_alpha,
+    fill_color, fill_alpha, stroke)
+    local t = math.max(1, px(stroke or 2))
+    return shape(x - t, y - t, border_color, border_alpha,
+            rounded_rect_path(w + t * 2, h + t * 2, radius + t))
+        .. shape(x, y, fill_color, fill_alpha,
+            rounded_rect_path(w, h, radius))
 end
 
 local function translate(state, key, fallback)
@@ -150,10 +156,10 @@ local function translate_format(state, key, fallback, ...)
 end
 
 local function safe_font_family(value)
-    if type(value) ~= "string" then return "Sans" end
+    if type(value) ~= "string" then return "Adwaita Sans" end
     value = value:sub(1, 48):gsub("[^%w _%-]", "")
     value = value:match("^%s*(.-)%s*$")
-    return value ~= "" and value or "Sans"
+    return value ~= "" and value or "Adwaita Sans"
 end
 
 local function fmt_time(seconds)
@@ -187,7 +193,7 @@ local function render_menu_panel(menu, width, height, colors, font_family, font_
         rounded_rect_path(panel_width, panel_height, 10))
         .. shape(x, y, colors.surface, "&H10&",
         rounded_rect_path(panel_width, panel_height, 10))
-        .. outline(x, y, panel_width, panel_height, 10, colors.muted, "&H30&", 1)
+        .. ring(x, y, panel_width, panel_height, 10, colors.muted, "&H28&", colors.surface, "&H10&", 1)
 
     for index, line in ipairs(lines) do
         local selected = menu.selected_line == index
@@ -432,11 +438,9 @@ function Renderer:render()
         local focus_width = focus_right - focus_x
         local focus_height = focus_bottom - focus_y
         if focus_width > 4 and focus_height > 4 then
-            focus_ass = outline(focus_x, focus_y, focus_width, focus_height,
-                    math.min(12, focus_height / 2), colors.accent, "&H40&", 2)
-                .. shape(focus_x + 3, focus_y + 3, colors.background, "&H18&",
-                    rounded_rect_path(focus_width - 6, focus_height - 6,
-                        math.min(10, focus_height / 2)))
+            focus_ass = ring(focus_x, focus_y, focus_width, focus_height,
+                math.min(12, focus_height / 2), colors.accent, "&H40&",
+                colors.background, "&H18&", 2)
         end
     end
     if not top_zone_visible then
@@ -456,9 +460,8 @@ function Renderer:render()
     if layout.top_zone and top_zone_visible then
         local top = layout.top_zone
         local top_color = state.hover_zone == "top" and colors.surface or colors.background
-        top_zone_ass = shape(top.x, top.y, top_color, "&H1A&",
-            rounded_rect_path(top.width, top.height, 12))
-            .. outline(top.x, top.y, top.width, top.height, 12, colors.muted, "&H28&", 1)
+        top_zone_ass = ring(top.x, top.y, top.width, top.height, 12,
+            colors.muted, "&H28&", top_color, "&H1A&", 1)
     end
     local panel_background = layout.top_zone and state.hover_zone == "bottom"
         and colors.surface or colors.background
@@ -482,8 +485,8 @@ function Renderer:render()
             local radius = math.floor(button.height / 2)
             transport_ass = transport_ass
                 .. shape(button.x, button.y, colors.surface, "&H24&", circle_path(button.height))
-                .. outline(button.x, button.y, button.height, button.height, radius,
-                    colors.muted, "&H24&", 1)
+                .. ring(button.x, button.y, button.height, button.height, radius,
+                    colors.muted, "&H28&", colors.surface, "&H24&", 1)
                 .. shape(button.x, button.y, colors.text, "&H10&",
                     icon_path(button == transport.prev and "prev" or "next", button.height))
             end
@@ -493,8 +496,8 @@ function Renderer:render()
         transport_ass = transport_ass
             .. shape(play.x, play.y, colors.accent, "&H20&",
                 rounded_rect_path(play.width, play.height, play_radius))
-            .. outline(play.x, play.y, play.width, play.height, play_radius,
-                colors.accent, "&H28&", 1)
+            .. ring(play.x, play.y, play.width, play.height, play_radius,
+                colors.accent, "&H28&", colors.accent, "&H20&", 1)
             .. shape(play.x + 12, play.y + math.floor((play.height - 24) / 2),
                 colors.on_accent, "&H10&",
                 icon_path(state.paused and "play" or "pause", 24))
@@ -520,16 +523,16 @@ function Renderer:render()
 
     local ass = top_zone_ass .. panel_surface .. focus_ass .. transport_ass .. volume_ass
         .. string.format([[
-{\an7\pos(%d,%d)\fnSans\fs%d\b1\1c%s}%s
-{\an9\pos(%d,%d)\fnSans\fs13\b1\1c%s}%s
-{\an8\pos(%d,%d)\fnSans\fs13\b1\1c%s}%s
-{\an7\pos(%d,%d)\fnSans\fs16\b1\1c%s}%s
-{\an7\pos(%d,%d)\fnSans\fs14\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs%d\b1\1c%s}%s
+{\an9\pos(%d,%d)\fnAdwaita Sans\fs13\b1\1c%s}%s
+{\an8\pos(%d,%d)\fnAdwaita Sans\fs13\b1\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs16\b1\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs14\1c%s}%s
 {\an7\pos(%d,%d)\bord0\shad0\1c%s\p1}%s{\p0}
 {\an7\pos(%d,%d)\bord0\shad0\1c%s\p1}%s{\p0}
-{\an7\pos(%d,%d)\fnSans\fs14\1c%s}%s
-{\an7\pos(%d,%d)\fnSans\fs%d\b1\1c%s}%s
-{\an7\pos(%d,%d)\fnSans\fs16\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs14\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs%d\b1\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs16\1c%s}%s
 ]],
         title_pos.x, title_pos.y, title_font_size, colors.text, title,
         status_pos.x + status_pos.width, status_pos.y + 2, colors.accent, status_text,
@@ -615,7 +618,7 @@ function Renderer:render()
             :gsub("\\fs13", "\\fs11")
     end
 
-    ass = ass:gsub("\\fnSans", function() return "\\fn" .. font_family end)
+    ass = ass:gsub("\\fnAdwaita Sans", function() return "\\fn" .. font_family end)
     ass = ass:gsub("\\fs(%d+)", function(size)
         return "\\fs" .. math.max(1, math.floor(tonumber(size) * font_scale + 0.5))
     end)

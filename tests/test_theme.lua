@@ -4,7 +4,7 @@ local Theme = require "core.theme"
 
 local fallback, source = Theme.load("")
 assert(source == "fallback", "empty path should use fallback palette")
-assert(fallback.accent == "#9B7653", "fallback accent should be available")
+assert(fallback.accent == "#3584E4", "fallback accent should be available")
 
 -- Keep the shipped green preset aligned with the exact semantic palette contract.
 local green, green_source = Theme.load("themes/matugen-green.conf")
@@ -57,11 +57,11 @@ assert(diagnostics[2]:find("invalid color for 'accent'", 1, true) ~= nil,
 local ass = Theme.to_ass(palette)
 assert(ass.background == "&H332211&", "ASS color should convert RGB to BGR")
 assert(ass.accent == "&HFFBCD0&", "accent should convert RGB to BGR")
-assert(Theme.to_ass({ accent = "invalid" }).accent == "&H53769B&",
+assert(Theme.to_ass({ accent = "invalid" }).accent == "&HE48435&",
     "invalid colors should use fallback")
-assert(Theme.to_ass({ accent = "#GG0000" }).accent == "&H53769B&",
+assert(Theme.to_ass({ accent = "#GG0000" }).accent == "&HE48435&",
     "non-hex palette colors should use fallback")
-assert(Theme.to_ass({ accent = "#12345" }).accent == "&H53769B&",
+assert(Theme.to_ass({ accent = "#12345" }).accent == "&HE48435&",
     "short palette colors should use fallback")
 
 -- Entirely invalid files should be rejected with actionable diagnostics.

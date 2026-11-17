@@ -40,8 +40,10 @@ mode moves the title and playlist navigation into a separate top surface.
 
 Colors come from `core/theme.lua` semantic roles: `background`, `surface`,
 `text`, `muted`, `accent`, and `on_accent`. Matugen palettes map onto these
-roles at runtime; the built-in palette is only a fallback. The renderer never
-hard-codes a new static palette for individual widgets.
+roles at runtime; the built-in palette is only a fallback and mirrors
+libadwaita's dark style (neutral grays with a blue accent). The default text
+font is Adwaita Sans, with `font_family`/`font_scale` available as overrides.
+The renderer never hard-codes a new static palette for individual widgets.
 
 ## Interaction and accessibility
 
