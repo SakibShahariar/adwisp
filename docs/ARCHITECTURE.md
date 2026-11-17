@@ -5,7 +5,9 @@
 `main.lua` is the directory-script entry point and simply loads `adwisp.lua`, which reads script options, observes playback properties, updates shared state, and routes render requests to the renderer. Project-local modules are loaded relative to the script directory.
 
 - `core/state.lua`: defaults for the shared playback state.
-- `core/renderer.lua`: ASS OSD overlay creation, time formatting, drawing, and duplicate-frame suppression.
+- `core/renderer.lua`: ASS OSD overlay creation, time formatting, Adwisp-style drawing, and duplicate-frame suppression.
+- `core/layout.lua`: responsive control geometry shared by rendering and hit-testing.
+- `docs/DESIGN.md`: the GNOME HIG / libadwaita mapping and its ASS limitations.
 - `adwisp.lua`: mpv property observers, events, keyboard bindings, and script messages.
 
 The state module intentionally contains defaults only for now. Property observation remains in the entry point so the mpv integration lifecycle is explicit.

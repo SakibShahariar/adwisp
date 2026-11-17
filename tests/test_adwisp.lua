@@ -1588,7 +1588,7 @@ option_fixture.osd_margin = 24
 local top_layout = Layout.compute(1280, 720, option_fixture)
 assert_equal(top_layout.panel.y, 24, "top OSD should use its configured margin")
 observers["media-title"].callback("media-title", "Top OSD")
-assert_true(overlays[1].data:find("\\pos(360,24)", 1, true) ~= nil,
+assert_true(overlays[1].data:find("\\pos(320,24)", 1, true) ~= nil,
     "renderer should place the panel at the configured top offset")
 local commands_before_top_click = #commands
 mouse_x = top_layout.playback.x + 5
@@ -1783,7 +1783,7 @@ mouse_y = split_hover_layout.top_zone.y + 8
 key_bindings["adwisp-mouse-move"].callback()
 assert_equal(observed_state.hover_zone, "top",
     "pointer over the top panel should activate only the top hover region")
-assert_true(overlays[1].data:find("\\pos(360,24)", 1, true) ~= nil,
+assert_true(overlays[1].data:find("\\pos(320,24)", 1, true) ~= nil,
     "top-zone hover should retain the separate top panel")
 observed_state.playlist_count = 2
 mouse_x = split_hover_layout.playlist.x + 8

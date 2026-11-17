@@ -1235,16 +1235,16 @@ local function handle_mouse_click(event)
         return
     end
 
-    local playlist = layout.playlist
-    if has_playlist_navigation() and mouse_x >= playlist.x
-        and mouse_x <= playlist.x + playlist.width
-        and mouse_y >= playlist.y and mouse_y <= playlist.y + playlist.height then
-        if mouse_x < playlist.x + playlist.width / 2 then
+    local transport = layout.transport
+    if has_playlist_navigation() then
+        if contains(transport.prev, mouse_x, mouse_y) then
             mp.commandv("playlist-prev", "weak")
-        else
-            mp.commandv("playlist-next", "weak")
+            return
         end
-        return
+        if contains(transport.next, mouse_x, mouse_y) then
+            mp.commandv("playlist-next", "weak")
+            return
+        end
     end
 
     if contains(volume_hit, mouse_x, mouse_y) then

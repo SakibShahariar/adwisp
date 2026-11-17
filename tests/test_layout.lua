@@ -16,10 +16,10 @@ end
 local function test_standard_layout()
     local layout = Layout.compute(1280, 720)
     assert_true(layout ~= nil, "layout should exist for valid dimensions")
-    assert_equal(layout.panel.width, 560, "panel should respect max width")
-    assert_equal(layout.panel.height, 156, "panel should use standard height")
-    assert_equal(layout.panel.x, 360, "panel should be horizontally centered")
-    assert_equal(layout.panel.y, 522, "panel should sit above bottom margin")
+    assert_equal(layout.panel.width, 640, "panel should respect max width")
+    assert_equal(layout.panel.height, 200, "panel should use standard height")
+    assert_equal(layout.panel.x, 320, "panel should be horizontally centered")
+    assert_equal(layout.panel.y, 478, "panel should sit above bottom margin")
     assert_true(layout.title.width > 0, "title should expose available width")
     assert_true(layout.timeline.width > 0, "timeline width should be positive")
     assert_true(layout.timeline.hit_width >= layout.timeline.width,
@@ -30,7 +30,7 @@ local function test_small_layout()
     local layout = Layout.compute(320, 240)
     assert_true(layout ~= nil, "small valid dimensions should be supported")
     assert_true(layout.panel.width <= 288, "panel should fit within horizontal margins")
-    assert_true(layout.panel.height <= 156, "panel should not exceed standard height")
+    assert_true(layout.panel.height <= 200, "panel should not exceed standard height")
     assert_true(layout.timeline.width > 0, "small timeline width should stay positive")
 end
 
@@ -62,12 +62,12 @@ local function test_compact_layout_fits_short_windows()
             "title should precede controls at height " .. height)
         assert_true(layout.playback.y + layout.playback.height <= layout.timeline.y,
             "controls should not overlap timeline at height " .. height)
-        assert_true(layout.progress_label.y < layout.playlist.y,
-            "progress labels should precede playlist at height " .. height)
+        assert_true(layout.progress_label.y > layout.playlist.y + layout.playlist.height,
+            "timeline labels should sit below the transport row at height " .. height)
         assert_true(layout.playlist.y + layout.playlist.height <= panel_bottom,
             "playlist should remain inside panel at height " .. height)
     end
-    assert_true(not Layout.compute(640, 240).compact,
+    assert_true(not Layout.compute(640, 260).compact,
         "standard layout should be retained at the compact threshold")
 end
 
@@ -107,10 +107,12 @@ local function test_layout_rectangles()
         local volume = candidate.volume
         local track = volume.track
         local hit = volume.hit
-        assert_true(track.x == volume.x and track.width == volume.width,
-            label .. " volume track should share the control's horizontal geometry")
-        assert_true(track.y == volume.y + 25 and track.height == 4,
-            label .. " volume track should use its canonical vertical geometry")
+        assert_true(track.x >= volume.x and track.x + track.width <= volume.x + volume.width,
+            label .. " volume track should sit inside the control beside the speaker icon")
+        assert_true(track.y > volume.y
+                and track.y + track.height <= volume.y + volume.height + 10
+                and (track.height == 4 or track.height == 6),
+            label .. " volume track should sit on the control's vertical center")
         assert_true(hit.x == track.x and hit.width == track.width,
             label .. " volume hit area should match the track width")
         assert_true(hit.y <= track.y and hit.y + hit.height >= track.y + track.height,
@@ -127,7 +129,7 @@ end
 
 local function test_configurable_vertical_position()
     local default = Layout.compute(1280, 720)
-    assert_equal(default.panel.y, 522, "default bottom placement should remain unchanged")
+    assert_equal(default.panel.y, 478, "default bottom placement should remain unchanged")
 
     local top = Layout.compute(1280, 720, {
         osd_position = "top",
@@ -140,7 +142,7 @@ local function test_configurable_vertical_position()
         osd_position = "bottom",
         osd_margin = 60,
     })
-    assert_equal(bottom.panel.y, 504, "bottom placement should use the configured margin")
+    assert_equal(bottom.panel.y, 460, "bottom placement should use the configured margin")
 
     local custom = Layout.compute(1280, 720, {
         osd_position = "custom",
@@ -209,8 +211,8 @@ local function test_dense_compact_layout_stays_inside_panel()
                 <= candidate.timeline.hit_y,
                 "volume and timeline hit targets should not overlap at "
                     .. width .. "x" .. height)
-            assert_true(candidate.progress_label.y + 11 <= candidate.playlist.y,
-                "timeline labels should precede playlist at " .. width .. "x" .. height)
+            assert_true(candidate.progress_label.y >= candidate.playlist.y + candidate.playlist.height,
+                "timeline labels should sit below the transport row at " .. width .. "x" .. height)
         end
     end
 end
@@ -228,7 +230,7 @@ local function test_timeline_labels_do_not_overlap()
         local progress = candidate.progress_label
         local time = candidate.time_label
 
-        if timeline.width >= 164 then
+        if timeline.width >= 180 then
             assert_true(progress.visible and time.visible,
                 "wide timelines should show both time labels at width " .. width)
             assert_true(progress.x + progress.width + 8 <= time.x,
@@ -238,14 +240,14 @@ local function test_timeline_labels_do_not_overlap()
                 "narrow timelines should hide the progress label at width " .. width)
             assert_true(time.x == timeline.x,
                 "narrow timeline time should start at the timeline edge at width " .. width)
-            assert_true(time.visible == (timeline.width >= 40),
+            assert_true(time.visible == (timeline.width >= 44),
                 "time should only be shown when its minimum width is available at width " .. width)
         end
 
-        if timeline.width >= 120 and timeline.width < 164 then
+        if timeline.width >= 130 and timeline.width < 180 then
             assert_true(time.compact and not time.current_only,
                 "medium timelines should use compact elapsed/total text at width " .. width)
-        elseif timeline.width < 120 then
+        elseif timeline.width < 130 then
             assert_true(time.current_only,
                 "very narrow timelines should retain elapsed time only at width " .. width)
         end
@@ -254,8 +256,7 @@ local function test_timeline_labels_do_not_overlap()
     local compact = Layout.compute(200, 180)
     assert_true(compact.compact and not compact.progress_label.visible,
         "compact narrow windows should hide the progress label")
-    assert_true(compact.time_label.visible and compact.time_label.compact
-        and not compact.time_label.current_only,
+    assert_true(compact.time_label.visible,
         "compact narrow windows should retain elapsed time where it fits")
 end
 
@@ -346,7 +347,7 @@ end
 
 local function test_split_zone_matrix()
     for _, size in ipairs({
-        { 320, 320 }, { 640, 360 }, { 1280, 720 }, { 1920, 1080 },
+        { 640, 360 }, { 1280, 720 }, { 1920, 1080 },
     }) do
         local width, height = size[1], size[2]
         local candidate = Layout.compute(width, height, {

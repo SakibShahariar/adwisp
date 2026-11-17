@@ -58,6 +58,7 @@ Full keyboard/mouse reference, configuration options, and script-message API: `d
 
 - [Usage and controls](docs/USAGE.md)
 - [Theming and Matugen](docs/THEMING.md)
+- [OSD design specification](docs/DESIGN.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Real-mpv testing checklist](docs/MPV_TESTING.md)
 

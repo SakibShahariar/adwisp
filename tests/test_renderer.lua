@@ -219,9 +219,9 @@ assert_true(overlay.data:find("\\1c&H060504&", 1, true) ~= nil,
 -- Compact layouts reduce text sizes so labels fit short video windows.
 height = 180
 renderer:render()
-assert_true(overlay.data:find("\\fs18", 1, true) ~= nil,
+assert_true(overlay.data:find("\\fs20", 1, true) ~= nil,
     "compact title should use the smaller font size")
-assert_true(overlay.data:find("\\fs22", 1, true) == nil,
+assert_true(overlay.data:find("\\fs26", 1, true) == nil,
     "compact layout should not retain the standard title font size")
 assert_true(overlay.data:find("\\fs11", 1, true) ~= nil,
     "compact progress labels should use the smallest font size")
@@ -305,13 +305,13 @@ state.layout_options = { font_family = "Noto Sans", font_scale = 1.2 }
 renderer:render()
 assert_true(overlay.data:find("\\fnNoto Sans", 1, true) ~= nil,
     "configured font family should be applied to ASS text")
-assert_true(overlay.data:find("\\fs26", 1, true) ~= nil,
+assert_true(overlay.data:find("\\fs31", 1, true) ~= nil,
     "font scale should scale the title font size")
 state.layout_options = { font_family = "Noto Sans}\\evil", font_scale = 9 }
 renderer:render()
 assert_true(overlay.data:find("\\fnNoto Sans\\evil", 1, true) == nil,
     "font family input must not inject ASS override tags")
-assert_true(overlay.data:find("\\fs28", 1, true) ~= nil,
+assert_true(overlay.data:find("\\fs33", 1, true) ~= nil,
     "font scale should clamp to its documented maximum")
 
 -- Keyboard focus draws an accent outline around the focused control.
@@ -407,7 +407,7 @@ state.layout_options = {
 state.hover_zone = "top"
 state.title = "Demo {x}"
 renderer:render()
-assert_true(overlay.data:find("\\pos(360,24)", 1, true) ~= nil,
+assert_true(overlay.data:find("\\pos(320,24)", 1, true) ~= nil,
     "hover-only top zone should draw its own panel")
 assert_true(overlay.data:find("Demo", 1, true) ~= nil,
     "hover-only top zone should show the title while hovered")
@@ -422,7 +422,7 @@ assert_true(overlay.data:find("Demo", 1, true) == nil,
 state.hover_zone = nil
 state.focus_target = "playlist"
 renderer:render()
-assert_true(overlay.data:find("\\pos(378,60)", 1, true) ~= nil,
+assert_true(overlay.data:find("\\pos(532,36)", 1, true) ~= nil,
     "keyboard focus should outline the playlist control in the top zone")
 assert_true(overlay.data:find("Demo", 1, true) ~= nil
     and overlay.data:find("Pause", 1, true) == nil,
