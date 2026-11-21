@@ -97,9 +97,9 @@ local Layout = require "core.layout"
 
 local marker_layout = Layout.compute(width, height)
 local marker_x = math.floor(marker_layout.timeline.x + marker_layout.timeline.width / 2 + 0.5)
-local marker_y = marker_layout.timeline.y - 1
+local marker_y = marker_layout.timeline.y - 4
 assert_true(overlay.data:find(string.format("\\pos(%d,%d)\\bord0\\shad0\\1c",
-    marker_x, marker_y), 1, true) ~= nil,
+    marker_x - 4, marker_y), 1, true) ~= nil,
     "chapter metadata should draw a marker at the corresponding timeline position")
 
 renderer:render()
@@ -355,14 +355,14 @@ assert_true(overlay.data:find("0:15 / 1:00", 1, true) == nil
     "collapsed timeline should hide time and percentage labels")
 assert_true(overlay.data:find("\\p1", 1, true) ~= nil,
     "collapsed timeline should retain its progress indicator")
-assert_true(overlay.data:find("m 0 0 l 2 0 2 8 0 8", 1, true) == nil,
+assert_true(overlay.data:find("m 4 0 l 8 4 4 8 0 4", 1, true) == nil,
     "collapsed timeline should hide chapter decorations")
 state.layout_options.timeline_expanded = true
 renderer:render()
 assert_true(overlay.data:find("0:15 / 1:00", 1, true) ~= nil
     and overlay.data:find("25%", 1, true) ~= nil,
     "expanded timeline should restore its labels")
-assert_true(overlay.data:find("m 0 0 l 2 0 2 8 0 8", 1, true) ~= nil,
+assert_true(overlay.data:find("m 4 0 l 8 4 4 8 0 4", 1, true) ~= nil,
     "expanded timeline should restore chapter markers")
 state.layout_options = nil
 renderer:render()

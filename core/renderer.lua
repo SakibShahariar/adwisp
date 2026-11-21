@@ -562,6 +562,45 @@ function Renderer:render()
         end
     end
 
+    local top_bar = layout.top_bar
+    local top_bar_ass = ""
+    if state.visible and top_bar then
+        local chapter_label = ""
+        if type(state.chapter_title) == "string" and state.chapter_title ~= "" then
+            local chapter_index = 1
+            for index, chapter in ipairs(type(state.chapter_list) == "table"
+                    and state.chapter_list or {}) do
+                if is_finite_number(chapter.time) and chapter.time <= time_pos then
+                    chapter_index = index
+                end
+            end
+            chapter_label = string.format("%d: %s", chapter_index,
+                truncate_title(state.chapter_title, 24))
+        end
+        top_bar_ass = shape(top_bar.x, top_bar.y, colors.background, "&H38&",
+                rounded_rect_path(top_bar.width, top_bar.height, 8))
+            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs12\\b1\\1c%s}%s\\n",
+                top_bar.x + 12, top_bar.y + 7, font_family, colors.text,
+                escape_ass(truncate_title(title, math.floor(top_bar.width / 18))))
+            .. string.format("{\\an9\\pos(%d,%d)\\fn%s\\fs11\\1c%s}%s\\n",
+                top_bar.x + top_bar.width - 12, top_bar.y + 8,
+                font_family, colors.muted, escape_ass(chapter_label))
+    end
+
+    local hover_timeline_ass = ""
+    if bottom_zone_visible and is_finite_number(state.hover_time)
+        and is_finite_number(duration) and duration > 0 then
+        local hovered_x = px(timeline.x
+            + math.max(0, math.min(1, state.hover_time / duration)) * timeline.width)
+        hover_timeline_ass = shape(hovered_x - 1, timeline.y - 6,
+            colors.muted, "&H28&", rect_path(2, timeline.height + 12))
+            .. ring(hovered_x - 32, timeline.y - 36, 64, 22, 6,
+                colors.accent, "&H28&", colors.surface, "&H18&", 1)
+            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs11\\1c%s}%s\\n",
+                hovered_x - 25, timeline.y - 32, font_family, colors.text,
+                fmt_time(state.hover_time))
+    end
+
     local filmstrip_ass = ""
     if state.preview_visible == true and is_finite_number(state.preview_time)
         and is_finite_number(duration) and duration > 0 then
@@ -615,7 +654,7 @@ function Renderer:render()
                 escape_ass(truncate_title(state.notification.text, 48)))
     end
 
-    local ass = filmstrip_ass .. preview_ass .. notification_ass .. scrim_ass .. thumbnail_ass .. focus_ass .. timeline_ass .. controls_ass
+    local ass = top_bar_ass .. hover_timeline_ass .. filmstrip_ass .. preview_ass .. notification_ass .. scrim_ass .. thumbnail_ass .. focus_ass .. timeline_ass .. controls_ass
         .. string.format([[
 {\an7\pos(%d,%d)\fnAdwaita Sans\fs18\b1\1c%s}%s
 {\an9\pos(%d,%d)\fnAdwaita Sans\fs11\1c%s}%s
@@ -652,8 +691,8 @@ function Renderer:render()
                     seen_markers[marker_x] = true
                     chapter_markers[#chapter_markers + 1] = string.format(
                         "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\p1}"
-                            .. "m 0 0 l 2 0 2 8 0 8{\\p0}",
-                        marker_x, timeline.y - 1, colors.accent)
+                            .. "m 4 0 l 8 4 4 8 0 4{\\p0}",
+                        marker_x - 4, timeline.y - 4, colors.accent)
                 end
             end
         end

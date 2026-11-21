@@ -18,6 +18,7 @@ return {
     buffering = false,
     buffering_progress = 0,
     preview_visible = false,
+    hover_time = nil,
     preview_time = 0,
     preview_x = 0,
     preview_y = 0,

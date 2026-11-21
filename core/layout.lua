@@ -37,6 +37,9 @@ function Layout.compute(width, height, options)
     local y = height - scrim_height
     local right = width - pad
 
+    local top_bar = { x = pad, y = 8,
+        width = math.max(1, width - pad * 2), height = dense and 24 or 30 }
+
     local thumbnail = { x = pad, y = y + 12,
         width = dense and 30 or 40, height = dense and 24 or 30 }
     if dense then thumbnail.width, thumbnail.height = 30, 24 end
@@ -100,6 +103,7 @@ function Layout.compute(width, height, options)
         dense = dense,
         position = "bottom",
         panel = { x = x, y = y, width = width, height = scrim_height },
+        top_bar = top_bar,
         top_zone = nil,
         title = title,
         status = status,

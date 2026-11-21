@@ -1837,11 +1837,11 @@ assert_true(overlays[1].data:find("0:30", 1, true) ~= nil,
 assert_true(overlays[1].data:find("\\an8\\pos(", 1, true) ~= nil,
     "preview timestamp should use its own positioned label")
 
--- Disabling thumbfast clears the timestamp immediately; re-enabling restores it.
+-- Disabling thumbfast clears its image; the hover timestamp remains.
 thumbfast_payload = { width = 160, height = 90, disabled = true, available = false }
 script_messages["thumbfast-info"]("{}")
-assert_true(overlays[1].data:find("0:30", 1, true) == nil,
-    "unavailable thumbfast previews should hide the timestamp")
+assert_true(observed_state.preview_visible == false,
+    "unavailable thumbfast previews should be cleared")
 assert_equal(commands[#commands][3], "clear",
     "disabling thumbfast should clear its active preview")
 thumbfast_payload = { width = 160, height = 90, disabled = false, available = true }

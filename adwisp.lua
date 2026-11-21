@@ -452,6 +452,7 @@ local function clear_interaction_state()
     active_drag = nil
     last_mouse_x, last_mouse_y = nil, nil
     state.hover_target = nil
+    state.hover_time = nil
     state.focus_target = nil
     state.notification = nil
     clear_track_menu()
@@ -1269,6 +1270,13 @@ local function handle_mouse_move()
     end
 
     local timeline = layout.timeline
+    if contains_timeline(timeline, mouse_x, mouse_y) and finite_number(state.duration)
+        and state.duration > 0 then
+        state.hover_time = math.max(0, math.min(state.duration,
+            (mouse_x - timeline.x) / timeline.width * state.duration))
+    else
+        state.hover_time = nil
+    end
     local on_timeline = active_drag == nil
         and opts.thumbnail_preview ~= false
         and contains_timeline(timeline, mouse_x, mouse_y)
