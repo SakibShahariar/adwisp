@@ -1584,7 +1584,9 @@ mp.register_event("end-file", function()
     if flush_recent_progress then flush_recent_progress(true) end
     current_history_path = nil
     resume_prompt_path, resume_prompt_position = nil, nil
-    hide_osd()
+    clear_thumbnail()
+    -- Keep the overlay visible across files; only the controls reset.
+    show_osd()
 end)
 
 -- mpv emits shutdown before terminating Lua script event loops.

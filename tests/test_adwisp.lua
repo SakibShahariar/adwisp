@@ -2139,8 +2139,8 @@ assert_equal(overlays[1].data, "", "hide message should leave OSD data cleared")
 assert_equal(overlays[1].update_count, updates_before_escape + 1,
     "hiding an already dismissed overlay should be cached")
 events["end-file"]()
-assert_equal(overlays[1].update_count, updates_before_escape + 1,
-    "clearing an already hidden OSD should be cached")
+assert_equal(overlays[1].update_count, updates_before_escape + 2,
+    "end-file should restore the always-visible overlay")
 
 -- Verbosity controls diagnostics without changing playback behavior.
 option_fixture = package.loaded["mp.options"].last_options
@@ -2164,13 +2164,13 @@ local warnings_before_invalid_message = #logs.warn
 script_messages["adwisp-show"]("unexpected")
 assert_equal(#logs.warn, warnings_before_invalid_message + 1,
     "script messages with unexpected arguments should be rejected")
-assert_equal(observed_state.visible, false,
-    "invalid script-message payloads should not change UI state")
+assert_equal(observed_state.visible, true,
+    "invalid script-message payloads should not change the always-visible UI")
 local info_before_query = #logs.info
 script_messages["adwisp-query"]()
 assert_equal(#logs.info, info_before_query + 1,
     "state query should emit a response even when informational logging is quiet")
-assert_true(logs.info[#logs.info]:find('"visible":false', 1, true) ~= nil,
+assert_true(logs.info[#logs.info]:find('"visible":true', 1, true) ~= nil,
     "state query should return a JSON snapshot of UI state")
 assert_true(logs.info[#logs.info]:find('"speed":', 1, true) ~= nil,
     "state query should include playback speed")

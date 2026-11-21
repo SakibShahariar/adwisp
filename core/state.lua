@@ -2,7 +2,7 @@
 -- Property observation stays in the entry point so lifecycle and cleanup remain explicit.
 
 return {
-    visible = false,
+    visible = true,
     opacity = 1,
     focus_target = nil,
     paused = false,
