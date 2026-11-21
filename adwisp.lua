@@ -60,7 +60,7 @@ local opts = {
     osd_custom_offset = 120,
     font_family = "Sans",
     font_scale = 1.0,
-    ui_scale = 1.0,
+    ui_scale = "auto",
     log_level = "info",
     recent_history = false,
     recent_history_limit = 20,
@@ -574,9 +574,14 @@ end
 
 local function render()
     opts.fullscreen = state.fullscreen == true
-    opts.ui_scale = (type(opts.ui_scale) == "number" and opts.ui_scale == opts.ui_scale
-        and opts.ui_scale > 0 and math.max(0.5, math.min(3, opts.ui_scale)) or 1)
-        * state.display_scale * state.system_scale
+    local configured_scale = opts.ui_scale
+    if type(configured_scale) == "number" and configured_scale == configured_scale
+        and configured_scale > 0 then
+        opts.ui_scale = math.max(0.5, math.min(3, configured_scale))
+    else
+        opts.ui_scale = math.max(0.5, math.min(3,
+            state.display_scale * state.system_scale))
+    end
     opts.timeline_expanded = state.hover_target == "timeline"
         or state.focus_target == "timeline" or active_drag == "timeline"
     -- Any immediate render supersedes and cancels a queued playback-position update.
