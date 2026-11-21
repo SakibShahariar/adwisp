@@ -10,7 +10,7 @@ Theme.fallback = {
     surface = "#26374E",
     text = "#FFFFFF",
     muted = "#9DB2CE",
-    accent = "#3B82F6",
+    accent = "#2563EB",
     on_accent = "#FFFFFF",
 }
 
