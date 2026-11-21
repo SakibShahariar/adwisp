@@ -60,6 +60,7 @@ local opts = {
     osd_custom_offset = 120,
     font_family = "Sans",
     font_scale = 1.0,
+    ui_scale = 1.0,
     log_level = "info",
     recent_history = false,
     recent_history_limit = 20,
@@ -573,6 +574,9 @@ end
 
 local function render()
     opts.fullscreen = state.fullscreen == true
+    opts.ui_scale = (type(opts.ui_scale) == "number" and opts.ui_scale == opts.ui_scale
+        and opts.ui_scale > 0 and math.max(0.5, math.min(3, opts.ui_scale)) or 1)
+        * state.display_scale * state.system_scale
     opts.timeline_expanded = state.hover_target == "timeline"
         or state.focus_target == "timeline" or active_drag == "timeline"
     -- Any immediate render supersedes and cancels a queued playback-position update.
@@ -955,6 +959,24 @@ local function reset_preference(key)
 end
 
 mp.register_script_message("adwisp-settings", show_preferences)
+-- Follow the desktop text-scaling factor where available (GNOME/GTK).
+-- This is a one-shot async probe; mpv's display-hidpi-scale is observed above
+-- and covers Wayland/X11 scale changes while mpv is running.
+if type(utils.subprocess) == "function" then
+    pcall(utils.subprocess, {
+        args = { "gsettings", "get", "org.gnome.desktop.interface",
+            "text-scaling-factor" },
+        callback = function(result)
+            local stdout = type(result) == "table" and result.stdout or nil
+            local factor = type(stdout) == "string" and tonumber(stdout:match("[%d%.]+")) or nil
+            if factor and factor > 0 then
+                state.system_scale = math.max(0.5, math.min(3, factor))
+                render()
+            end
+        end,
+    })
+end
+
 mp.register_script_message("adwisp-setting-set", set_preference)
 mp.register_script_message("adwisp-setting-reset", reset_preference)
 
@@ -1578,6 +1600,10 @@ local observers = {
     { "audio-device-list", "native", update_audio_device_list },
     { "audio-device", "string", update_audio_device },
     { "fullscreen", "bool", function(value) state.fullscreen = value == true end },
+    { "display-hidpi-scale", "native", function(value)
+        state.display_scale = type(value) == "number" and value == value
+            and value > 0 and math.max(0.5, math.min(3, value)) or 1
+    end },
 }
 
 for _, observer in ipairs(observers) do

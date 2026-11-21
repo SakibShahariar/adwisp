@@ -3,6 +3,8 @@
 
 return {
     visible = true,
+    display_scale = 1,
+    system_scale = 1,
     opacity = 1,
     focus_target = nil,
     paused = false,

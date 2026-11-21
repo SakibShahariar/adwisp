@@ -738,8 +738,11 @@ function Renderer:render()
     end
 
     ass = ass:gsub("\\fnAdwaita Sans", function() return "\\fn" .. font_family end)
+    local ui_scale = layout_options.ui_scale
+    if not is_finite_number(ui_scale) or ui_scale <= 0 then ui_scale = 1 end
+    ui_scale = math.max(0.5, math.min(4, ui_scale))
     ass = ass:gsub("\\fs(%d+)", function(size)
-        return "\\fs" .. math.max(1, math.floor(tonumber(size) * font_scale + 0.5))
+        return "\\fs" .. math.max(1, math.floor(tonumber(size) * font_scale * ui_scale + 0.5))
     end)
 
     local size_key = width .. "x" .. height

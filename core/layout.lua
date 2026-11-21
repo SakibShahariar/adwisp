@@ -26,7 +26,12 @@ function Layout.compute(width, height, options)
     if width < 1 or height < 1 then return nil end
 
     local layout_options = type(options) == "table" and options or {}
-    local ui_scale = layout_options.fullscreen == true and 1.3 or 1
+    local option_scale = layout_options.ui_scale
+    if type(option_scale) ~= "number" or option_scale ~= option_scale or option_scale <= 0 then
+        option_scale = 1
+    end
+    local ui_scale = math.max(0.5, math.min(4, option_scale))
+        * (layout_options.fullscreen == true and 1.3 or 1)
     local function scaled(value) return math.floor(value * ui_scale + 0.5) end
     local minimal_timeline = layout_options.minimal_timeline == true
         and layout_options.timeline_expanded ~= true
