@@ -71,7 +71,7 @@ invalid_file:write("not a palette entry\nunknown=#000000\naccent=invalid\n")
 invalid_file:close()
 local invalid_palette, invalid_source, invalid_error, invalid_diagnostics = Theme.load(invalid_path)
 assert(invalid_palette == nil, "files without valid colors should not replace the active palette")
-assert(invalid_source == "invalid", "invalid content should be distinguished from file errors")
+assert(invalid_source == "invalid", "invalid content should be distinguished from invalid content")
 assert(invalid_error == "no valid palette entries found",
     "invalid-only files should explain why they were rejected")
 assert(#invalid_diagnostics == 3, "every malformed entry should be reported")
@@ -91,7 +91,9 @@ assert(Theme.contrast_ratio("#777777", "#FFFFFF") < 4.5,
 local fallback_contrast = Theme.contrast_report(Theme.fallback)
 assert(fallback_contrast.text_background >= 4.5,
     "fallback text should meet normal-text contrast")
-assert(fallback_contrast.on_accent >= 3,
-    "fallback accent labels should meet large-text contrast")
+assert(fallback_contrast.muted_background >= 4.5,
+    "fallback secondary text should meet normal-text contrast")
+assert(fallback_contrast.on_accent >= 4.5,
+    "fallback accent labels should meet normal-text contrast")
 
 print("All theme tests passed.")

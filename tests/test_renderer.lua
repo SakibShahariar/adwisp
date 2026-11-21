@@ -413,4 +413,47 @@ assert_true(overlay.data:find("Pause", 1, true) ~= nil,
 state.layout_options = nil
 renderer:render()
 
+-- Playlist navigation is bounded by the responsive row width at narrow sizes.
+state.playlist_count = 12
+state.playlist_pos = 4
+width, height = 200, 720
+state.layout_options = nil
+renderer:render()
+assert_true(overlay.data:find("‹", 1, true) ~= nil,
+    "narrow playlist navigation should retain its leading navigation affordance")
+assert_true(overlay.data:find("Previous      5 / 12      Next", 1, true) == nil,
+    "narrow playlist navigation should not render the full-width desktop label")
+assert_true(not overlay.data:find(string.rep(" ", 12), 1, true),
+    "narrow playlist navigation should not preserve excessive desktop spacing")
+
+-- Status metadata uses the remaining title-row width instead of a fixed character cap.
+state.buffering = true
+state.buffering_progress = 45
+state.chapter_title = string.rep("Long chapter metadata ", 4)
+state.audio_track_label = string.rep("English audio track ", 3)
+state.audio_track_count = 2
+width, height = 200, 720
+renderer:render()
+assert_true(overlay.data:find("Buffering", 1, true) ~= nil,
+    "narrow title rows should retain a recognizable buffering status")
+assert_true(overlay.data:find("Buffering 45%", 1, true) == nil,
+    "narrow title rows should truncate status metadata to its allocated width")
+state.buffering = false
+state.chapter_title = "Opening Scene"
+state.audio_track_label = "eng English AAC"
+width, height = 1280, 720
+renderer:render()
+
+-- Without status metadata, the title should reclaim the entire title row.
+state.chapter_title = nil
+state.audio_track_count = 0
+state.subtitle_track_count = 0
+state.buffering = false
+state.loop_file = nil
+state.image_mode = false
+state.title = string.rep("T", 100)
+renderer:render()
+assert_true(overlay.data:find(string.rep("T", 35), 1, true) ~= nil,
+    "title should use the full row when no status metadata needs reserved space")
+
 print("All renderer tests passed.")

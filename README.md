@@ -60,6 +60,7 @@ Full keyboard/mouse reference, configuration options, and script-message API: `d
 - [Theming and Matugen](docs/THEMING.md)
 - [OSD design specification](docs/DESIGN.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [OSD design principles (GNOME HIG and Libadwaita)](docs/OSD_DESIGN.md)
 - [Real-mpv testing checklist](docs/MPV_TESTING.md)
 
 ## Development
