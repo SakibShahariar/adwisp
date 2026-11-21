@@ -456,4 +456,14 @@ renderer:render()
 assert_true(overlay.data:find(string.rep("T", 35), 1, true) ~= nil,
     "title should use the full row when no status metadata needs reserved space")
 
+
+state.notification = { text = "Saved" }
+renderer:render()
+assert_true(overlay.data:find("Saved", 1, true) ~= nil,
+    "OSD notification should render its message")
+state.notification = nil
+renderer:render()
+assert_true(overlay.data:find("Saved", 1, true) == nil,
+    "clearing the notification should remove its toast")
+
 print("All renderer tests passed.")

@@ -198,37 +198,68 @@ local function render_menu_panel(menu, width, height, colors, font_family, font_
     end
 
     local lines = menu.lines
-    local available_height = math.max(1, height - 16)
-    local line_height = math.max(6, math.min(22,
-        math.floor(math.max(1, available_height - 20) / #lines)))
-    local panel_width = math.max(1, math.min(520, width - 16))
-    local panel_height = math.min(available_height, 20 + #lines * line_height)
-    local x = math.max(0, width - panel_width - 8)
-    local y = math.max(0, math.floor((height - panel_height) / 2))
-    local font_size = math.max(8, math.min(17,
-        math.floor(line_height * 0.72 * font_scale + 0.5)))
-    local max_chars = math.max(1, math.floor((panel_width - 28) / (font_size * 0.56)))
-    local ass = shape(x + 2, y + 3, colors.background, "&H50&",
-        rounded_rect_path(panel_width, panel_height, 10))
-        .. shape(x, y, colors.surface, "&H10&",
-        rounded_rect_path(panel_width, panel_height, 10))
-        .. ring(x, y, panel_width, panel_height, 10, colors.muted, "&H28&", colors.surface, "&H10&", 1)
-
-    for index, line in ipairs(lines) do
-        local selected = menu.selected_line == index
-        local color = selected and colors.on_accent
-            or (index == 1 and colors.accent or (index == 2 and colors.muted or colors.text))
-        local bold = (index == 1 or selected) and 1 or 0
-        local line_y = y + 10 + (index - 1) * line_height
-        if selected then
-            ass = ass .. shape(x + 8, line_y - 2, colors.accent, "&H28&",
-                rounded_rect_path(panel_width - 16, line_height, 5))
+    local title = lines[1]
+    local rows = {}
+    local footer = nil
+    for index = 2, #lines do
+        local line = lines[index]
+        local hint = line:find("Up/Down") or line:find("Esc closes")
+            or line:find("unavailable")
+        if hint then
+            footer = line
+        else
+            rows[#rows + 1] = line
         end
-        ass = ass .. string.format(
-            "{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\b%d\\1c%s}%s\\N",
-            x + 14, line_y, font_family, font_size, bold, color,
-            escape_ass(truncate_title(line, max_chars))
-        )
+    end
+    if #rows == 0 and footer then
+        rows[1] = footer
+        footer = nil
+    end
+
+    local header_h, row_h, footer_h = 34, 28, 24
+    local panel_width = math.max(120, math.min(340, width - 24))
+    local panel_height = header_h + #rows * row_h + (footer and footer_h or 0)
+    local x = math.max(8, width - panel_width - 24)
+    local y = math.max(12, math.floor(height * 0.12))
+    if y + panel_height > height - 8 then y = math.max(8, height - panel_height - 8) end
+    local font_size = math.max(9, math.min(15, math.floor(13 * font_scale + 0.5)))
+    local max_chars = math.max(4, math.floor((panel_width - 52) / (font_size * 0.56)))
+
+    local ass = ring(x, y, panel_width, panel_height, 12,
+        colors.muted, "&H28&", colors.surface, "&H18&", 1)
+        .. shape(x + 14, y + 10, colors.accent, "&H10&",
+            rounded_rect_path(12, 12, 3))
+        .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\b1\\1c%s}%s\\n",
+            x + 36, y + 8, font_family, font_size, colors.text,
+            escape_ass(truncate_title(title, max_chars)))
+        .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\1c%s}x\\n",
+            x + panel_width - 22, y + 8, font_family, font_size, colors.muted)
+        .. shape(x + 12, y + header_h - 2, colors.muted, "&H30&",
+            rect_path(panel_width - 24, 1))
+
+    for index, line in ipairs(rows) do
+        local line_y = y + header_h + 6 + (index - 1) * row_h
+        local selected = menu.selected_line == index
+        if selected then
+            ass = ass .. shape(x + 8, line_y - 4, colors.accent, "&H28&",
+                rounded_rect_path(panel_width - 16, row_h - 2, 6))
+        end
+        local mark = line:match("^([>%*])")
+        local text = line:gsub("^[>%*]%s*", "")
+        local color = selected and colors.on_accent
+            or (mark and colors.accent or colors.text)
+        ass = ass .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\b%d\\1c%s}%s\\n",
+            x + 20, line_y, font_family, font_size, selected and 1 or 0,
+            color, escape_ass(truncate_title(text, max_chars)))
+    end
+
+    if footer then
+        ass = ass .. shape(x + 12, y + panel_height - footer_h + 4,
+            colors.muted, "&H30&", rect_path(panel_width - 24, 1))
+            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\1c%s}%s\\n",
+                x + 20, y + panel_height - footer_h + 8,
+                font_family, math.max(8, font_size - 2), colors.muted,
+                escape_ass(truncate_title(footer, max_chars + 8)))
     end
     return ass
 end
@@ -528,7 +559,24 @@ function Renderer:render()
         end
     end
 
-    local ass = scrim_ass .. thumbnail_ass .. focus_ass .. timeline_ass .. controls_ass
+    local notification_ass = ""
+    if type(state.notification) == "table" and state.notification.text
+        and state.notification.text ~= "" then
+        local toast_width = math.max(120, math.min(360, width - 32))
+        local toast_x = math.floor((width - toast_width) / 2)
+        local toast_y = 16
+        notification_ass = ring(toast_x, toast_y, toast_width, 38, 12,
+                colors.muted, "&H28&", colors.surface, "&H18&", 1)
+            .. shape(toast_x + 12, toast_y + 11, colors.accent, "&H10&",
+                circle_path(16))
+            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs13\\b1\\1c%s}i\\n",
+                toast_x + 17, toast_y + 12, font_family, colors.on_accent)
+            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs13\\1c%s}%s\\n",
+                toast_x + 46, toast_y + 11, font_family, colors.text,
+                escape_ass(truncate_title(state.notification.text, 48)))
+    end
+
+    local ass = notification_ass .. scrim_ass .. thumbnail_ass .. focus_ass .. timeline_ass .. controls_ass
         .. string.format([[
 {\an7\pos(%d,%d)\fnAdwaita Sans\fs18\b1\1c%s}%s
 {\an9\pos(%d,%d)\fnAdwaita Sans\fs11\1c%s}%s

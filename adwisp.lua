@@ -446,6 +446,7 @@ local function clear_interaction_state()
     last_mouse_x, last_mouse_y = nil, nil
     state.hover_target = nil
     state.focus_target = nil
+    state.notification = nil
     clear_track_menu()
 end
 
@@ -3068,6 +3069,18 @@ register_no_argument_message("adwisp-toggle", toggle)
 register_no_argument_message("adwisp-show", show_osd)
 register_no_argument_message("adwisp-hide", hide_osd)
 register_no_argument_message("adwisp-reload-theme", reload_theme)
+mp.register_script_message("adwisp-notify", function(text, duration)
+    local message = tostring(text or "")
+    if message == "" then return end
+    state.notification = { text = message:sub(1, 200) }
+    render()
+    local seconds = tonumber(duration)
+    if not seconds or seconds ~= seconds or seconds == math.huge then seconds = 2.5 end
+    mp.add_timeout(math.max(0.2, math.min(10, seconds)), function()
+        state.notification = nil
+        render()
+    end)
+end)
 register_no_argument_message("adwisp-query", function()
     local payload = {
         visible = state.visible == true,

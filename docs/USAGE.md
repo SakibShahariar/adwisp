@@ -150,6 +150,7 @@ Other mpv scripts and external controllers can send these messages to Adwisp. Ea
 | `adwisp-continue` | Open Continue Watching (requires opt-in history) |
 | `adwisp-clear-recent` | Clear the local recent-file history |
 | `adwisp-query` | Print a JSON snapshot of the current UI/playback state to mpv's log |
+| `adwisp-notify <text> [seconds]` | Show a short toast message over the controls (default 2.5s) |
 
 From another mpv Lua script:
 

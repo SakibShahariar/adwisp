@@ -2356,4 +2356,10 @@ assert_true(query_output:find('"image_mode"', 1, true) ~= nil
     and query_output:find('"image_zoom"', 1, true) ~= nil,
     "the state query should expose image-viewer mode and zoom")
 
+
+script_messages["adwisp-notify"]("Saved", 1)
+assert_equal(observed_state.notification and observed_state.notification.text,
+    "Saved", "adwisp-notify should expose the notification text")
+
+
 print("All mocked mpv API tests passed.")
