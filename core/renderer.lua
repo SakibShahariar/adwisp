@@ -559,6 +559,12 @@ function Renderer:render()
         end
     end
 
+    local preview_ass = ""
+    if preview_label ~= "" and preview_label_x and preview_label_y then
+        preview_ass = ring(preview_label_x - 26, preview_label_y - 5,
+            56, 22, 7, colors.accent, "&H28&", colors.surface, "&H18&", 1)
+    end
+
     local notification_ass = ""
     if type(state.notification) == "table" and state.notification.text
         and state.notification.text ~= "" then
@@ -576,7 +582,7 @@ function Renderer:render()
                 escape_ass(truncate_title(state.notification.text, 48)))
     end
 
-    local ass = notification_ass .. scrim_ass .. thumbnail_ass .. focus_ass .. timeline_ass .. controls_ass
+    local ass = preview_ass .. notification_ass .. scrim_ass .. thumbnail_ass .. focus_ass .. timeline_ass .. controls_ass
         .. string.format([[
 {\an7\pos(%d,%d)\fnAdwaita Sans\fs18\b1\1c%s}%s
 {\an9\pos(%d,%d)\fnAdwaita Sans\fs11\1c%s}%s
@@ -620,7 +626,7 @@ function Renderer:render()
         end
     end
     ass = ass .. table.concat(chapter_markers, "\\n")
-    ass = ass .. render_menu_panel(state.library_menu or state.playlist_menu or state.recent_menu, width, height,
+    ass = ass .. render_menu_panel(state.library_menu or state.playlist_menu or state.recent_menu or state.track_menu, width, height,
         colors, font_family, font_scale)
 
     if state.hover_target == "playback" or state.hover_target == "volume"

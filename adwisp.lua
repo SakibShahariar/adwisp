@@ -418,6 +418,11 @@ local open_audio_device_menu
 local track_menu_binding_names = {}
 local track_menu_timer
 
+local function show_track_menu(lines, selected_line)
+    state.track_menu = { lines = lines, selected_line = selected_line }
+    renderer:render()
+end
+
 local function clear_track_menu()
     local had_playlist_menu = active_playlist_menu ~= nil or active_recent_menu ~= nil
     for _, name in ipairs(track_menu_binding_names) do
@@ -433,11 +438,13 @@ local function clear_track_menu()
     active_track_menu = nil
     active_playlist_menu = nil
     active_recent_menu = nil
+    local had_track_menu = state.track_menu ~= nil
+    state.track_menu = nil
     if had_playlist_menu then
         state.playlist_menu = nil
         state.recent_menu = nil
-        renderer:render()
     end
+    if had_playlist_menu or had_track_menu then renderer:render() end
 end
 
 local function clear_interaction_state()
@@ -2113,7 +2120,8 @@ local function open_track_menu(kind, query, selected_source_id)
 
     track_menu_timer = mp.add_timeout(8, clear_track_menu)
     note_activity()
-    mp.commandv("show-text", table.concat(lines, "\n"), 8000)
+    local selected_index = active_track_menu and active_track_menu.selected_index or 1
+    show_track_menu(lines, selected_index + 2)
 end
 
 open_audio_device_menu = function(offset)
@@ -2184,7 +2192,8 @@ open_audio_device_menu = function(offset)
 
     track_menu_timer = mp.add_timeout(8, clear_track_menu)
     note_activity()
-    mp.commandv("show-text", table.concat(lines, "\n"), 8000)
+    local selected_index = active_track_menu and active_track_menu.selected_index or 1
+    show_track_menu(lines, selected_index + 2)
 end
 
 local function chapter_timestamp(value)
@@ -2393,7 +2402,8 @@ local function open_chapter_menu(offset, query, selected_source_index)
 
     track_menu_timer = mp.add_timeout(8, clear_track_menu)
     note_activity()
-    mp.commandv("show-text", table.concat(lines, "\n"), 8000)
+    local selected_index = active_track_menu and active_track_menu.selected_index or 1
+    show_track_menu(lines, selected_index + 2)
 end
 
 local function show_chapter_list()

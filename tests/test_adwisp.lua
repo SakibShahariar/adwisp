@@ -397,6 +397,10 @@ observers["playlist-count"].callback("playlist-count", 0 / 0)
 observers["playlist-pos"].callback("playlist-pos", -math.huge)
 local observed_state = require("core.state")
 
+local function track_menu_text()
+    return observed_state.track_menu and table.concat(observed_state.track_menu.lines, "\n") or ""
+end
+
 -- Script-message preferences validate, apply immediately, and persist locally.
 script_messages["adwisp-settings"]()
 assert_true(commands[#commands][1] == "show-text"
@@ -727,11 +731,12 @@ observers.chapter.callback("chapter", 1)
 assert_equal(observed_state.chapter_title, "The Journey",
     "current chapter title should follow mpv chapter metadata")
 key_bindings["adwisp-chapter-list"].callback()
-assert_equal(commands[#commands][1], "show-text", "chapter list should use mpv OSD text")
-assert_true(commands[#commands][2]:find("Opening", 1, true) ~= nil
-    and commands[#commands][2]:find("00:42", 1, true) ~= nil
-    and commands[#commands][2]:find("The Journey", 1, true) ~= nil,
-    "chapter list should include chapter titles and timestamps")
+local chapter_menu_text = observed_state.track_menu
+    and table.concat(observed_state.track_menu.lines, "\n") or ""
+assert_true(chapter_menu_text:find("Opening", 1, true) ~= nil
+    and chapter_menu_text:find("00:42", 1, true) ~= nil
+    and chapter_menu_text:find("The Journey", 1, true) ~= nil,
+    "chapter menu should include chapter titles and timestamps")
 observers["track-list"].callback("track-list", {
     { type = "audio", id = 1, lang = "eng", title = "English", codec = "aac", selected = true },
     { type = "audio", id = 2, lang = "jpn", title = "Japanese", codec = "flac", selected = false },
@@ -746,8 +751,10 @@ assert_equal(observed_state.subtitle_track_count, 1, "subtitle track count shoul
 assert_true(observed_state.subtitle_track_label:find("English", 1, true) ~= nil,
     "active subtitle label should include its title")
 key_bindings["adwisp-audio-menu"].callback()
-assert_true(commands[#commands][2]:find("Audio tracks", 1, true) ~= nil
-    and commands[#commands][2]:find("Japanese", 1, true) ~= nil,
+local audio_menu_text = observed_state.track_menu
+    and table.concat(observed_state.track_menu.lines, "\n") or ""
+assert_true(audio_menu_text:find("Audio tracks", 1, true) ~= nil
+    and audio_menu_text:find("Japanese", 1, true) ~= nil,
     "audio menu should list available tracks")
 assert_true(key_bindings["adwisp-track-menu-select-2"] ~= nil,
     "audio menu should register number shortcuts for selection")
@@ -758,8 +765,10 @@ assert_equal(commands[#commands - 1][3], 2, "audio menu should pass the selected
 assert_true(key_bindings["adwisp-track-menu-select-2"] == nil,
     "selecting an audio track should remove temporary menu shortcuts")
 key_bindings["adwisp-subtitle-menu"].callback()
-assert_true(commands[#commands][2]:find("Off", 1, true) ~= nil
-    and commands[#commands][2]:find("English", 1, true) ~= nil,
+local subtitle_menu_text = observed_state.track_menu
+    and table.concat(observed_state.track_menu.lines, "\n") or ""
+assert_true(subtitle_menu_text:find("Off", 1, true) ~= nil
+    and subtitle_menu_text:find("English", 1, true) ~= nil,
     "subtitle menu should include Off and available subtitle tracks")
 key_bindings["adwisp-track-menu-select-1"].callback()
 assert_equal(commands[#commands - 1][1], "set", "subtitle Off selection should set mpv property")
@@ -985,8 +994,10 @@ local function type_track_query(value)
     end
 end
 type_track_query("jpn")
-assert_true(commands[#commands][2]:find("Main", 1, true) ~= nil
-    and commands[#commands][2]:find("Commentary", 1, true) == nil,
+local filtered_menu_text = observed_state.track_menu
+    and table.concat(observed_state.track_menu.lines, "\n") or ""
+assert_true(filtered_menu_text:find("Main", 1, true) ~= nil
+    and filtered_menu_text:find("Commentary", 1, true) == nil,
     "audio track search should match language metadata")
 key_bindings["adwisp-track-menu-search-enter"].callback({ event = "down" })
 assert_equal(commands[#commands - 1][2], "aid",
@@ -996,18 +1007,18 @@ assert_equal(commands[#commands - 1][3], 2,
 
 key_bindings["adwisp-audio-menu"].callback()
 type_track_query("aac")
-assert_true(commands[#commands][2]:find("Commentary", 1, true) ~= nil,
+assert_true(track_menu_text():find("Commentary", 1, true) ~= nil,
     "audio track codec metadata should be searchable")
 key_bindings["adwisp-track-menu-search-clear"].callback({ event = "down" })
-assert_true(commands[#commands][2]:find("Main", 1, true) ~= nil
-    and commands[#commands][2]:find("Commentary", 1, true) ~= nil
-    and commands[#commands][2]:find(">* jpn Main", 1, true) ~= nil,
+assert_true(track_menu_text():find("Main", 1, true) ~= nil
+    and track_menu_text():find("Commentary", 1, true) ~= nil
+    and track_menu_text():find(">* jpn Main", 1, true) ~= nil,
     "clearing track search should restore the selected audio track")
 
 key_bindings["adwisp-subtitle-menu"].callback()
 type_track_query("spa")
-assert_true(commands[#commands][2]:find("Spanish", 1, true) ~= nil
-    and commands[#commands][2]:find("English", 1, true) == nil,
+assert_true(track_menu_text():find("Spanish", 1, true) ~= nil
+    and track_menu_text():find("English", 1, true) == nil,
     "subtitle track search should match language metadata")
 key_bindings["adwisp-track-menu-search-enter"].callback({ event = "down" })
 assert_equal(commands[#commands - 1][2], "sid",
@@ -1016,7 +1027,7 @@ assert_equal(commands[#commands - 1][3], 4,
     "subtitle track filtering should preserve the original track ID")
 key_bindings["adwisp-subtitle-menu"].callback()
 type_track_query("missing")
-assert_true(commands[#commands][2]:find("No matching subtitle tracks", 1, true) ~= nil,
+assert_true(track_menu_text():find("No matching subtitle tracks", 1, true) ~= nil,
     "subtitle track search should show an empty-results state")
 key_bindings["adwisp-track-menu-search-escape"].callback({ event = "down" })
 observers["track-list"].callback("track-list", {})
@@ -1090,8 +1101,8 @@ local function type_chapter_query(value)
     end
 end
 type_chapter_query("final")
-assert_true(commands[#commands][2]:find("Final", 1, true) ~= nil
-    and commands[#commands][2]:find("Opening", 1, true) == nil,
+assert_true(track_menu_text():find("Final", 1, true) ~= nil
+    and track_menu_text():find("Opening", 1, true) == nil,
     "chapter menu should filter chapter titles")
 key_bindings["adwisp-chapter-menu-search-enter"].callback({ event = "down" })
 assert_equal(commands[#commands - 1][2], "chapter",
@@ -1101,15 +1112,15 @@ assert_equal(commands[#commands - 1][3], 2,
 
 key_bindings["adwisp-chapter-list"].callback()
 type_chapter_query("60")
-assert_true(commands[#commands][2]:find("Middle", 1, true) ~= nil,
+assert_true(track_menu_text():find("Middle", 1, true) ~= nil,
     "chapter timestamps should be searchable")
 key_bindings["adwisp-chapter-menu-search-clear"].callback({ event = "down" })
-assert_true(commands[#commands][2]:find("Opening", 1, true) ~= nil
-    and commands[#commands][2]:find("Final", 1, true) ~= nil
-    and commands[#commands][2]:find(">* 01:00  Middle", 1, true) ~= nil,
+assert_true(track_menu_text():find("Opening", 1, true) ~= nil
+    and track_menu_text():find("Final", 1, true) ~= nil
+    and track_menu_text():find(">* 01:00  Middle", 1, true) ~= nil,
     "clearing chapter search should restore the full list and current chapter")
 type_chapter_query("missing")
-assert_true(commands[#commands][2]:find("No matching chapters", 1, true) ~= nil,
+assert_true(track_menu_text():find("No matching chapters", 1, true) ~= nil,
     "chapter menu should display an empty-results state")
 key_bindings["adwisp-chapter-menu-search-escape"].callback({ event = "down" })
 observers["chapter-list"].callback("chapter-list", {})
@@ -1151,9 +1162,9 @@ assert_equal(observed_state.audio_device, "pipewire/headset",
 assert_equal(#observed_state.audio_devices, 3,
     "malformed audio-device entries should be ignored")
 key_bindings["adwisp-audio-device-menu"].callback()
-assert_true(commands[#commands][2]:find("Automatic output", 1, true) ~= nil
-    and commands[#commands][2]:find("Built-in Speakers", 1, true) ~= nil
-    and commands[#commands][2]:find("> Bluetooth Headphones", 1, true) ~= nil,
+assert_true(track_menu_text():find("Automatic output", 1, true) ~= nil
+    and track_menu_text():find("Built-in Speakers", 1, true) ~= nil
+    and track_menu_text():find("> Bluetooth Headphones", 1, true) ~= nil,
     "the device menu should list descriptions and mark the active device")
 assert_true(key_bindings["adwisp-audio-device-select-2"] ~= nil,
     "the device menu should register number shortcuts")
@@ -1175,11 +1186,11 @@ observers["audio-device-list"].callback("audio-device-list", {
 })
 assert_true(key_bindings["adwisp-audio-device-select-3"] == nil,
     "refreshing a shorter device list should remove stale selection bindings")
-assert_true(commands[#commands][2]:find("Audio output devices", 1, true) ~= nil
-    and commands[#commands][2]:find("Built-in Speakers", 1, true) == nil,
+assert_true(track_menu_text():find("Audio output devices", 1, true) ~= nil
+    and track_menu_text():find("Built-in Speakers", 1, true) == nil,
     "an open menu should refresh to the latest device list")
 observers["audio-device"].callback("audio-device", "pipewire/missing")
-assert_true(commands[#commands][2]:find("not in the available device list", 1, true) ~= nil,
+assert_true(track_menu_text():find("not in the available device list", 1, true) ~= nil,
     "a disconnected current device should be identified without breaking the menu")
 key_bindings["adwisp-audio-device-menu"].callback()
 assert_true(key_bindings["adwisp-audio-device-menu-next"] == nil,
@@ -1196,7 +1207,7 @@ key_bindings["adwisp-audio-device-menu"].callback()
 assert_true(key_bindings["adwisp-audio-device-menu-next"] ~= nil,
     "long device lists should expose a next-page shortcut")
 key_bindings["adwisp-audio-device-menu-next"].callback()
-assert_true(commands[#commands][2]:find("Test device 10", 1, true) ~= nil,
+assert_true(track_menu_text():find("Test device 10", 1, true) ~= nil,
     "the second page should display devices beyond the first nine")
 key_bindings["adwisp-audio-device-select-2"].callback()
 assert_equal(commands[#commands - 1][3], "test/device-10",
