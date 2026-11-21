@@ -1582,24 +1582,19 @@ assert_equal(commands[#commands][2], 42, "chapter marker click should seek to it
 assert_equal(commands[#commands][3], "absolute",
     "chapter marker click should use absolute time rather than approximate percent")
 
--- Configured OSD placement must be shared by rendering and hit testing.
-option_fixture.osd_position = "top"
-option_fixture.osd_margin = 24
-local top_layout = Layout.compute(1280, 720, option_fixture)
-assert_equal(top_layout.panel.y, 24, "top OSD should use its configured margin")
-observers["media-title"].callback("media-title", "Top OSD")
-assert_true(overlays[1].data:find("\\pos(320,24)", 1, true) ~= nil,
-    "renderer should place the panel at the configured top offset")
-local commands_before_top_click = #commands
-mouse_x = top_layout.playback.x + 5
-mouse_y = top_layout.playback.y + 5
+-- The overlay layout renders and hit-tests from the same geometry.
+local overlay_layout = Layout.compute(1280, 720)
+assert_equal(overlay_layout.panel.y + overlay_layout.panel.height, 720,
+    "the scrim should be anchored to the bottom of the OSD")
+observers["media-title"].callback("media-title", "Overlay OSD")
+local commands_before_overlay_click = #commands
+mouse_x = overlay_layout.playback.x + overlay_layout.playback.width / 2
+mouse_y = overlay_layout.playback.y + overlay_layout.playback.height / 2
 key_bindings["adwisp-mouse-click"].callback()
 assert_equal(commands[#commands][1], "cycle",
-    "mouse hit testing should follow the repositioned playback control")
-assert_equal(#commands, commands_before_top_click + 1,
-    "clicking the repositioned control should issue exactly one command")
-option_fixture.osd_position = "bottom"
-option_fixture.osd_margin = -1
+    "mouse hit testing should follow the rendered play button")
+assert_equal(#commands, commands_before_overlay_click + 1,
+    "clicking the play button should issue exactly one command")
 
 -- Minimal timeline expands on hover, keyboard focus, and active dragging.
 option_fixture.minimal_timeline = true
@@ -1674,8 +1669,8 @@ key_bindings["adwisp-mouse-move"].callback()
 assert_true(overlays[1].data:find("Previous", 1, true) == nil
     and overlays[1].data:find("Next", 1, true) == nil,
     "single-item playlists should hide navigation controls")
-assert_true(overlays[1].data:find("\\alpha&H30&", 1, true) == nil,
-    "single-item playlist row should not show hover feedback")
+assert_equal(observed_state.hover_target, nil,
+    "single-item playlist row should not be hoverable")
 local commands_before_single_item_click = #commands
 key_bindings["adwisp-mouse-click"].callback()
 assert_equal(#commands, commands_before_single_item_click,
@@ -1687,27 +1682,28 @@ observers["playlist-pos"].callback("playlist-pos", 1)
 mouse_x = layout.playlist.x + 5
 mouse_y = layout.playlist.y + 5
 key_bindings["adwisp-mouse-move"].callback()
-assert_true(overlays[1].data:find("\\alpha&H30&", 1, true) ~= nil,
-    "hovering playlist should draw a highlight")
+assert_equal(observed_state.hover_target, "playlist",
+    "hovering playlist should set the playlist hover target")
 
--- Playlist row halves should navigate backward and forward.
-mouse_x = layout.playlist.x + layout.playlist.width * 0.25
-mouse_y = layout.playlist.y + 5
+-- The discrete transport buttons navigate backward and forward.
+local nav_layout = Layout.compute(1280, 720)
+mouse_x = nav_layout.transport.prev.x + nav_layout.transport.prev.width / 2
+mouse_y = nav_layout.transport.prev.y + nav_layout.transport.prev.height / 2
 key_bindings["adwisp-mouse-click"].callback()
 assert_equal(commands[#commands][1], "playlist-prev",
-    "left playlist half should go to previous item")
+    "the previous button should go to the previous item")
 assert_equal(commands[#commands][2], "weak", "previous item should use weak mode")
 
-mouse_x = layout.playlist.x + layout.playlist.width * 0.75
-mouse_y = layout.playlist.y + 5
+mouse_x = nav_layout.transport.next.x + nav_layout.transport.next.width / 2
+mouse_y = nav_layout.transport.next.y + nav_layout.transport.next.height / 2
 key_bindings["adwisp-mouse-click"].callback()
 assert_equal(commands[#commands][1], "playlist-next",
-    "right playlist half should go to next item")
+    "the next button should go to the next item")
 assert_equal(commands[#commands][2], "weak", "next item should use weak mode")
 
 -- The volume label is not part of the slider hit area.
-mouse_x = layout.volume.x + layout.volume.width * 0.75
-mouse_y = layout.volume.y + 5
+mouse_x = nav_layout.volume.x + 2
+mouse_y = nav_layout.volume.y + 2
 local commands_before_volume_label_click = #commands
 key_bindings["adwisp-mouse-click"].callback()
 assert_equal(#commands, commands_before_volume_label_click,
@@ -1765,38 +1761,23 @@ local hover_layout = Layout.compute(1280, 720)
 mouse_x = hover_layout.playback.x + 5
 mouse_y = hover_layout.playback.y + 5
 key_bindings["adwisp-mouse-move"].callback()
-assert_true(overlays[1].data:find("\\alpha&H30&", 1, true) ~= nil,
-    "hovering playback should draw a highlight")
+assert_equal(observed_state.hover_target, "playback",
+    "hovering the play button should set the playback hover target")
 
 mouse_x = 10
 mouse_y = 10
 key_bindings["adwisp-mouse-move"].callback()
-assert_true(overlays[1].data:find("\\alpha&H30&", 1, true) == nil,
-    "moving outside controls should remove the highlight")
+assert_equal(observed_state.hover_target, nil,
+    "moving outside controls should clear the hover target")
 
--- Split zones have separate hover regions and retain their own geometry.
-observed_state.layout_options.control_zones = "split"
-observed_state.layout_options.top_zone_margin = 24
-local split_hover_layout = Layout.compute(1280, 720, observed_state.layout_options)
-mouse_x = split_hover_layout.top_zone.x + 8
-mouse_y = split_hover_layout.top_zone.y + 8
-key_bindings["adwisp-mouse-move"].callback()
-assert_equal(observed_state.hover_zone, "top",
-    "pointer over the top panel should activate only the top hover region")
-assert_true(overlays[1].data:find("\\pos(320,24)", 1, true) ~= nil,
-    "top-zone hover should retain the separate top panel")
+-- The overlay layout has one scrim, so hover is shared by all controls.
 observed_state.playlist_count = 2
-mouse_x = split_hover_layout.playlist.x + 8
-mouse_y = split_hover_layout.playlist.y + 5
+mouse_x = layout.playlist.x + 8
+mouse_y = layout.playlist.y + 5
 key_bindings["adwisp-mouse-move"].callback()
 assert_equal(observed_state.hover_target, "playlist",
-    "the top-zone playlist control should retain its own mouse hit target")
+    "the playlist transport should retain its own mouse hit target")
 observed_state.playlist_count = 0
-mouse_x = split_hover_layout.panel.x + 8
-mouse_y = split_hover_layout.panel.y + 8
-key_bindings["adwisp-mouse-move"].callback()
-assert_equal(observed_state.hover_zone, "bottom",
-    "pointer over the bottom panel should activate only the bottom hover region")
 mouse_x, mouse_y = 10, 10
 key_bindings["adwisp-mouse-move"].callback()
 observed_state.layout_options.control_zones = "single"
@@ -1826,8 +1807,8 @@ script_messages["thumbfast-info"]("{}")
 mouse_x = hover_layout.timeline.x + hover_layout.timeline.width / 2
 mouse_y = hover_layout.timeline.y
 key_bindings["adwisp-mouse-move"].callback()
-assert_true(overlays[1].data:find("\\alpha&H30&", 1, true) ~= nil,
-    "hovering timeline should draw a highlight")
+assert_equal(observed_state.hover_target, "timeline",
+    "hovering the timeline should set the timeline hover target")
 assert_equal(commands[#commands][1], "script-message-to",
     "timeline hover should send a thumbfast script message")
 assert_equal(commands[#commands][2], "thumbfast", "preview should target thumbfast")

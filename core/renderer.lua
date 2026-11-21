@@ -123,6 +123,25 @@ local function icon_path(kind, size)
         return box(0.08, 0.38, 0.28, 0.62)
             .. string.format(" m %d %d l %d %d %d %d %d %d",
                 c(0.28), c(0.38), c(0.54), c(0.18), c(0.54), c(0.82), c(0.28), c(0.62))
+    elseif kind == "fullscreen" then
+        return table.concat({
+            box(0.08, 0.08, 0.36, 0.16), box(0.08, 0.08, 0.16, 0.36),
+            box(0.64, 0.08, 0.92, 0.16), box(0.84, 0.08, 0.92, 0.36),
+            box(0.08, 0.84, 0.36, 0.92), box(0.08, 0.64, 0.16, 0.92),
+            box(0.64, 0.84, 0.92, 0.92), box(0.84, 0.64, 0.92, 0.92),
+        }, " ")
+    elseif kind == "settings" then
+        return box(0.10, 0.24, 0.90, 0.32) .. " "
+            .. box(0.10, 0.47, 0.90, 0.55) .. " "
+            .. box(0.10, 0.70, 0.90, 0.78)
+    elseif kind == "repeat" then
+        return box(0.14, 0.30, 0.82, 0.70)
+            .. string.format(" m %d %d l %d %d %d %d",
+                c(0.82), c(0.30), c(0.66), c(0.20), c(0.66), c(0.40))
+    elseif kind == "menu" then
+        return box(0.10, 0.20, 0.90, 0.30) .. " "
+            .. box(0.10, 0.45, 0.90, 0.55) .. " "
+            .. box(0.10, 0.70, 0.90, 0.80)
     end
     return rect_path(size, size)
 end
@@ -202,7 +221,7 @@ local function render_menu_panel(menu, width, height, colors, font_family, font_
         local bold = (index == 1 or selected) and 1 or 0
         local line_y = y + 10 + (index - 1) * line_height
         if selected then
-            ass = ass .. shape(x + 8, line_y - 2, colors.accent, "&H30&",
+            ass = ass .. shape(x + 8, line_y - 2, colors.accent, "&H28&",
                 rounded_rect_path(panel_width - 16, line_height, 5))
         end
         ass = ass .. string.format(
@@ -363,6 +382,7 @@ function Renderer:render()
         else
             time_text = now .. " / " .. total
         end
+        if progress_text ~= "" then time_text = time_text .. "  " .. progress_text end
     end
 
     local preview_label = ""
@@ -403,12 +423,9 @@ function Renderer:render()
     local volume_label_color = (state.mute or volume_value <= 20)
         and colors.accent or colors.muted
     local transport = layout.transport
-    local status_pos = layout.status
-    local control_h = layout.transport.play.height
-    local pad = layout.dense and 16 or 24
-    local inner_x = panel.x + pad
-    local volume_fraction = volume_value / 100
-    local volume_fill = math.floor(volume.track.width * volume_fraction)
+    local panel = layout.panel
+    local time_pos_label = layout.time_label
+    local volume_fill = math.floor(volume.track.width * volume_value / 100)
 
     local focus_geometry
     if state.focus_target == "playback" then
@@ -419,30 +436,18 @@ function Renderer:render()
         focus_geometry = layout.playlist
     elseif state.focus_target == "timeline" then
         focus_geometry = {
-            x = layout.timeline.x,
-            y = layout.timeline.y - 4,
-            width = layout.timeline.width,
-            height = layout.timeline.height + 8,
+            x = layout.timeline.x, y = layout.timeline.y - 6,
+            width = layout.timeline.width, height = layout.timeline.height + 12,
         }
     end
     local focus_ass = ""
-    if focus_geometry and ((state.focus_target == "playlist" and top_zone_visible)
-        or (state.focus_target ~= "playlist" and bottom_zone_visible)) then
-        local focus_panel = state.focus_target == "playlist" and layout.top_zone or panel
-        local focus_x = math.max(focus_panel.x, focus_geometry.x - 4)
-        local focus_y = math.max(focus_panel.y, focus_geometry.y - 4)
-        local focus_right = math.min(focus_panel.x + focus_panel.width,
-            focus_geometry.x + focus_geometry.width + 4)
-        local focus_bottom = math.min(focus_panel.y + focus_panel.height,
-            focus_geometry.y + focus_geometry.height + 4)
-        local focus_width = focus_right - focus_x
-        local focus_height = focus_bottom - focus_y
-        if focus_width > 4 and focus_height > 4 then
-            focus_ass = ring(focus_x, focus_y, focus_width, focus_height,
-                math.min(12, focus_height / 2), colors.accent, "&H40&",
-                colors.background, "&H18&", 2)
-        end
+    if focus_geometry then
+        focus_ass = ring(focus_geometry.x - 4, focus_geometry.y - 4,
+            focus_geometry.width + 8, focus_geometry.height + 8,
+            math.min(14, (focus_geometry.height + 8) / 2),
+            colors.accent, "&H40&", colors.accent, "&HF0&", 2)
     end
+
     if not top_zone_visible then
         title = ""
         status_text = ""
@@ -456,103 +461,92 @@ function Renderer:render()
         preview_label = ""
     end
 
-    local top_zone_ass = ""
-    if layout.top_zone and top_zone_visible then
-        local top = layout.top_zone
-        local top_color = state.hover_zone == "top" and colors.surface or colors.background
-        top_zone_ass = ring(top.x, top.y, top.width, top.height, 12,
-            colors.muted, "&H28&", top_color, "&H1A&", 1)
+    -- Bottom scrim: stacked translucent bands form a soft gradient.
+    local scrim_ass = ""
+    local bands = 64
+    for index = 1, bands do
+        local alpha = math.floor(40 - (index - 1) * (32 / (bands - 1)) + 0.5)
+        local top = panel.y + math.floor((index - 1) * panel.height / bands)
+        local bottom = panel.y + math.floor(index * panel.height / bands)
+        scrim_ass = scrim_ass .. shape(0, top,
+            colors.background, string.format("&H%02X&", alpha),
+            rect_path(panel.width, math.max(1, bottom - top + 1)))
     end
-    local panel_background = layout.top_zone and state.hover_zone == "bottom"
-        and colors.surface or colors.background
-    local panel_radius = layout.dense and 10 or 14
 
-    local panel_surface = shape(panel.x + 2, panel.y + 4, colors.background, "&H50&",
-            rounded_rect_path(panel.width, panel.height, panel_radius))
-        .. shape(panel.x - 1, panel.y - 1, colors.muted, "&H24&",
-            rounded_rect_path(panel.width + 2, panel.height + 2, panel_radius + 1))
-        .. shape(panel.x, panel.y, panel_background, "&H18&",
-            rounded_rect_path(panel.width, panel.height, panel_radius))
-        .. shape(inner_x, layout.divider_y, colors.muted, "&H24&",
-            rect_path(panel.width - pad * 2, 1))
+    local thumb = layout.thumbnail
+    local thumbnail_ass = shape(thumb.x, thumb.y, colors.surface, "&H28&",
+        rounded_rect_path(thumb.width, thumb.height, 5))
+        .. shape(thumb.x + 4, thumb.y + 4, colors.accent, "&H40&",
+            icon_path("play", math.max(8, thumb.height - 8)))
 
-    -- Transport buttons: two flat navigation circles and a raised primary action.
-    local transport_ass = ""
+    local timeline = layout.timeline
+    local timeline_ass = shape(timeline.x, timeline.y, colors.muted, "&H50&",
+            rounded_rect_path(timeline.width, timeline.height, timeline.height / 2))
+        .. shape(timeline.x, timeline.y, colors.accent, "&H10&",
+            rounded_rect_path(filled, timeline.height, timeline.height / 2))
+    if filled > 0 then
+        timeline_ass = timeline_ass .. shape(timeline.x + filled - 5, timeline.y - 3,
+            colors.accent, "&H10&", circle_path(10))
+    end
+
+    local controls_ass = ""
     if bottom_zone_visible then
         local nav = { transport.prev, transport.next }
         for _, button in ipairs(nav) do
-            if button.width >= 8 then
-            local radius = math.floor(button.height / 2)
-            transport_ass = transport_ass
-                .. shape(button.x, button.y, colors.surface, "&H24&", circle_path(button.height))
-                .. ring(button.x, button.y, button.height, button.height, radius,
-                    colors.muted, "&H28&", colors.surface, "&H24&", 1)
+            controls_ass = controls_ass
                 .. shape(button.x, button.y, colors.text, "&H10&",
                     icon_path(button == transport.prev and "prev" or "next", button.height))
-            end
         end
         local play = transport.play
-        local play_radius = math.floor(play.height / 2)
-        transport_ass = transport_ass
-            .. shape(play.x, play.y, colors.accent, "&H20&",
-                rounded_rect_path(play.width, play.height, play_radius))
-            .. ring(play.x, play.y, play.width, play.height, play_radius,
-                colors.accent, "&H28&", colors.accent, "&H20&", 1)
-            .. shape(play.x + 12, play.y + math.floor((play.height - 24) / 2),
+        controls_ass = controls_ass
+            .. shape(play.x, play.y, colors.accent, "&H10&", circle_path(play.height))
+            .. shape(play.x + math.floor(play.height * 0.22),
+                play.y + math.floor(play.height * 0.22),
                 colors.on_accent, "&H10&",
-                icon_path(state.paused and "play" or "pause", 24))
-    end
-
-    -- Volume group: speaker glyph, rounded track, slider knob, and caption.
-    local volume_ass = ""
-    if bottom_zone_visible then
-        local icon_y = volume.y + math.floor((control_h - 24) / 2)
-        volume_ass = volume_ass
-            .. shape(volume.x, icon_y, volume_label_color, "&H10&", icon_path("volume", 24))
+                icon_path(state.paused and "play" or "pause",
+                    math.floor(play.height * 0.56)))
+        local utility = { layout.fullscreen, layout.settings }
+        local utility_kinds = { "fullscreen", "settings" }
+        for index, button in ipairs(utility) do
+            controls_ass = controls_ass .. shape(button.x, button.y, colors.text, "&H28&",
+                icon_path(utility_kinds[index], button.height))
+        end
+        local icon_y = layout.volume.y + math.floor((layout.volume.height - 18) / 2)
+        controls_ass = controls_ass .. shape(volume.x, icon_y,
+            volume_label_color, "&H10&", icon_path("volume", 18))
         local track = volume.track
-        volume_ass = volume_ass .. shape(track.x, track.y, colors.muted, "&H40&",
+        controls_ass = controls_ass
+            .. shape(track.x, track.y, colors.muted, "&H50&",
                 rounded_rect_path(track.width, track.height, track.height / 2))
         if volume_fill > 0 then
-            volume_ass = volume_ass .. shape(track.x, track.y, colors.accent, "&H10&",
+            controls_ass = controls_ass
+                .. shape(track.x, track.y, colors.accent, "&H10&",
                     rounded_rect_path(volume_fill, track.height, track.height / 2))
-                .. shape(track.x + volume_fill - 6,
-                    track.y + (track.height - 12) / 2,
-                    colors.accent, "&H10&", circle_path(12))
+                .. shape(track.x + volume_fill - 5, track.y - 3,
+                    colors.accent, "&H10&", circle_path(10))
         end
     end
 
-    local ass = top_zone_ass .. panel_surface .. focus_ass .. transport_ass .. volume_ass
+    local ass = scrim_ass .. thumbnail_ass .. focus_ass .. timeline_ass .. controls_ass
         .. string.format([[
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs%d\b1\1c%s}%s
-{\an9\pos(%d,%d)\fnAdwaita Sans\fs13\b1\1c%s}%s
-{\an8\pos(%d,%d)\fnAdwaita Sans\fs13\b1\1c%s}%s
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs16\b1\1c%s}%s
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs14\1c%s}%s
-{\an7\pos(%d,%d)\bord0\shad0\1c%s\p1}%s{\p0}
-{\an7\pos(%d,%d)\bord0\shad0\1c%s\p1}%s{\p0}
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs14\1c%s}%s
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs%d\b1\1c%s}%s
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs16\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs18\b1\1c%s}%s
+{\an9\pos(%d,%d)\fnAdwaita Sans\fs11\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs12\1c%s}%s
+{\an8\pos(%d,%d)\fnAdwaita Sans\fs12\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs%s\b1\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs12\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs12\1c%s}%s
 ]],
-        title_pos.x, title_pos.y, title_font_size, colors.text, title,
-        status_pos.x + status_pos.width, status_pos.y + 2, colors.accent, status_text,
+        title_pos.x, title_pos.y, colors.text, title,
+        layout.status.x + layout.status.width, layout.status.y, colors.accent, status_text,
+        time_pos_label.x, time_pos_label.y, colors.text, time_text,
         preview_label_x or 0, preview_label_y or 0, colors.accent, preview_label,
-        transport.play.x + 44, transport.play.y + math.floor((control_h - 16) / 2),
-        colors.on_accent, playback_label,
-        volume.x, volume.y + 2, volume_label_color, volume_label,
-        timeline.x, timeline.y, colors.muted,
-        rounded_rect_path(timeline.width, 6, 3),
-        timeline.x, timeline.y, colors.accent,
-        rounded_rect_path(filled, 6, 3),
-        progress_label.x, progress_label.y, colors.muted, progress_text,
-        time_label.x, time_label.y, time_label.font_size, colors.text, time_text,
-        playlist.x, playlist.y, colors.text, playlist_label
+        time_pos_label.x + 200, time_pos_label.y,
+        layout.dense and "11" or "12", colors.muted, playback_label,
+        volume.x + volume.width - 40, layout.volume.y + 2,
+        volume_label_color, volume_label,
+        playlist.x, playlist.y, colors.muted, playlist_label
     )
-
-    if bottom_zone_visible and not timeline.minimal and filled > 0 then
-        ass = ass .. shape(timeline.x + filled - 6, timeline.y - 3,
-            colors.accent, "&H10&", circle_path(12))
-    end
 
     local chapter_markers = {}
     local chapters = type(state.chapter_list) == "table" and state.chapter_list or {}
@@ -583,19 +577,17 @@ function Renderer:render()
     if state.hover_target == "playback" or state.hover_target == "volume"
         or state.hover_target == "playlist" or state.hover_target == "timeline" then
         local target
-        if state.hover_target == "playback" then target = playback
+        if state.hover_target == "playback" then target = transport.play
         elseif state.hover_target == "volume" then target = volume
         elseif state.hover_target == "playlist" then target = playlist
         else
             target = {
-                x = timeline.x,
-                y = timeline.y - 5,
-                width = timeline.width,
-                height = timeline.height + 10,
+                x = timeline.x, y = timeline.y - 6,
+                width = timeline.width, height = timeline.height + 12,
             }
         end
-        ass = shape(target.x - 6, target.y - 5, colors.surface, "&H30&",
-            rounded_rect_path(target.width + 12, target.height + 10, 10)) .. ass
+        ass = shape(target.x - 6, target.y - 6, colors.surface, "&H31&",
+            rounded_rect_path(target.width + 12, target.height + 12, 12)) .. ass
     end
 
     local opacity = is_finite_number(state.opacity)
@@ -608,7 +600,7 @@ function Renderer:render()
     ass = ass:gsub("{\\", "{\\alpha&H" .. string.format("%02X", fade_alpha) .. "&\\")
     ass = ass:gsub("\\alpha&H18&", "\\alpha&H" .. string.format("%02X", panel_alpha) .. "&")
     ass = ass:gsub("\\alpha&H1A&", "\\alpha&H" .. string.format("%02X", top_panel_alpha) .. "&")
-    ass = ass:gsub("\\alpha&H30&", "\\alpha&H" .. string.format("%02X", hover_alpha) .. "&")
+    ass = ass:gsub("\\alpha&H31&", "\\alpha&H" .. string.format("%02X", hover_alpha) .. "&")
     ass = ass:gsub("\\alpha&H40&", "\\alpha&H" .. string.format("%02X", focus_alpha) .. "&")
 
     if layout.compact then
@@ -622,64 +614,6 @@ function Renderer:render()
     ass = ass:gsub("\\fs(%d+)", function(size)
         return "\\fs" .. math.max(1, math.floor(tonumber(size) * font_scale + 0.5))
     end)
-
-    local chapter_markers = {}
-    local chapters = type(state.chapter_list) == "table" and state.chapter_list or {}
-    if bottom_zone_visible and not timeline.minimal
-        and is_finite_number(duration) and duration > 0 then
-        local seen_markers = {}
-        for _, chapter in ipairs(chapters) do
-            local chapter_time = type(chapter) == "table" and chapter.time or nil
-            if is_finite_number(chapter_time) and chapter_time > 0
-                and chapter_time < duration then
-                local marker_x = math.floor(timeline.x
-                    + chapter_time / duration * timeline.width + 0.5)
-                if marker_x > timeline.x and marker_x < timeline.x + timeline.width
-                    and not seen_markers[marker_x] then
-                    seen_markers[marker_x] = true
-                    chapter_markers[#chapter_markers + 1] = string.format(
-                        "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\p1}"
-                            .. "m 0 0 l 2 0 2 8 0 8{\\p0}",
-                        marker_x, timeline.y - 1, colors.accent)
-                end
-            end
-        end
-    end
-    ass = ass .. table.concat(chapter_markers, "\\n")
-    ass = ass .. render_menu_panel(state.library_menu or state.playlist_menu or state.recent_menu, width, height,
-        colors, font_family, font_scale)
-
-    if state.hover_target == "playback" or state.hover_target == "volume"
-        or state.hover_target == "playlist" or state.hover_target == "timeline" then
-        local target
-        if state.hover_target == "playback" then target = playback
-        elseif state.hover_target == "volume" then target = volume
-        elseif state.hover_target == "playlist" then target = playlist
-        else
-            target = {
-                x = timeline.x,
-                y = timeline.y - 5,
-                width = timeline.width,
-                height = timeline.height + 10,
-            }
-        end
-        local hover_bg = shape(target.x - 6, target.y - 5, colors.surface, "&H30&",
-            rounded_rect_path(target.width + 12, target.height + 10, 10))
-        ass = hover_bg .. ass
-    end
-
-    local opacity = is_finite_number(state.opacity)
-        and math.max(0, math.min(1, state.opacity)) or 1
-    local fade_alpha = math.floor((1 - opacity) * 255 + 0.5)
-    local panel_alpha = bottom_zone_visible and math.min(255, 24 + fade_alpha) or 255
-    local top_panel_alpha = top_zone_visible and math.min(255, 24 + fade_alpha) or 255
-    local hover_alpha = math.min(255, 48 + fade_alpha)
-    local focus_alpha = math.min(255, 64 + fade_alpha)
-    ass = ass:gsub("{\\", "{\\alpha&H" .. string.format("%02X", fade_alpha) .. "&\\")
-    ass = ass:gsub("\\alpha&H18&", "\\alpha&H" .. string.format("%02X", panel_alpha) .. "&")
-    ass = ass:gsub("\\alpha&H1A&", "\\alpha&H" .. string.format("%02X", top_panel_alpha) .. "&")
-    ass = ass:gsub("\\alpha&H30&", "\\alpha&H" .. string.format("%02X", hover_alpha) .. "&")
-    ass = ass:gsub("\\alpha&H40&", "\\alpha&H" .. string.format("%02X", focus_alpha) .. "&")
 
     local size_key = width .. "x" .. height
     if self.last_data == ass and self.last_size == size_key then return end

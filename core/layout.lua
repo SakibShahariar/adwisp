@@ -1,9 +1,9 @@
 -- Adwisp layout calculations.
--- Pure geometry: no mpv dependency, so hit-testing can share these values.
+-- Pure geometry, shared by rendering and mouse hit-testing.
 --
--- The grid follows GNOME HIG spacing (multiples of 8 where possible): a header
--- band, a separated control band, then the timeline and its labels. All values
--- are integer pixels because mpv's OSD and ASS drawing are pixel based.
+-- Geometry follows the GTK-style player concept: a translucent bottom scrim
+-- carrying a media row, a full-width timeline, and a centered transport with
+-- volume and utility icons on the right.
 
 local Layout = {}
 
@@ -12,9 +12,12 @@ local function finite(value)
         and value ~= math.huge and value ~= -math.huge
 end
 
+local function clamp(value, low, high)
+    return math.max(low, math.min(high, value))
+end
+
 function Layout.compute(width, height, options)
-    if not finite(width) or not finite(height)
-        or width <= 0 or height <= 0 then
+    if not finite(width) or not finite(height) or width <= 0 or height <= 0 then
         return nil
     end
 
@@ -22,152 +25,93 @@ function Layout.compute(width, height, options)
     height = math.floor(height)
     if width < 1 or height < 1 then return nil end
 
-    local panel_width = math.min(640, math.max(1, width - 32))
-    local compact = height < 260
-    local dense = compact or panel_width < 480
-    local panel_height = dense and 140 or 200
-    panel_height = math.min(panel_height, math.max(1, height - 4))
-    local scale = panel_height / (dense and 140 or 200)
-    local function sy(value) return math.floor(value * scale + 0.5) end
-    local x = math.floor((width - panel_width) / 2)
-
     local layout_options = type(options) == "table" and options or {}
     local minimal_timeline = layout_options.minimal_timeline == true
         and layout_options.timeline_expanded ~= true
-    local position = layout_options.osd_position
-    if position ~= "top" and position ~= "bottom" and position ~= "custom" then
-        position = "bottom"
-    end
+    local compact = height < 300 or width < 640
+    local dense = height < 220 or width < 400
 
-    local margin = layout_options.osd_margin
-    if not finite(margin) or margin < 0 then
-        margin = compact and 16 or 42
-    end
-    local max_y = math.max(0, height - panel_height)
-    margin = math.min(math.floor(margin), max_y)
+    local scrim_height = math.floor(clamp(height * 0.30, 92, 168))
+    local pad = clamp(math.floor(width * 0.022), 10, 32)
+    local x = 0
+    local y = height - scrim_height
+    local right = width - pad
 
-    local y
-    if position == "top" then
-        y = margin
-    elseif position == "custom" then
-        local offset = layout_options.osd_custom_offset
-        if finite(offset) and offset >= 0 then
-            y = math.max(0, math.min(max_y, math.floor(offset)))
-        else
-            position = "bottom"
-            y = max_y - margin
-        end
-    else
-        y = max_y - margin
-    end
+    local thumbnail = { x = pad, y = y + 12,
+        width = dense and 30 or 40, height = dense and 24 or 30 }
+    if dense then thumbnail.width, thumbnail.height = 30, 24 end
 
-    local split_zones = layout_options.control_zones == "split"
-        and not compact and not dense and position == "bottom"
-    local top_zone
-    local top_margin = layout_options.top_zone_margin
-    if not finite(top_margin) or top_margin < 0 then top_margin = 24 end
-    top_margin = math.min(math.floor(top_margin), math.max(0, height - 88))
-    if split_zones and y >= top_margin + 88 then
-        top_zone = { x = x, y = top_margin, width = panel_width, height = 80 }
-    end
+    local title_x = thumbnail.x + thumbnail.width + 10
+    local title = { x = title_x, y = y + (dense and 12 or 14),
+        width = math.max(1, math.floor(width * 0.52) - title_x) }
+    local status = { x = right - 150, y = title.y, width = 150 }
 
-    local pad = dense and 16 or 24
-    local inner_x = x + pad
-    local inner_width = math.max(1, panel_width - pad * 2)
-    local right_edge = x + panel_width - pad
-
-    local title_y = y + sy(dense and 12 or 20)
-    local status_width = dense and 132 or 200
-    local title_width = math.max(1, inner_width - status_width - 8)
-    local title = top_zone
-        and { x = inner_x, y = top_zone.y + 12, width = title_width }
-        or { x = inner_x, y = title_y, width = title_width }
-    local status = {
-        x = right_edge - status_width,
-        y = title.y,
-        width = status_width,
+    local bar_y = y + math.floor(scrim_height * 0.32)
+    local timeline = {
+        x = pad, y = bar_y, width = math.max(1, right - pad),
+        height = minimal_timeline and 2 or 4,
+        minimal = minimal_timeline,
+        hit_x = pad, hit_y = bar_y - 12,
+        hit_width = math.max(1, right - pad), hit_height = 28,
     }
-    local divider_y = title.y + sy(dense and 30 or 38)
-
-    local tiny = panel_width < 300
-    local control_h = math.max(20, sy(dense and 40 or 56))
-    local nav_size = tiny and 0 or math.max(18, sy(dense and 32 or 44))
-    local play_width = tiny and 40 or math.max(40, sy(dense and 116 or 168))
-    local gap = tiny and 0 or (dense and 6 or 8)
-    local group_gap = tiny and 8 or (dense and 16 or 24)
-    local control_y = y + sy(dense and 52 or 76)
-
-    local prev = { x = inner_x, y = control_y + math.floor((control_h - nav_size) / 2),
-        width = nav_size, height = nav_size }
-    local next = { x = prev.x + nav_size + gap, y = prev.y,
-        width = nav_size, height = nav_size }
-    local play = { x = next.x + nav_size + group_gap, y = control_y,
-        width = play_width, height = control_h }
-
-    local volume_x = play.x + play_width + group_gap
-    local icon_width = sy(dense and 20 or 28)
-    local volume_width = math.max(1, right_edge - volume_x)
-    local track_height = math.max(2, sy(dense and 4 or 6))
-    local track_x = volume_x + icon_width
-    local track_width = math.max(1, volume_width - icon_width)
-    local track_y = control_y + math.floor(control_h / 2) - math.floor(track_height / 2)
-        + sy(dense and 10 or 14)
-    local volume_track = { x = track_x, y = track_y, width = track_width, height = track_height }
-    local volume_hit = { x = track_x, y = track_y - 8,
-        width = track_width, height = track_height + 16 }
-    local volume = { x = volume_x, y = control_y, width = volume_width,
-        height = control_h, track = volume_track, hit = volume_hit }
-
-    local bar_y = y + sy(dense and 108 or 154)
-    local bar_x = inner_x
-    local bar_width = inner_width
-    local label_y = bar_y + sy(dense and 10 or 16)
-    local labels_have_room = bar_width >= 180
-    local progress_label = {
-        x = bar_x, y = label_y, width = 44,
-        visible = labels_have_room and not minimal_timeline,
-    }
+    local progress_label = { x = pad, y = bar_y + 14, width = 52,
+        visible = not minimal_timeline and not dense }
     local time_label = {
-        x = labels_have_room and (bar_x + bar_width - 132) or bar_x,
-        y = label_y,
-        width = labels_have_room and 132 or bar_width,
-        visible = bar_width >= 44 and not minimal_timeline,
-        compact = not labels_have_room,
-        current_only = bar_width < 130,
-        font_size = labels_have_room and 16 or 12,
+        x = pad + (progress_label.visible and 60 or 0), y = bar_y + 14,
+        width = 180, visible = not minimal_timeline,
+        compact = false, current_only = false, font_size = dense and 11 or 12,
     }
 
-    local playlist = top_zone
-        and { x = inner_x + play_width + group_gap,
-              y = top_zone.y + 16, width = nav_size * 2 + gap, height = nav_size }
-        or { x = prev.x, y = prev.y, width = nav_size * 2 + gap, height = nav_size }
-    if top_zone then
-        title.width = math.max(1, playlist.x - gap - inner_x)
-        status.x = right_edge - status_width
-        status.width = status_width
-    end
+    local cy = y + math.floor(scrim_height * 0.70)
+    local center_x = math.floor(width / 2)
+    local play_size = math.min(dense and 36 or 44, math.floor(scrim_height * 0.30))
+    local nav_size = dense and 22 or 28
+    local nav_offset = dense and 48 or 68
+    local prev = { x = center_x - nav_offset - math.floor(nav_size / 2),
+        y = cy - math.floor(nav_size / 2), width = nav_size, height = nav_size }
+    local play = { x = center_x - math.floor(play_size / 2),
+        y = cy - math.floor(play_size / 2), width = play_size, height = play_size }
+    local next = { x = center_x + nav_offset - math.floor(nav_size / 2),
+        y = cy - math.floor(nav_size / 2), width = nav_size, height = nav_size }
+    local transport = { prev = prev, play = play, next = next }
+    local playlist = { x = prev.x, y = prev.y,
+        width = next.x + next.width - prev.x, height = nav_size }
+
+    local utility_size = dense and 20 or 24
+    local settings = { x = right - utility_size, y = cy - math.floor(utility_size / 2),
+        width = utility_size, height = utility_size }
+    local fullscreen = { x = settings.x - utility_size - 12, y = settings.y,
+        width = utility_size, height = utility_size }
+    local volume_x = dense and pad or math.max(
+        center_x + 120, fullscreen.x - 150)
+    volume_x = math.min(volume_x, math.max(pad, right - 60))
+    local volume_width = math.max(1, math.min(dense and 70 or 108, right - volume_x))
+    local volume_icon = 18
+    local track = { x = volume_x + volume_icon + 4, y = cy - 2,
+        width = math.max(1, volume_width - volume_icon - 4), height = 4 }
+    local volume = { x = volume_x, y = cy - 16, width = volume_width, height = 32,
+        track = track,
+        hit = { x = track.x, y = cy - 14, width = track.width, height = 28 } }
 
     return {
         width = width,
         height = height,
         compact = compact,
         dense = dense,
-        position = position,
-        panel = { x = x, y = y, width = panel_width, height = panel_height },
-        top_zone = top_zone,
+        position = "bottom",
+        panel = { x = x, y = y, width = width, height = scrim_height },
+        top_zone = nil,
         title = title,
         status = status,
-        divider_y = divider_y,
-        transport = { prev = prev, play = play, next = next },
+        divider_y = bar_y - 12,
+        thumbnail = thumbnail,
+        transport = transport,
         playback = play,
         playlist = playlist,
         volume = volume,
-        timeline = {
-            x = bar_x, y = bar_y, width = bar_width,
-            height = minimal_timeline and 2 or 6,
-            minimal = minimal_timeline,
-            hit_x = bar_x, hit_y = bar_y - 12, hit_width = bar_width, hit_height = 30,
-        },
+        fullscreen = fullscreen,
+        settings = settings,
+        timeline = timeline,
         progress_label = progress_label,
         time_label = time_label,
     }

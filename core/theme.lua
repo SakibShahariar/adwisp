@@ -6,11 +6,11 @@ local Theme = {}
 -- Built-in fallback mirrors libadwaita's dark style. Matugen palettes
 -- override these semantic roles at runtime when configured.
 Theme.fallback = {
-    background = "#1D1D1F",
-    surface = "#303030",
-    text = "#F6F5F4",
-    muted = "#9A9A9A",
-    accent = "#3584E4",
+    background = "#162232",
+    surface = "#26374E",
+    text = "#FFFFFF",
+    muted = "#9DB2CE",
+    accent = "#3B82F6",
     on_accent = "#FFFFFF",
 }
 

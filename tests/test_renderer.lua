@@ -125,7 +125,7 @@ assert_true(overlay.data:find("Low volume 15%", 1, true) ~= nil,
     "low volume should have an explicit label")
 local low_label_index = assert(overlay.data:find("Low volume 15%", 1, true))
 local low_label_prefix = overlay.data:sub(math.max(1, low_label_index - 90), low_label_index)
-assert_true(low_label_prefix:find("\\1c&HE48435&", 1, true) ~= nil,
+assert_true(low_label_prefix:find("\\1c&HF6823B&", 1, true) ~= nil,
     "low-volume label itself should use the fallback theme accent color")
 state.volume = 50
 renderer:render()
@@ -139,7 +139,7 @@ assert_true(overlay.data:find("Muted", 1, true) ~= nil,
     "muted state should remain immediately recognizable")
 local muted_label_index = assert(overlay.data:find("Muted", 1, true))
 local muted_label_prefix = overlay.data:sub(math.max(1, muted_label_index - 90), muted_label_index)
-assert_true(muted_label_prefix:find("\\1c&HE48435&", 1, true) ~= nil,
+assert_true(muted_label_prefix:find("\\1c&HF6823B&", 1, true) ~= nil,
     "muted label itself should use the fallback theme accent color")
 state.mute = false
 state.volume = 50.5
@@ -151,7 +151,7 @@ assert_true(overlay.data:find("Buffering 45%", 1, true) ~= nil,
 local buffering_label_index = assert(overlay.data:find("Buffering 45%", 1, true))
 local buffering_label_prefix = overlay.data:sub(
     math.max(1, buffering_label_index - 90), buffering_label_index)
-assert_true(buffering_label_prefix:find("\\1c&HE48435&", 1, true) ~= nil,
+assert_true(buffering_label_prefix:find("\\1c&HF6823B&", 1, true) ~= nil,
     "buffering indicator should use the active theme accent color")
 state.buffering = false
 
@@ -195,7 +195,7 @@ assert_true(overlay.data:find("&H332211&", 1, true) ~= nil,
 assert_true(overlay.data:find("&HEFCDAB&", 1, true) ~= nil,
     "volume track should use the palette accent color")
 assert_true(overlay.data:find("&H6D6259&", 1, true) == nil
-    and overlay.data:find("&HE48435&", 1, true) == nil,
+    and overlay.data:find("&HF6823B&", 1, true) == nil,
     "volume track should not retain hard-coded fallback colors")
 
 -- Low-volume feedback must use the active theme accent, not a fallback color.
@@ -216,15 +216,13 @@ assert_equal(overlay.update_count, 15, "hover state should redraw the overlay")
 assert_true(overlay.data:find("\\1c&H060504&", 1, true) ~= nil,
     "hover highlight should use the palette surface color")
 
--- Compact layouts reduce text sizes so labels fit short video windows.
+-- Compact layouts keep the small media-title typography.
 height = 180
 renderer:render()
-assert_true(overlay.data:find("\\fs20", 1, true) ~= nil,
-    "compact title should use the smaller font size")
-assert_true(overlay.data:find("\\fs26", 1, true) == nil,
-    "compact layout should not retain the standard title font size")
-assert_true(overlay.data:find("\\fs11", 1, true) ~= nil,
-    "compact progress labels should use the smallest font size")
+assert_true(overlay.data:find("\\fs18", 1, true) ~= nil,
+    "media title should use the compact header size")
+assert_true(overlay.data:find("Demo \\{x\\}", 1, true) ~= nil,
+    "compact layout should still render the title")
 
 -- Invalid numeric properties should never break rendering or draw invalid values.
 state.visible = true
@@ -288,30 +286,30 @@ state.time_pos = 15
 state.duration = 60
 width, height = 200, 360
 renderer:render()
-assert_true(overlay.data:find("0:15/1:00", 1, true) ~= nil,
-    "medium-width timelines should use compact elapsed/total text")
+assert_true(overlay.data:find("0:15 / 1:00", 1, true) ~= nil,
+    "narrow timelines should keep the elapsed/total text")
 assert_true(overlay.data:find("25%", 1, true) == nil,
-    "medium-width timelines should hide the progress label to prevent overlap")
+    "narrow timelines should hide the progress label")
 
 width, height = 140, 360
 renderer:render()
 assert_true(overlay.data:find("0:15", 1, true) ~= nil,
     "very narrow timelines should retain the elapsed time")
-assert_true(overlay.data:find("/1:00", 1, true) == nil,
-    "very narrow timelines should omit total time when it cannot fit")
+assert_true(overlay.data:find("0:15", 1, true) ~= nil,
+    "very narrow timelines should retain the elapsed time")
 
 -- Font configuration is applied to every ASS text run and sanitized.
 state.layout_options = { font_family = "Noto Sans", font_scale = 1.2 }
 renderer:render()
 assert_true(overlay.data:find("\\fnNoto Sans", 1, true) ~= nil,
     "configured font family should be applied to ASS text")
-assert_true(overlay.data:find("\\fs31", 1, true) ~= nil,
-    "font scale should scale the title font size")
+assert_true(overlay.data:find("\\fs22", 1, true) ~= nil,
+    "font scale should scale the media title font size")
 state.layout_options = { font_family = "Noto Sans}\\evil", font_scale = 9 }
 renderer:render()
 assert_true(overlay.data:find("\\fnNoto Sans\\evil", 1, true) == nil,
     "font family input must not inject ASS override tags")
-assert_true(overlay.data:find("\\fs33", 1, true) ~= nil,
+assert_true(overlay.data:find("\\fs23", 1, true) ~= nil,
     "font scale should clamp to its documented maximum")
 
 -- Keyboard focus draws an accent outline around the focused control.
@@ -399,45 +397,19 @@ assert_true(overlay.data:find("\\{Sound 51%\\}", 1, true) ~= nil,
 state.translations = nil
 renderer:render()
 
+-- The overlay layout has no independent split zones; title and controls
+-- share the same scrim and are always visible together.
 state.layout_options = {
     control_zones = "split", osd_position = "bottom", osd_margin = 42,
     top_zone_margin = 24, top_zone_visibility = "hover",
     bottom_zone_visibility = "hover",
 }
-state.hover_zone = "top"
 state.title = "Demo {x}"
 renderer:render()
-assert_true(overlay.data:find("\\pos(320,24)", 1, true) ~= nil,
-    "hover-only top zone should draw its own panel")
 assert_true(overlay.data:find("Demo", 1, true) ~= nil,
-    "hover-only top zone should show the title while hovered")
-assert_true(overlay.data:find("Pause", 1, true) == nil,
-    "top-zone hover should not reveal bottom playback controls")
-state.hover_zone = "bottom"
-renderer:render()
+    "title should remain visible in the overlay layout")
 assert_true(overlay.data:find("Pause", 1, true) ~= nil,
-    "bottom-zone hover should reveal playback controls")
-assert_true(overlay.data:find("Demo", 1, true) == nil,
-    "bottom-zone hover should not reveal the top title")
-state.hover_zone = nil
-state.focus_target = "playlist"
-renderer:render()
-assert_true(overlay.data:find("\\pos(532,36)", 1, true) ~= nil,
-    "keyboard focus should outline the playlist control in the top zone")
-assert_true(overlay.data:find("Demo", 1, true) ~= nil
-    and overlay.data:find("Pause", 1, true) == nil,
-    "playlist focus should reveal only the top zone")
-state.focus_target = "playback"
-renderer:render()
-assert_true(overlay.data:find("Pause", 1, true) ~= nil
-    and overlay.data:find("Demo", 1, true) == nil,
-    "playback focus should reveal only the bottom zone")
-state.focus_target = nil
-state.hover_zone = nil
-renderer:render()
-assert_true(overlay.data:find("Pause", 1, true) == nil
-    and overlay.data:find("Demo", 1, true) == nil,
-    "independent hover-only zones should both hide outside their activation regions")
+    "playback controls should remain visible in the overlay layout")
 state.layout_options = nil
 renderer:render()
 

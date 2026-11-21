@@ -18,30 +18,33 @@ to what ASS can actually render, and records the deliberate limitations.
 
 ## Layout bands
 
-For a standard OSD (640x200 panel):
+The primary layout mirrors the GTK-style player concept: a translucent bottom
+scrim spanning the full OSD width, with four bands of information.
 
 ```
 +--------------------------------------------------------------+
-|  Title (bold)                                    status       |  header
-+--------------------------------------------------------------+  divider
-|  ( prev ) ( next )   [ play / pause ]   speaker ---o---      |  controls
+|                         video                                |
 |                                                              |
-|  --------------------------o-------------------------------  |  timeline
-|  0%                                        0:15 / 1:00       |  labels
+|  [thumb] Title                                   status       |  media row
+|  --------------------------o---------------------------------  |  timeline
+|  0:15 / 1:00                                                  |  labels
+|                    <   ( play )   >        speaker --o-- []  |  transport
 +--------------------------------------------------------------+
 ```
 
-Dense layouts (short windows or OSD widths below 480px) reduce the panel to
-140px, shrink buttons, and drop the header divider. Very narrow OSDs (below
-300px) hide playlist navigation and keep only the primary controls. Split-zone
-mode moves the title and playlist navigation into a separate top surface.
+- The scrim is a stacked set of translucent bands forming a soft gradient.
+- The timeline is a thin full-width line with a circular knob.
+- Prev/play/next are symbolic glyphs; only play has a filled accent circle.
+- Volume, fullscreen, and settings icons sit on the right of the transport row.
+- Short and narrow OSDs shrink the scrim and hide secondary labels, keeping the
+  timeline and transport inside the visible area.
 
 ## Color roles
 
 Colors come from `core/theme.lua` semantic roles: `background`, `surface`,
 `text`, `muted`, `accent`, and `on_accent`. Matugen palettes map onto these
 roles at runtime; the built-in palette is only a fallback and mirrors
-libadwaita's dark style (neutral grays with a blue accent). The default text
+a dark navy style with a blue accent, matching the project's GTK player concept. The default text
 font is Adwaita Sans, with `font_family`/`font_scale` available as overrides.
 The renderer never hard-codes a new static palette for individual widgets.
 
