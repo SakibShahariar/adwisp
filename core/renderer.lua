@@ -496,13 +496,17 @@ function Renderer:render()
         preview_label = ""
     end
 
-    -- Bottom scrim: stacked translucent bands form a soft gradient.
-    local scrim_ass = ""
-    local bands = 64
-    for index = 1, bands do
-        local alpha = math.floor(40 - (index - 1) * (32 / (bands - 1)) + 0.5)
-        local top = panel.y + math.floor((index - 1) * panel.height / bands)
-        local bottom = panel.y + math.floor(index * panel.height / bands)
+    -- Bottom scrim: a solid base plus a short soft fade at the top edge.
+    -- A few tightly spaced bands avoid the visible striping of a full-height
+    -- gradient while preserving the elevated, video-first look.
+    local scrim_ass = shape(0, panel.y, colors.background, "&H0C&",
+        rect_path(panel.width, panel.height))
+    local fade_bands = 16
+    local fade_height = math.min(48, panel.height)
+    for index = 1, fade_bands do
+        local alpha = math.floor(64 - (index - 1) * (52 / (fade_bands - 1)) + 0.5)
+        local top = panel.y + math.floor((index - 1) * fade_height / fade_bands)
+        local bottom = panel.y + math.floor(index * fade_height / fade_bands)
         scrim_ass = scrim_ass .. shape(0, top,
             colors.background, string.format("&H%02X&", alpha),
             rect_path(panel.width, math.max(1, bottom - top + 1)))
