@@ -771,6 +771,66 @@ local function preference_values()
     }
 end
 
+local function open_main_menu()
+    clear_track_menu()
+    if not state.visible then show_osd() end
+    local categories = {
+        { name = "File", actions = {
+            { "Show info", { "script-message", "adwisp-query" } },
+            { "Open recent files", { "script-message", "adwisp-recent" } },
+        } },
+        { name = "Playback", actions = {
+            { "Play / Pause", { "cycle", "pause" } },
+            { "Seek forward", { "add", "time-pos", 5 } },
+            { "Seek backward", { "add", "time-pos", -5 } },
+            { "Next item", { "playlist-next", "weak" } },
+            { "Previous item", { "playlist-prev", "weak" } },
+        } },
+        { name = "Audio", actions = {
+            { "Audio tracks", { "script-message", "adwisp-audio-menu" } },
+            { "Audio devices", { "script-message", "adwisp-audio-device-menu" } },
+            { "Mute", { "cycle", "mute" } },
+        } },
+        { name = "Subtitles", actions = {
+            { "Subtitle tracks", { "script-message", "adwisp-subtitle-menu" } },
+        } },
+        { name = "Video", actions = {
+            { "Fit image", { "script-message", "adwisp-image-fit" } },
+            { "Zoom in", { "script-message", "adwisp-image-zoom-in" } },
+            { "Zoom out", { "script-message", "adwisp-image-zoom-out" } },
+        } },
+        { name = "Tools", actions = {
+            { "Settings", { "script-message", "adwisp-settings" } },
+            { "Video library", { "script-message", "adwisp-library" } },
+        } },
+        { name = "View", actions = {
+            { "Show OSD", { "script-message", "adwisp-show" } },
+            { "Hide OSD", { "script-message", "adwisp-hide" } },
+        } },
+    }
+    local lines = { "Menu" }
+    for index, category in ipairs(categories) do
+        lines[#lines + 1] = string.format("%d. %s", index, category.name)
+        local name = "adwisp-main-menu-" .. index
+        track_menu_binding_names[#track_menu_binding_names + 1] = name
+        mp.add_key_binding(tostring(index), name, function()
+            local sublines = { category.name }
+            for subindex, action in ipairs(category.actions) do
+                sublines[#sublines + 1] = string.format("%d. %s", subindex, action[1])
+                local subname = "adwisp-main-sub-" .. index .. "-" .. subindex
+                track_menu_binding_names[#track_menu_binding_names + 1] = subname
+                mp.add_key_binding(tostring(subindex), subname, function()
+                    local command = action[2]
+                    clear_track_menu()
+                    mp.commandv(table.unpack(command, 1, #command))
+                end)
+            end
+            show_track_menu(sublines, nil)
+        end)
+    end
+    show_track_menu(lines, nil)
+end
+
 local function open_context_menu()
     clear_track_menu()
     if not state.visible then show_osd() end
@@ -1485,6 +1545,7 @@ local observers = {
     { "video-zoom", "number", function(value) state.image_zoom = finite_property(value, 0) end },
     { "audio-device-list", "native", update_audio_device_list },
     { "audio-device", "string", update_audio_device },
+    { "fullscreen", "bool", function(value) state.fullscreen = value == true end },
 }
 
 for _, observer in ipairs(observers) do
@@ -2478,6 +2539,7 @@ local registered_key_bindings = {
     ["CTRL+ALT+F11"] = "adwisp-subtitle-menu",
     ["CTRL+ALT+F12"] = "adwisp-playlist-menu",
     ["MBTN_RIGHT"] = "adwisp-context-menu",
+    ["CTRL+ALT+M"] = "adwisp-main-menu",
     ["CTRL+ALT+PGUP"] = "temporary playlist page-up",
     ["CTRL+ALT+PGDWN"] = "temporary playlist page-down",
 }
@@ -2649,6 +2711,7 @@ register_configurable_key_binding("screenshot_key", "adwisp-screenshot", functio
 end, "CTRL+ALT+S")
 mp.add_key_binding("MBTN_LEFT", "adwisp-mouse-click", handle_mouse_click, { complex = true })
 mp.add_key_binding("MBTN_RIGHT", "adwisp-context-menu", open_context_menu)
+mp.add_key_binding("CTRL+ALT+M", "adwisp-main-menu", open_main_menu)
 mp.add_key_binding("mouse_move", "adwisp-mouse-move", handle_mouse_move, { complex = true })
 
 local library_dependencies = {
@@ -3123,6 +3186,11 @@ register_no_argument_message("adwisp-toggle", toggle)
 register_no_argument_message("adwisp-show", show_osd)
 register_no_argument_message("adwisp-hide", hide_osd)
 register_no_argument_message("adwisp-reload-theme", reload_theme)
+register_no_argument_message("adwisp-audio-device-menu", function() open_audio_device_menu(0) end)
+register_no_argument_message("adwisp-image-fit", function() fit_image_to_window() end)
+register_no_argument_message("adwisp-image-zoom-in", function() change_image_zoom(0.25) end)
+register_no_argument_message("adwisp-image-zoom-out", function() change_image_zoom(-0.25) end)
+register_no_argument_message("adwisp-library", function() open_library() end)
 mp.register_script_message("adwisp-notify", function(text, duration)
     local message = tostring(text or "")
     if message == "" then return end

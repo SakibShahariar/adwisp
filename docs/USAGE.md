@@ -38,6 +38,7 @@ This guide covers Adwisp's keyboard and mouse controls, configuration, and scrip
 | `Ctrl+Alt+BS` | Reset a still image to fit; otherwise reset playback speed |
 | `Ctrl+Up` / `Ctrl+Down` | Adjust volume |
 | Right-click | Open the quick-actions menu (number keys 1–7 activate an action) |
+| `Ctrl+Alt+M` | Open the main menu with submenus |
 
 Still-image controls are available only when mpv marks the selected video track as an image or album-art track. Zoom steps use mpv's logarithmic video-zoom setting; fit/reset clears zoom and pan and restores normal window scaling.
 

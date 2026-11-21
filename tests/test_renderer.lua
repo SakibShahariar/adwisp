@@ -466,4 +466,13 @@ renderer:render()
 assert_true(overlay.data:find("Saved", 1, true) == nil,
     "clearing the notification should remove its toast")
 
+
+state.visible = true
+state.fullscreen = true
+renderer:render()
+assert_true(overlay.data:find("Demo", 1, true) == nil,
+    "fullscreen mode should drop the media title")
+state.fullscreen = false
+renderer:render()
+
 print("All renderer tests passed.")

@@ -2384,4 +2384,13 @@ assert_true(#commands > commands_before_context_action,
 assert_equal(commands[#commands][1], "cycle",
     "the first quick action should toggle pause")
 
+
+key_bindings["adwisp-main-menu"].callback({ event = "down" })
+assert_true(track_menu_text():find("Menu", 1, true) ~= nil
+    and track_menu_text():find("Playback", 1, true) ~= nil,
+    "the main menu should list its categories")
+key_bindings["adwisp-main-menu-2"].callback({ event = "down" })
+assert_true(track_menu_text():find("Play / Pause", 1, true) ~= nil,
+    "choosing a category should open its submenu")
+
 print("All mocked mpv API tests passed.")

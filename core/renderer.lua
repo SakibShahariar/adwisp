@@ -480,7 +480,7 @@ function Renderer:render()
             colors.accent, "&H40&", colors.accent, "&HF0&", 2)
     end
 
-    if not top_zone_visible then
+    if not top_zone_visible or state.fullscreen == true then
         title = ""
         status_text = ""
         playlist_label = ""
@@ -506,10 +506,13 @@ function Renderer:render()
     end
 
     local thumb = layout.thumbnail
-    local thumbnail_ass = shape(thumb.x, thumb.y, colors.surface, "&H28&",
-        rounded_rect_path(thumb.width, thumb.height, 5))
-        .. shape(thumb.x + 4, thumb.y + 4, colors.accent, "&H40&",
-            icon_path("play", math.max(8, thumb.height - 8)))
+    local thumbnail_ass = ""
+    if state.fullscreen ~= true then
+        thumbnail_ass = shape(thumb.x, thumb.y, colors.surface, "&H28&",
+            rounded_rect_path(thumb.width, thumb.height, 5))
+            .. shape(thumb.x + 4, thumb.y + 4, colors.accent, "&H40&",
+                icon_path("play", math.max(8, thumb.height - 8)))
+    end
 
     local timeline = layout.timeline
     local timeline_ass = shape(timeline.x, timeline.y, colors.muted, "&H50&",
