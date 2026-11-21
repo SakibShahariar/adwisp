@@ -113,7 +113,7 @@ local function test_minimal_timeline_geometry()
     assert_true(collapsed.timeline.minimal, "minimal timeline should be marked")
     assert_true(not collapsed.progress_label.visible and not collapsed.time_label.visible,
         "collapsed timeline should hide labels")
-    assert_equal(expanded.timeline.height, 4, "expansion should restore the timeline height")
+    assert_equal(expanded.timeline.height, 10, "expansion should enlarge the timeline")
     assert_true(expanded.progress_label.visible and expanded.time_label.visible,
         "expansion should restore labels")
     assert_equal(expanded.timeline.hit_y, collapsed.timeline.hit_y,
@@ -132,5 +132,19 @@ test_timeline_and_volume_hit_targets()
 test_invalid_dimensions()
 test_fractional_dimensions_are_normalized()
 test_minimal_timeline_geometry()
+
+
+local function test_fullscreen_scaling()
+    local normal = Layout.compute(1280, 720)
+    local fullscreen = Layout.compute(1280, 720, { fullscreen = true })
+    assert_true(fullscreen.top_bar.height > normal.top_bar.height,
+        "fullscreen should enlarge the top bar")
+    assert_true(fullscreen.playback.width > normal.playback.width,
+        "fullscreen should enlarge the transport")
+    assert_true(fullscreen.volume.track.width >= normal.volume.track.width,
+        "fullscreen should not shrink the volume slider")
+end
+
+test_fullscreen_scaling()
 
 print("All layout tests passed.")

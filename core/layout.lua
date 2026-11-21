@@ -26,19 +26,21 @@ function Layout.compute(width, height, options)
     if width < 1 or height < 1 then return nil end
 
     local layout_options = type(options) == "table" and options or {}
+    local ui_scale = layout_options.fullscreen == true and 1.3 or 1
+    local function scaled(value) return math.floor(value * ui_scale + 0.5) end
     local minimal_timeline = layout_options.minimal_timeline == true
         and layout_options.timeline_expanded ~= true
     local compact = height < 300 or width < 640
     local dense = height < 220 or width < 400
 
-    local scrim_height = math.floor(clamp(height * 0.30, 92, 168))
+    local scrim_height = scaled(math.floor(clamp(height * 0.30, 92, 168)))
     local pad = clamp(math.floor(width * 0.022), 10, 32)
     local x = 0
     local y = height - scrim_height
     local right = width - pad
 
     local top_bar = { x = pad, y = 8,
-        width = math.max(1, width - pad * 2), height = dense and 24 or 30 }
+        width = math.max(1, width - pad * 2), height = scaled(dense and 32 or 40) }
 
     local thumbnail = { x = pad, y = y + 12,
         width = dense and 30 or 40, height = dense and 24 or 30 }
@@ -52,7 +54,8 @@ function Layout.compute(width, height, options)
     local bar_y = y + math.floor(scrim_height * 0.32)
     local timeline = {
         x = pad, y = bar_y, width = math.max(1, right - pad),
-        height = minimal_timeline and 2 or 4,
+        height = minimal_timeline and 2
+            or (layout_options.timeline_expanded == true and scaled(10) or scaled(4)),
         minimal = minimal_timeline,
         hit_x = pad, hit_y = bar_y - 12,
         hit_width = math.max(1, right - pad), hit_height = 28,
@@ -67,8 +70,8 @@ function Layout.compute(width, height, options)
 
     local cy = y + math.floor(scrim_height * 0.70)
     local center_x = math.floor(width / 2)
-    local play_size = math.min(dense and 36 or 44, math.floor(scrim_height * 0.30))
-    local nav_size = dense and 22 or 28
+    local play_size = math.min(scaled(dense and 32 or 40), math.floor(scrim_height * 0.30))
+    local nav_size = scaled(dense and 24 or 32)
     local nav_offset = dense and 48 or 68
     local prev = { x = center_x - nav_offset - math.floor(nav_size / 2),
         y = cy - math.floor(nav_size / 2), width = nav_size, height = nav_size }
@@ -80,7 +83,7 @@ function Layout.compute(width, height, options)
     local playlist = { x = prev.x, y = prev.y,
         width = next.x + next.width - prev.x, height = nav_size }
 
-    local utility_size = dense and 20 or 24
+    local utility_size = scaled(dense and 20 or 24)
     local settings = { x = right - utility_size, y = cy - math.floor(utility_size / 2),
         width = utility_size, height = utility_size }
     local fullscreen = { x = settings.x - utility_size - 12, y = settings.y,
@@ -88,8 +91,8 @@ function Layout.compute(width, height, options)
     local volume_x = dense and pad or math.max(
         center_x + 120, fullscreen.x - 150)
     volume_x = math.min(volume_x, math.max(pad, right - 60))
-    local volume_width = math.max(1, math.min(dense and 70 or 108, right - volume_x))
-    local volume_icon = 18
+    local volume_width = math.max(1, math.min(scaled(dense and 56 or 72), right - volume_x))
+    local volume_icon = scaled(18)
     local track = { x = volume_x + volume_icon + 4, y = cy - 2,
         width = math.max(1, volume_width - volume_icon - 4), height = 4 }
     local volume = { x = volume_x, y = cy - 16, width = volume_width, height = 32,

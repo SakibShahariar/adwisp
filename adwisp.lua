@@ -572,12 +572,9 @@ local function cancel_time_pos_render()
 end
 
 local function render()
-    if opts.minimal_timeline == true then
-        opts.timeline_expanded = state.hover_target == "timeline"
-            or state.focus_target == "timeline" or active_drag == "timeline"
-    else
-        opts.timeline_expanded = nil
-    end
+    opts.fullscreen = state.fullscreen == true
+    opts.timeline_expanded = state.hover_target == "timeline"
+        or state.focus_target == "timeline" or active_drag == "timeline"
     -- Any immediate render supersedes and cancels a queued playback-position update.
     cancel_time_pos_render()
     time_pos_render_generation = time_pos_render_generation + 1
