@@ -450,6 +450,9 @@ function Renderer:render()
     local font_scale = layout_options.font_scale
     if not is_finite_number(font_scale) then font_scale = 1 end
     font_scale = math.max(0.75, math.min(1.25, font_scale))
+    local ui_scale = layout_options.ui_scale
+    if not is_finite_number(ui_scale) or ui_scale <= 0 then ui_scale = 1 end
+    ui_scale = math.max(0.5, math.min(4, ui_scale))
 
     local colors = Theme.to_ass(state.palette)
     local volume_label_color = (state.mute or volume_value <= 20)
@@ -577,14 +580,21 @@ function Renderer:render()
             chapter_label = string.format("%d: %s", chapter_index,
                 truncate_title(state.chapter_title, 24))
         end
+        local top_font = math.max(9, math.floor(12 * font_scale + 0.5))
+        local rendered_top_font = top_font * ui_scale
+        local title_budget = math.max(8,
+            math.floor(top_bar.width * 0.62 / (rendered_top_font * 0.58)))
+        local status_budget = math.max(4,
+            math.floor(top_bar.width * 0.30 / (rendered_top_font * 0.58)))
         top_bar_ass = shape(top_bar.x, top_bar.y, colors.background, "&H38&",
                 rounded_rect_path(top_bar.width, top_bar.height, 8))
-            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs12\\b1\\1c%s}%s\\n",
-                top_bar.x + 12, top_bar.y + 7, font_family, colors.text,
-                escape_ass(truncate_title(title, math.floor(top_bar.width / 18))))
-            .. string.format("{\\an9\\pos(%d,%d)\\fn%s\\fs11\\1c%s}%s\\n",
+            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\b1\\1c%s}%s\\n",
+                top_bar.x + 12, top_bar.y + 7, font_family, top_font, colors.text,
+                truncate_title(title, title_budget))
+            .. string.format("{\\an9\\pos(%d,%d)\\fn%s\\fs%d\\1c%s}%s\\n",
                 top_bar.x + top_bar.width - 12, top_bar.y + 8,
-                font_family, colors.muted, escape_ass(chapter_label))
+                font_family, math.max(8, top_font - 1), colors.muted,
+                escape_ass(truncate_title(chapter_label, status_budget)))
     end
 
     local hover_timeline_ass = ""
@@ -664,13 +674,13 @@ function Renderer:render()
 {\an7\pos(%d,%d)\fnAdwaita Sans\fs12\1c%s}%s
 {\an7\pos(%d,%d)\fnAdwaita Sans\fs12\1c%s}%s
 ]],
-        title_pos.x, title_pos.y, colors.text, title,
+        title_pos.x, title_pos.y, colors.text, "",
         layout.status.x + layout.status.width, layout.status.y, colors.accent, status_text,
         time_pos_label.x, time_pos_label.y, colors.text, time_text,
         preview_label_x or 0, preview_label_y or 0, colors.accent, preview_label,
-        time_pos_label.x + 200, time_pos_label.y,
+        time_pos_label.x + math.floor(200 * ui_scale), time_pos_label.y,
         layout.dense and "11" or "12", colors.muted, playback_label,
-        volume.x + volume.width - 40, layout.volume.y + 2,
+        volume.x + volume.width - math.floor(60 * ui_scale), layout.volume.y + 2,
         volume_label_color, volume_label,
         playlist.x, playlist.y, colors.muted, playlist_label
     )
@@ -738,9 +748,6 @@ function Renderer:render()
     end
 
     ass = ass:gsub("\\fnAdwaita Sans", function() return "\\fn" .. font_family end)
-    local ui_scale = layout_options.ui_scale
-    if not is_finite_number(ui_scale) or ui_scale <= 0 then ui_scale = 1 end
-    ui_scale = math.max(0.5, math.min(4, ui_scale))
     ass = ass:gsub("\\fs(%d+)", function(size)
         return "\\fs" .. math.max(1, math.floor(tonumber(size) * font_scale * ui_scale + 0.5))
     end)
