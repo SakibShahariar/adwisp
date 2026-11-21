@@ -562,6 +562,36 @@ function Renderer:render()
         end
     end
 
+    local filmstrip_ass = ""
+    if state.preview_visible == true and is_finite_number(state.preview_time)
+        and is_finite_number(duration) and duration > 0 then
+        local frame_width = 72
+        local frame_height = 40
+        local frame_gap = 6
+        local center = preview_label_x or math.floor(width / 2)
+        local step = duration / 16
+        for offset = -3, 3 do
+            local frame_x = center + offset * (frame_width + frame_gap)
+                - math.floor(frame_width / 2)
+            local frame_y = timeline.y - frame_height - 20
+            if frame_x >= 4 and frame_x + frame_width <= width - 4
+                and frame_y >= 4 then
+                local selected = offset == 0
+                filmstrip_ass = filmstrip_ass
+                    .. ring(frame_x, frame_y, frame_width, frame_height, 4,
+                        selected and colors.accent or colors.muted,
+                        selected and "&H28&" or "&H50&",
+                        colors.surface, "&H24&", 1)
+                    .. shape(frame_x + math.floor(frame_width / 2) - 5,
+                        frame_y + math.floor(frame_height / 2) - 5,
+                        colors.muted, "&H28&", icon_path("play", 10))
+                    .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs9\\1c%s}%s\\n",
+                        frame_x + 2, frame_y + frame_height + 2, font_family,
+                        colors.muted, fmt_time(state.preview_time + offset * step))
+            end
+        end
+    end
+
     local preview_ass = ""
     if preview_label ~= "" and preview_label_x and preview_label_y then
         preview_ass = ring(preview_label_x - 26, preview_label_y - 5,
@@ -585,7 +615,7 @@ function Renderer:render()
                 escape_ass(truncate_title(state.notification.text, 48)))
     end
 
-    local ass = preview_ass .. notification_ass .. scrim_ass .. thumbnail_ass .. focus_ass .. timeline_ass .. controls_ass
+    local ass = filmstrip_ass .. preview_ass .. notification_ass .. scrim_ass .. thumbnail_ass .. focus_ass .. timeline_ass .. controls_ass
         .. string.format([[
 {\an7\pos(%d,%d)\fnAdwaita Sans\fs18\b1\1c%s}%s
 {\an9\pos(%d,%d)\fnAdwaita Sans\fs11\1c%s}%s

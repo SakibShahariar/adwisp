@@ -475,4 +475,18 @@ assert_true(overlay.data:find("Demo", 1, true) == nil,
 state.fullscreen = false
 renderer:render()
 
+
+state.fullscreen = false
+state.preview_visible = true
+state.preview_time = 30
+state.preview_x = 640
+state.preview_y = 500
+state.preview_width = 160
+state.preview_height = 90
+renderer:render()
+assert_true(overlay.data:find("0:30", 1, true) ~= nil,
+    "seek preview should show the hovered timestamp")
+state.preview_visible = false
+renderer:render()
+
 print("All renderer tests passed.")
