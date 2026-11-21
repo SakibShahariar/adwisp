@@ -229,10 +229,10 @@ local function render_menu_panel(menu, width, height, colors, font_family, font_
         colors.muted, "&H28&", colors.surface, "&H18&", 1)
         .. shape(x + 14, y + 10, colors.accent, "&H10&",
             rounded_rect_path(12, 12, 3))
-        .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\b1\\1c%s}%s\\n",
+        .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\b1\\1c%s}%s\n",
             x + 36, y + 8, font_family, font_size, colors.text,
             escape_ass(truncate_title(title, max_chars)))
-        .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\1c%s}x\\n",
+        .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\1c%s}x\n",
             x + panel_width - 22, y + 8, font_family, font_size, colors.muted)
         .. shape(x + 12, y + header_h - 2, colors.muted, "&H30&",
             rect_path(panel_width - 24, 1))
@@ -248,7 +248,7 @@ local function render_menu_panel(menu, width, height, colors, font_family, font_
         local text = line:gsub("^[>%*]%s*", "")
         local color = selected and colors.on_accent
             or (mark and colors.accent or colors.text)
-        ass = ass .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\b%d\\1c%s}%s\\n",
+        ass = ass .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\b%d\\1c%s}%s\n",
             x + 20, line_y, font_family, font_size, selected and 1 or 0,
             color, escape_ass(truncate_title(text, max_chars)))
     end
@@ -256,7 +256,7 @@ local function render_menu_panel(menu, width, height, colors, font_family, font_
     if footer then
         ass = ass .. shape(x + 12, y + panel_height - footer_h + 4,
             colors.muted, "&H30&", rect_path(panel_width - 24, 1))
-            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\1c%s}%s\\n",
+            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\1c%s}%s\n",
                 x + 20, y + panel_height - footer_h + 8,
                 font_family, math.max(8, font_size - 2), colors.muted,
                 escape_ass(truncate_title(footer, max_chars + 8)))

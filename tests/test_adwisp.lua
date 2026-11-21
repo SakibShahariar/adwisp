@@ -403,8 +403,8 @@ end
 
 -- Script-message preferences validate, apply immediately, and persist locally.
 script_messages["adwisp-settings"]()
-assert_true(commands[#commands][1] == "show-text"
-    and commands[#commands][2]:find("seek_step", 1, true) ~= nil,
+assert_true(track_menu_text():find("seek_step", 1, true) ~= nil
+    and track_menu_text():find("Settings", 1, true) ~= nil,
     "settings message should display the current editable preferences")
 script_messages["adwisp-setting-set"]("seek_step", "10")
 key_bindings["adwisp-seek-back"].callback()
@@ -2372,5 +2372,16 @@ script_messages["adwisp-notify"]("Saved", 1)
 assert_equal(observed_state.notification and observed_state.notification.text,
     "Saved", "adwisp-notify should expose the notification text")
 
+
+
+key_bindings["adwisp-context-menu"].callback({ event = "down" })
+assert_true(track_menu_text():find("Quick actions", 1, true) ~= nil,
+    "right-click should open the quick-actions menu")
+local commands_before_context_action = #commands
+key_bindings["adwisp-context-1"].callback({ event = "down" })
+assert_true(#commands > commands_before_context_action,
+    "choosing a quick action should issue a command")
+assert_equal(commands[#commands][1], "cycle",
+    "the first quick action should toggle pause")
 
 print("All mocked mpv API tests passed.")

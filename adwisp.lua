@@ -771,17 +771,59 @@ local function preference_values()
     }
 end
 
+local function open_context_menu()
+    clear_track_menu()
+    if not state.visible then show_osd() end
+    local actions = {
+        { label = state.paused and "Play" or "Pause", hint = "Space",
+          command = { "cycle", "pause" } },
+        { label = "Next chapter", hint = ">", command = { "add", "chapter", 1 } },
+        { label = "Previous chapter", hint = "<", command = { "add", "chapter", -1 } },
+        { label = "Playlist", hint = "Ctrl+Alt+F12", command = { "script-message", "adwisp-playlist-menu" } },
+        { label = "Audio tracks", hint = "Ctrl+Alt+F10",
+          command = { "script-message", "adwisp-audio-menu" } },
+        { label = "Subtitle tracks", hint = "Ctrl+Alt+F11",
+          command = { "script-message", "adwisp-subtitle-menu" } },
+        { label = "Settings", hint = "Ctrl+Alt+F4",
+          command = { "script-message", "adwisp-settings" } },
+    }
+    local lines = { "Quick actions" }
+    for index, action in ipairs(actions) do
+        lines[#lines + 1] = string.format("%d. %s  %s", index, action.label, action.hint)
+        local name = "adwisp-context-" .. index
+        track_menu_binding_names[#track_menu_binding_names + 1] = name
+        mp.add_key_binding(tostring(index), name, function()
+            local command = action.command
+            clear_track_menu()
+            mp.commandv(table.unpack(command, 1, #command))
+        end)
+    end
+    lines[#lines + 1] = "Esc closes the menu"
+    local escape_name = "adwisp-context-escape"
+    track_menu_binding_names[#track_menu_binding_names + 1] = escape_name
+    mp.add_key_binding("ESC", escape_name, function() clear_track_menu() end)
+    show_track_menu(lines, nil)
+end
+
 local function show_preferences()
     local lines = {
-        "Adwisp preferences",
-        "seek_step = " .. tostring(opts.seek_step) .. " seconds",
-        "volume_step = " .. tostring(opts.volume_step) .. " percent",
-        "thumbnail_preview = " .. (opts.thumbnail_preview and "yes" or "no"),
-        "theme_file = " .. (opts.theme_file ~= "" and opts.theme_file or "(built-in theme)"),
+        "Settings",
+        "General",
+        "  seek_step = " .. tostring(opts.seek_step) .. " seconds",
+        "  volume_step = " .. tostring(opts.volume_step) .. " percent",
+        "  thumbnail_preview = " .. (opts.thumbnail_preview and "yes" or "no"),
+        "  theme_file = " .. (opts.theme_file ~= "" and opts.theme_file or "(built-in theme)"),
+        "Playback",
+        "  speed = " .. string.format("%.2g",
+            type(state.speed) == "number" and state.speed == state.speed and state.speed or 1) .. "x",
+        "  loop = " .. tostring(state.loop_file or "no"),
+        "Video",
+        "  zoom = " .. string.format("%.2g",
+            type(state.image_zoom) == "number" and state.image_zoom == state.image_zoom
+            and state.image_zoom or 0),
         "Set: script-message adwisp-setting-set <key> <value>",
-        "Reset: script-message adwisp-setting-reset <key>",
     }
-    mp.commandv("show-text", table.concat(lines, "\n"), 7000)
+    show_track_menu(lines, nil)
 end
 
 local function set_preference(key, raw_value)
@@ -2435,6 +2477,7 @@ local registered_key_bindings = {
     ["CTRL+ALT+F10"] = "adwisp-audio-menu",
     ["CTRL+ALT+F11"] = "adwisp-subtitle-menu",
     ["CTRL+ALT+F12"] = "adwisp-playlist-menu",
+    ["MBTN_RIGHT"] = "adwisp-context-menu",
     ["CTRL+ALT+PGUP"] = "temporary playlist page-up",
     ["CTRL+ALT+PGDWN"] = "temporary playlist page-down",
 }
@@ -2605,6 +2648,7 @@ register_configurable_key_binding("screenshot_key", "adwisp-screenshot", functio
     mp.commandv("screenshot")
 end, "CTRL+ALT+S")
 mp.add_key_binding("MBTN_LEFT", "adwisp-mouse-click", handle_mouse_click, { complex = true })
+mp.add_key_binding("MBTN_RIGHT", "adwisp-context-menu", open_context_menu)
 mp.add_key_binding("mouse_move", "adwisp-mouse-move", handle_mouse_move, { complex = true })
 
 local library_dependencies = {
