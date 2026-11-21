@@ -35,7 +35,7 @@ To install from source, copy:
 - `main.lua`, `adwisp.lua`, and the complete `core/` directory to `~/.config/mpv/scripts/adwisp/`. mpv needs `main.lua` to load a script directory.
 - `script-opts/adwisp.conf` to `~/.config/mpv/script-opts/adwisp.conf`.
 
-Restart mpv and open a media file. Adwisp is visible by default and stays visible across files; press `g` to toggle it off and on.
+Add `osc=no` to your `mpv.conf` so mpv's built-in on-screen controller does not overlap Adwisp. Restart mpv and open a media file. Adwisp is visible by default and stays visible across files; press `g` to toggle it off and on.
 
 ## Quick controls
 
