@@ -7,6 +7,7 @@ local script_messages = {}
 local commands = {}
 local overlays = {}
 local timers = {}
+local periodic_timers = {}
 local mouse_x, mouse_y = 0, 0
 local thumbfast_payload
 local properties = {}
@@ -57,6 +58,10 @@ local mp = {
             return args[2]
         end
         return nil
+    end,
+    add_periodic_timer = function(seconds, callback)
+        periodic_timers[#periodic_timers + 1] = { seconds = seconds, callback = callback }
+        return { kill = function() end }
     end,
     add_timeout = function(seconds, callback)
         local timer = { timeout = seconds, callback = callback, killed = false }
@@ -2392,5 +2397,34 @@ assert_true(track_menu_text():find("Menu", 1, true) ~= nil
 key_bindings["adwisp-main-menu-2"].callback({ event = "down" })
 assert_true(track_menu_text():find("Play / Pause", 1, true) ~= nil,
     "choosing a category should open its submenu")
+
+
+local theme_timer = periodic_timers[#periodic_timers]
+assert_true(theme_timer ~= nil, "a theme watcher should be registered")
+local theme_fixture = os.tmpname()
+local theme_file = io.open(theme_fixture, "w")
+theme_file:write("accent=#123456\n")
+theme_file:close()
+option_fixture = package.loaded["mp.options"].last_options
+option_fixture.theme_file = theme_fixture
+option_fixture.log_level = "info"
+script_messages["adwisp-reload-theme"]()
+local utils_mock = package.loaded["mp.utils"]
+local real_file_info = utils_mock.file_info
+local fake_mtime = 100
+utils_mock.file_info = function(path)
+    if path == theme_fixture then
+        return { is_file = true, mtime = fake_mtime }
+    end
+    return real_file_info(path)
+end
+theme_timer.callback()
+fake_mtime = 101
+local logs_before_theme_change = #logs.info
+theme_timer.callback()
+assert_true(#logs.info > logs_before_theme_change,
+    "changing the Matugen palette should trigger a reload")
+utils_mock.file_info = real_file_info
+os.remove(theme_fixture)
 
 print("All mocked mpv API tests passed.")

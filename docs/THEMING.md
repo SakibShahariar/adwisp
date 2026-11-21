@@ -49,6 +49,33 @@ Use an absolute path to avoid ambiguity about mpv working directory. Colors are 
 - If the file is unreadable or contains no valid palette entries, Adwisp keeps the last successfully loaded palette. If no custom palette has loaded successfully yet, the built-in palette remains active.
 - A partial file with at least one valid entry loads those entries and uses built-in values for missing roles.
 
+## Matugen flow (automatic)
+
+To make Adwisp follow your wallpaper palette, add a Matugen template that emits
+the six semantic keys and point `theme_file` at the generated file:
+
+```ini
+background={{colors.background.default.hex}}
+surface={{colors.surface.default.hex}}
+text={{colors.on_surface.default.hex}}
+muted={{colors.on_surface_variant.default.hex}}
+accent={{colors.primary.default.hex}}
+on_accent={{colors.on_primary.default.hex}}
+```
+
+Register it in `~/.config/matugen/config.toml` with an `output_path` such as
+`~/.config/mpv/adwisp-matugen.conf`, then set an **absolute** path in
+`script-opts/adwisp.conf`:
+
+```ini
+theme_file=/home/you/.config/mpv/adwisp-matugen.conf
+```
+
+Adwisp watches the configured file every 2 seconds and reloads the palette
+whenever its modification time changes, so a normal Matugen regeneration flows
+into the OSD without restarting mpv. If Matugen also generates your `mpv.conf`,
+keep `osc=no` in that template so Adwisp remains the only control overlay.
+
 ## Live reload
 
 Run this mpv command after regenerating or editing the palette:

@@ -724,6 +724,7 @@ local function note_activity()
 end
 
 local active_palette
+local theme_mtime
 
 local function reload_theme()
     local palette, source, err, diagnostics = Theme.load(opts.theme_file)
@@ -758,9 +759,35 @@ local function reload_theme()
         mp.msg.warn("Adwisp: theme reload failed; keeping the previous palette: "
             .. tostring(err))
     end
+
+    if opts.theme_file ~= "" then
+        local ok, info = pcall(utils.file_info, opts.theme_file)
+        theme_mtime = ok and type(info) == "table" and info.mtime or nil
+    else
+        theme_mtime = nil
+    end
 end
 
 reload_theme()
+
+-- Follow Matugen palette updates: a light periodic check only while a theme
+-- file is configured. No redraw happens until the file actually changes.
+if type(mp.add_periodic_timer) == "function" then
+    mp.add_periodic_timer(2, function()
+        if opts.theme_file == "" then return end
+        local ok, info = pcall(utils.file_info, opts.theme_file)
+        local mtime = ok and type(info) == "table" and info.mtime or nil
+        if not mtime then return end
+        if not theme_mtime then
+            theme_mtime = mtime
+            return
+        end
+        if mtime ~= theme_mtime then
+            log_info("theme file changed; reloading palette.")
+            reload_theme()
+        end
+    end)
+end
 
 local function preference_values()
     return {
