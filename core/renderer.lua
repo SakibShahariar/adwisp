@@ -413,11 +413,13 @@ function Renderer:render()
     -- Transport
     local tr = layout.transport
     for _, rect in ipairs({tr.repeat_left, tr.prev, tr.next, tr.repeat_right}) do
-        osd[#osd + 1] = shape(rect.x, rect.y, colors.text, "&H30&", circle_path(rect.width))
+        -- Raised circular icon button: surface fill + subtle outline.
+        osd[#osd + 1] = ring(rect.x, rect.y, rect.width, rect.height,
+            rect.width / 2, colors.muted, "&H28&", colors.surface, "&H24&", 1)
     end
     local function glyph(rect, kind)
-        osd[#osd + 1] = shape(rect.x + inset(8), rect.y + inset(8),
-            colors.background, "&H10&", icon_path(kind, rect.width - inset(16)))
+        osd[#osd + 1] = shape(rect.x + inset(6), rect.y + inset(6),
+            colors.text, "&H10&", icon_path(kind, rect.width - inset(12)))
     end
     glyph(tr.repeat_left, "repeat"); glyph(tr.prev, "prev")
     glyph(tr.next, "next"); glyph(tr.repeat_right, "repeat")
@@ -461,8 +463,9 @@ function Renderer:render()
         and math.max(0.01, math.min(100, state.speed)) or 1
     local action = translate(state, state.paused and "play" or "pause",
         state.paused and "Play" or "Pause")
-    txt(layout.title.x, panel.y - inset(22), 4, 11 * scale, colors.text,
-        action .. "  " .. string.format("%.2g×", speed))
+    -- Playback action/speed beside the time label.
+    txt(layout.time_label.x + inset(240), layout.time_label.y, 4, 11 * scale,
+        colors.muted, action .. "  " .. string.format("%.2g×", speed))
     local volume_text = state.mute and translate(state, "muted", "Muted")
         or (volume_value <= 20 and translate_format(state, "low_volume",
             "Low volume %d%%", px(volume_value))
