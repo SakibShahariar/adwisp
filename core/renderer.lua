@@ -335,34 +335,33 @@ function Renderer:render()
             icon_path("menu", hb.height - inset(8)))
         txt(tb.x + tb.width / 2, tb.y + tb.height / 2 - inset(10), 5,
             20 * scale, colors.text, "mpv", true)
-        -- Three uniform GTK-style icon buttons: min, max, close.
+        -- Three uniform GNOME-style circular icon buttons (subtle surface fill,
+        -- light stroked glyphs) — no accent-filled close button.
         local wc = layout.window_controls
         local btn = wc.button
         local gap = wc.gap
-        local function wc_button(index, kind, accent)
+        local function wc_button(index, kind)
             local bx = wc.x + (btn + gap) * (index - 1)
-            local face = accent and colors.accent or colors.surface
-            local face_alpha = accent and "&H20&" or "&H1C&"
-            osd[#osd + 1] = shape(bx, wc.y, face, face_alpha,
-                rounded_rect_path(btn, btn, inset(6)))
-            local m = math.floor(btn * 0.3)
+            osd[#osd + 1] = shape(bx, wc.y, colors.text, "&H0C&",
+                circle_path(btn))
+            local m = math.floor(btn * 0.28)
             local d = btn - m * 2
             if kind == "min" then
                 osd[#osd + 1] = shape(bx + m, wc.y + btn / 2 - inset(1),
                     colors.text, "&H10&", rect_path(d, inset(2)))
             elseif kind == "max" then
                 osd[#osd + 1] = ring(bx + m, wc.y + m, d, d, inset(1),
-                    colors.text, "&H10&", colors.background, "&H00&", inset(1))
+                    colors.text, "&H10&", colors.surface, "&H00&", inset(1))
             else
                 osd[#osd + 1] = string.format(
                     "{\\an7\\pos(%d,%d)\\bord%d\\shad0\\1a&HFE&\\3c%s\\p1}"
                         .. "m 0 0 l %d %d m %d 0 l 0 %d{\\p0}",
-                    bx + m, wc.y + m, inset(2), colors.on_accent, d, d, d, d)
+                    bx + m, wc.y + m, inset(1), colors.text, d, d, d, d)
             end
         end
-        wc_button(1, "min", false)
-        wc_button(2, "max", false)
-        wc_button(3, "close", true)
+        wc_button(1, "min")
+        wc_button(2, "max")
+        wc_button(3, "close")
     end
 
     -- Scrim: 0x00 opaque, 0xFF transparent. Top ~31% opaque, bottom ~96%.
