@@ -38,7 +38,7 @@ function Layout.compute(width, height, options)
     local compact = height < 300 or width < 640
     local dense = height < 220 or width < 400
 
-    local scrim_height = scaled(math.floor(clamp(height * 0.30, 92, 168)))
+    local scrim_height = scaled(math.floor(clamp(height * 0.36, 130, 220)))
     local pad = clamp(math.floor(width * 0.022), 10, 32)
     local x = 0
     local y = height - scrim_height
@@ -70,14 +70,14 @@ function Layout.compute(width, height, options)
     local time_label = {
         x = pad + (progress_label.visible and 60 or 0), y = bar_y + 14,
         width = 180, visible = not minimal_timeline,
-        compact = false, current_only = false, font_size = dense and 11 or 12,
+        compact = false, current_only = false, font_size = dense and 14 or 16,
     }
 
     local cy = y + math.floor(scrim_height * 0.70)
     local center_x = math.floor(width / 2)
-    local play_size = math.min(scaled(dense and 32 or 40), math.floor(scrim_height * 0.30))
-    local nav_size = scaled(dense and 24 or 32)
-    local nav_offset = dense and 48 or 68
+    local play_size = math.min(scaled(dense and 40 or 56), math.floor(scrim_height * 0.34))
+    local nav_size = scaled(dense and 30 or 40)
+    local nav_offset = dense and 56 or 84
     local prev = { x = center_x - nav_offset - math.floor(nav_size / 2),
         y = cy - math.floor(nav_size / 2), width = nav_size, height = nav_size }
     local play = { x = center_x - math.floor(play_size / 2),

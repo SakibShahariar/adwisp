@@ -499,10 +499,10 @@ function Renderer:render()
     -- Bottom scrim: a solid base plus a short soft fade at the top edge.
     -- A few tightly spaced bands avoid the visible striping of a full-height
     -- gradient while preserving the elevated, video-first look.
-    local scrim_ass = shape(0, panel.y, colors.background, "&H0C&",
+    local scrim_ass = shape(0, panel.y, colors.background, "&H18&",
         rect_path(panel.width, panel.height))
-    local fade_bands = 16
-    local fade_height = math.min(48, panel.height)
+    local fade_bands = 8
+    local fade_height = math.min(64, panel.height)
     for index = 1, fade_bands do
         local alpha = math.floor(64 - (index - 1) * (52 / (fade_bands - 1)) + 0.5)
         local top = panel.y + math.floor((index - 1) * fade_height / fade_bands)
@@ -672,19 +672,19 @@ function Renderer:render()
         .. string.format([[
 {\an7\pos(%d,%d)\fnAdwaita Sans\fs18\b1\1c%s}%s
 {\an9\pos(%d,%d)\fnAdwaita Sans\fs11\1c%s}%s
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs12\1c%s}%s
-{\an8\pos(%d,%d)\fnAdwaita Sans\fs12\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs16\1c%s}%s
+{\an8\pos(%d,%d)\fnAdwaita Sans\fs14\1c%s}%s
 {\an7\pos(%d,%d)\fnAdwaita Sans\fs%s\b1\1c%s}%s
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs12\1c%s}%s
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs12\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs14\1c%s}%s
+{\an7\pos(%d,%d)\fnAdwaita Sans\fs14\1c%s}%s
 ]],
         title_pos.x, title_pos.y, colors.text, "",
         layout.status.x + layout.status.width, layout.status.y, colors.accent, status_text,
         time_pos_label.x, time_pos_label.y, colors.text, time_text,
         preview_label_x or 0, preview_label_y or 0, colors.accent, preview_label,
-        time_pos_label.x + math.floor(200 * ui_scale), time_pos_label.y,
-        layout.dense and "11" or "12", colors.muted, playback_label,
-        volume.x + volume.width - math.floor(60 * ui_scale), layout.volume.y + 2,
+        time_pos_label.x + math.floor(260 * ui_scale), time_pos_label.y,
+        layout.dense and "13" or "16", colors.muted, playback_label,
+        volume.x + volume.width - math.floor(70 * ui_scale), layout.volume.y + 2,
         volume_label_color, volume_label,
         playlist.x, playlist.y, colors.muted, playlist_label
     )

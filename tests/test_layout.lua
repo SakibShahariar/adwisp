@@ -28,7 +28,7 @@ local function test_standard_layout()
     assert_equal(layout.panel.width, 1280, "scrim should span the full width")
     assert_equal(layout.panel.y + layout.panel.height, 720,
         "scrim should sit at the bottom of the OSD")
-    assert_true(layout.panel.height >= 92 and layout.panel.height <= 168,
+    assert_true(layout.panel.height >= 130 and layout.panel.height <= 220,
         "scrim height should be clamped")
     inside(layout.thumbnail, layout.panel, "thumbnail")
     inside(layout.title, layout.panel, "title")
