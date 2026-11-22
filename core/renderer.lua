@@ -342,7 +342,7 @@ function Renderer:render()
         local gap = wc.gap
         local function wc_button(index, kind)
             local bx = wc.x + (btn + gap) * (index - 1)
-            osd[#osd + 1] = shape(bx, wc.y, colors.text, "&H0C&",
+            osd[#osd + 1] = shape(bx, wc.y, colors.muted, "&H14&",
                 circle_path(btn))
             local m = math.floor(btn * 0.28)
             local d = btn - m * 2
