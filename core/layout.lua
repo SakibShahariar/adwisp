@@ -34,8 +34,12 @@ function Layout.compute(width, height, options)
     -- Title bar
     local title_bar = { x = 0, y = 0, width = width, height = s(48) }
     local hamburger = { x = pad, y = s(12), width = s(24), height = s(24) }
-    local window_controls = { x = width - pad - s(96), y = s(12),
-        width = s(96), height = s(24) }
+    local wc_btn = s(28)
+    local wc_gap = s(4)
+    local wc_width = wc_btn * 3 + wc_gap * 2
+    local window_controls = { x = width - pad - wc_width - s(8),
+        y = math.floor((title_bar.height - wc_btn) / 2),
+        width = wc_width, height = wc_btn, button = wc_btn, gap = wc_gap }
 
     -- Media row
     local thumb_size = s(40)
