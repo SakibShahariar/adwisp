@@ -335,11 +335,25 @@ function Renderer:render()
             icon_path("menu", hb.height - inset(8)))
         txt(tb.x + tb.width / 2, tb.y + tb.height / 2 - inset(10), 5,
             20 * scale, colors.text, "mpv", true)
+        -- Window controls: minimize bar, hollow maximize square, accent close button with X.
         local wc = layout.window_controls
-        local step = wc.width / 3
-        txt(wc.x + step * 0.5, wc.y - inset(4), 5, 18 * scale, colors.text, "-")
-        txt(wc.x + step * 1.5, wc.y - inset(4), 5, 14 * scale, colors.text, "□")
-        txt(wc.x + step * 2.5, wc.y - inset(4), 5, 18 * scale, colors.accent, "×", true)
+        local btn = inset(20)
+        local gap = inset(6)
+        local cy = wc.y + btn / 2
+        osd[#osd + 1] = shape(wc.x, cy - inset(1), colors.text, "&H10&",
+            rect_path(btn, inset(2)))
+        local max_x = wc.x + btn + gap
+        osd[#osd + 1] = ring(max_x, wc.y, btn, btn, inset(1),
+            colors.text, "&H10&", colors.background, "&H00&", inset(1))
+        local close_x = max_x + btn + gap
+        osd[#osd + 1] = shape(close_x, wc.y, colors.accent, "&H10&",
+            rounded_rect_path(btn, btn, inset(4)))
+        local m = inset(5)
+        local d = btn - m * 2
+        osd[#osd + 1] = string.format(
+            "{\\an7\\pos(%d,%d)\\bord%d\\shad0\\1a&HFE&\\3c%s\\p1}"
+                .. "m 0 0 l %d %d m %d 0 l 0 %d{\\p0}",
+            close_x + m, wc.y + m, inset(2), colors.on_accent, d, d, d, d)
     end
 
     -- Scrim: 0x00 opaque, 0xFF transparent. Top ~31% opaque, bottom ~96%.
