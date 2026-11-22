@@ -360,7 +360,7 @@ function Renderer:render()
         circle_path(thumb.width - inset(20)))
     local title_text = state.title ~= "" and state.title or "Adwisp"
     local title_chars = math.max(4, math.floor(layout.title.width / (13 * scale * 0.56)))
-    txt(layout.title.x, layout.title.y, 4, 15 * scale, colors.text,
+    txt(layout.title.x, layout.title.y, 4, 18 * scale, colors.text,
         truncate_title(title_text, title_chars))
     txt(layout.media_actions.x, layout.media_actions.y, 6, 13 * scale, colors.muted, "⛶  ⋯")
 
@@ -436,7 +436,7 @@ function Renderer:render()
     -- Time and secondary labels
     if layout.time_label.visible then
         local now, total = fmt_time(state.time_pos), fmt_time(state.duration)
-        txt(layout.time_label.x, layout.time_label.y, 4, 14 * scale, colors.text,
+        txt(layout.time_label.x, layout.time_label.y, 4, 17 * scale, colors.text,
             now .. " / " .. total)
     end
     if width >= 640 and layout.progress_label.visible then
@@ -445,9 +445,10 @@ function Renderer:render()
     end
     local speed = is_finite_number(state.speed)
         and math.max(0.01, math.min(100, state.speed)) or 1
-    txt(play.x + play.width + inset(12), layout.time_label.y, 4, 12 * scale, colors.text,
-        translate(state, state.paused and "play" or "pause",
-            state.paused and "Play" or "Pause") .. "  " .. string.format("%.2g", speed) .. "×")
+    local action = translate(state, state.paused and "play" or "pause",
+        state.paused and "Play" or "Pause")
+    txt(layout.title.x, panel.y - inset(22), 4, 11 * scale, colors.text,
+        action .. "  " .. string.format("%.2g×", speed))
     local volume_text = state.mute and translate(state, "muted", "Muted")
         or (volume_value <= 20 and translate_format(state, "low_volume",
             "Low volume %d%%", px(volume_value))
