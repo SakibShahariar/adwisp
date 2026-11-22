@@ -49,6 +49,11 @@ local function truncate_title(value, max_chars)
     return value:sub(1, pos - 1) .. "…"
 end
 
+local function s(v)
+    return math.floor((type(v) == "number" and v == v
+        and v ~= math.huge and v ~= -math.huge and v or 0) + 0.5)
+end
+
 local function is_finite_number(value)
     return type(value) == "number" and value == value
         and value ~= math.huge and value ~= -math.huge
@@ -289,11 +294,7 @@ end
 
 function Renderer:render()
     local state = self.state
-    if not state.visible then
-        self:clear()
-        return
-    end
-
+    if not state.visible then self:clear(); return end
     local width, height = self.mp.get_osd_size()
     if not width or not height or width <= 0 or height <= 0 then return end
 
@@ -301,468 +302,262 @@ function Renderer:render()
     local duration = is_finite_number(state.duration) and state.duration or 0
     local volume_value = is_finite_number(state.volume) and state.volume or 0
     volume_value = math.max(0, math.min(100, volume_value))
-    local now = fmt_time(state.time_pos)
-    local total = fmt_time(state.duration)
-    local progress = 0
-    if duration > 0 then
-        progress = math.max(0, math.min(1, time_pos / duration))
-    end
+    local progress = duration > 0 and math.max(0, math.min(1, time_pos / duration)) or 0
 
-    local layout_options = type(state.layout_options) == "table"
-        and state.layout_options or {}
-    local layout = Layout.compute(width, height, layout_options)
+    local options = type(state.layout_options) == "table" and state.layout_options or {}
+    options.ui_scale = state.ui_scale or options.ui_scale
+    options.fullscreen = state.fullscreen == true
+    local layout = Layout.compute(width, height, options)
     if not layout then return end
-    local top_zone_visible = not layout.top_zone
-        or layout_options.top_zone_visibility ~= "hover"
-        or state.hover_zone == "top" or state.focus_target == "playlist"
-    local bottom_zone_visible = not layout.top_zone
-        or layout_options.bottom_zone_visibility ~= "hover"
-        or state.hover_zone == "bottom" or state.focus_target == "playback"
-        or state.focus_target == "volume" or state.focus_target == "timeline"
     local panel = layout.panel
-    local title_pos = layout.title
-    local title_font_size = layout.compact and 20 or 26
-    local status_labels = {}
-    if state.buffering == true then
-        local buffering_progress = is_finite_number(state.buffering_progress)
-            and math.max(0, math.min(100, state.buffering_progress)) or 0
-        if layout.compact and title_pos.width < 240 then
-            status_labels[#status_labels + 1] = translate(state, "buffering", "Buffering")
-        else
-            status_labels[#status_labels + 1] = translate_format(state, "buffering_percent", "Buffering %d%%",
-                math.floor(buffering_progress + 0.5))
-        end
-    end
-    local loop_file = state.loop_file
-    if loop_file == "inf" or (is_finite_number(tonumber(loop_file)) and tonumber(loop_file) > 0) then
-        status_labels[#status_labels + 1] = translate(state, "loop", "Loop")
-    end
-    local loop_a = is_finite_number(state.ab_loop_a) and state.ab_loop_a or -1
-    local loop_b = is_finite_number(state.ab_loop_b) and state.ab_loop_b or -1
-    if loop_a >= 0 and loop_b >= 0 then
-        status_labels[#status_labels + 1] = "A–B"
-    elseif loop_a >= 0 then
-        status_labels[#status_labels + 1] = "A"
-    elseif loop_b >= 0 then
-        status_labels[#status_labels + 1] = "B"
-    end
-    if state.image_mode == true then
-        local image_zoom = is_finite_number(state.image_zoom)
-            and math.max(-4, math.min(4, state.image_zoom)) or 0
-        status_labels[#status_labels + 1] = translate_format(state, "image_zoom",
-            "Image · Zoom %d%%", math.floor(100 * (2 ^ image_zoom) + 0.5))
-    end
-    if type(state.chapter_title) == "string" and state.chapter_title ~= "" then
-        status_labels[#status_labels + 1] = translate_format(state, "chapter_status", "Chapter: %s", truncate_title(state.chapter_title, 14))
-    end
-    if (tonumber(state.audio_track_count) or 0) > 0 then
-        local audio_label = type(state.audio_track_label) == "string"
-            and state.audio_track_label ~= "" and state.audio_track_label or "—"
-        status_labels[#status_labels + 1] = translate_format(state, "audio_status", "A: %s", truncate_title(audio_label, 10))
-    end
-    if (tonumber(state.subtitle_track_count) or 0) > 0 then
-        local subtitle_label = type(state.subtitle_track_label) == "string"
-            and state.subtitle_track_label ~= "" and state.subtitle_track_label or "Off"
-        if subtitle_label == "Off" then
-            subtitle_label = translate(state, "off", "Off")
-        end
-        status_labels[#status_labels + 1] = translate_format(state, "subtitle_status", "S: %s", truncate_title(subtitle_label, 10))
-    end
-    local status_text = escape_ass(truncate_title(table.concat(status_labels, " · "), 64))
-    local title_chars = math.max(6,
-        math.floor(title_pos.width / (title_font_size * 0.56)))
-    local title = escape_ass(truncate_title(
-        state.title ~= "" and state.title or "Adwisp", title_chars
-    ))
-    local playback = layout.playback
-    local volume = layout.volume
-    local timeline = layout.timeline
-    local progress_label = layout.progress_label
-    local time_label = layout.time_label
-    local playlist = layout.playlist
-    local playlist_label = ""
-    local playlist_count = is_finite_number(state.playlist_count)
-        and math.max(0, math.floor(state.playlist_count)) or 0
-    if playlist_count >= 2 then
-        playlist_label = translate(state, "playlist_controls", "‹    Previous       Next    ›")
-        if is_finite_number(state.playlist_pos) and state.playlist_pos >= 0 then
-            local playlist_pos = math.floor(state.playlist_pos)
-            if playlist_pos < playlist_count then
-                playlist_label = translate_format(state, "playlist_controls_position", "‹    Previous      %d / %d      Next    ›",
-                    playlist_pos + 1, playlist_count)
-            end
-        end
-    end
-    local playlist_max_chars = math.max(8, math.floor(width / (12 * 0.56)))
-    playlist_label = escape_ass(truncate_title(playlist_label, playlist_max_chars))
-    local filled = math.floor(timeline.width * progress)
-    local pause_label = state.paused and translate(state, "play", "Play") or translate(state, "pause", "Pause")
-    local playback_label = escape_ass(string.format("%s  %.2g×", pause_label,
-        is_finite_number(state.speed) and math.max(0.01, math.min(100, state.speed)) or 1))
-    local volume_label = state.mute and translate(state, "muted", "Muted")
-        or (volume_value <= 20 and translate_format(state, "low_volume", "Low volume %d%%", math.floor(volume_value + 0.5))
-            or translate_format(state, "volume", "Volume %d%%", math.floor(volume_value + 0.5)))
-    volume_label = escape_ass(volume_label)
-    local progress_text = progress_label.visible
-        and string.format("%d%%", math.floor(progress * 100 + 0.5)) or ""
-    local time_text = ""
-    if time_label.visible then
-        if time_label.current_only then
-            time_text = now
-        elseif time_label.compact then
-            time_text = now .. "/" .. total
-        else
-            time_text = now .. " / " .. total
-        end
-        if progress_text ~= "" then time_text = time_text .. "  " .. progress_text end
-    end
-
-    local preview_label = ""
-    local preview_label_x, preview_label_y
-    if state.preview_visible == true and is_finite_number(state.preview_time) then
-        preview_label = fmt_time(state.preview_time)
-        local preview_width = is_finite_number(state.preview_width)
-            and math.max(0, state.preview_width) or 0
-        local preview_height = is_finite_number(state.preview_height)
-            and math.max(0, state.preview_height) or 0
-        if preview_width > 0 and preview_height > 0 then
-            local preview_x = is_finite_number(state.preview_x) and state.preview_x or 0
-            local preview_y = is_finite_number(state.preview_y) and state.preview_y or 0
-            local horizontal_margin = math.min(40, width / 2)
-            preview_label_x = math.max(horizontal_margin, math.min(
-                width - horizontal_margin, preview_x + preview_width / 2))
-            preview_label_y = preview_y - 20
-            if preview_label_y < 8 then
-                preview_label_y = preview_y + preview_height + 8
-            end
-            local vertical_margin = math.min(8, height / 2)
-            preview_label_y = math.max(vertical_margin, math.min(
-                height - vertical_margin, preview_label_y))
-            -- ASS positions are integer pixels; mouse-derived values may be fractional.
-            preview_label_x = math.floor(preview_label_x + 0.5)
-            preview_label_y = math.floor(preview_label_y + 0.5)
-        else
-            preview_label = ""
-        end
-    end
-
-    local font_family = safe_font_family(layout_options.font_family)
-    local font_scale = layout_options.font_scale
-    if not is_finite_number(font_scale) then font_scale = 1 end
+    local scale = layout.scale
+    local font_scale = is_finite_number(options.font_scale) and options.font_scale or 1
     font_scale = math.max(0.75, math.min(1.25, font_scale))
-    local ui_scale = layout_options.ui_scale
-    if not is_finite_number(ui_scale) or ui_scale <= 0 then ui_scale = 1 end
-    ui_scale = math.max(0.5, math.min(4, ui_scale))
-
     local colors = Theme.to_ass(state.palette)
-    local volume_label_color = (state.mute or volume_value <= 20)
-        and colors.accent or colors.muted
-    local transport = layout.transport
-    local panel = layout.panel
-    local time_pos_label = layout.time_label
-    local volume_fill = math.floor(volume.track.width * volume_value / 100)
+    local font_family = safe_font_family(options.font_family)
 
-    local focus_geometry
-    if state.focus_target == "playback" then
-        focus_geometry = layout.playback
-    elseif state.focus_target == "volume" then
-        focus_geometry = layout.volume
-    elseif state.focus_target == "playlist" and playlist_count >= 2 then
-        focus_geometry = layout.playlist
-    elseif state.focus_target == "timeline" then
-        focus_geometry = {
-            x = layout.timeline.x, y = layout.timeline.y - 6,
-            width = layout.timeline.width, height = layout.timeline.height + 12,
-        }
+    local osd = {}
+    local function px(v) return math.floor(v + 0.5) end
+    local function txt(x, y, align, size, color, value, bold)
+        osd[#osd + 1] = string.format("{\\an%d\\pos(%d,%d)\\fn%s\\fs%d\\b%d\\1c%s}%s",
+            align or 4, px(x), px(y), font_family, math.max(1, px(size * font_scale)),
+            bold and 1 or 0, color, escape_ass(tostring(value or "")))
     end
-    local focus_ass = ""
-    if focus_geometry then
-        focus_ass = ring(focus_geometry.x - 4, focus_geometry.y - 4,
-            focus_geometry.width + 8, focus_geometry.height + 8,
-            math.min(14, (focus_geometry.height + 8) / 2),
-            colors.accent, "&H40&", colors.accent, "&HF0&", 2)
-    end
+    local function inset(base) return px(base * scale) end
 
-    if not top_zone_visible or state.fullscreen == true then
-        title = ""
-        status_text = ""
-        playlist_label = ""
-    end
-    if not bottom_zone_visible then
-        playback_label = ""
-        volume_label = ""
-        progress_text = ""
-        time_text = ""
-        preview_label = ""
+    -- Title bar
+    if not state.fullscreen then
+        local tb = layout.title_bar
+        osd[#osd + 1] = shape(tb.x, tb.y, colors.background, "&H18&",
+            rect_path(tb.width, tb.height))
+        local hb = layout.hamburger
+        osd[#osd + 1] = shape(hb.x, hb.y + inset(4), colors.text, "&H10&",
+            icon_path("menu", hb.height - inset(8)))
+        txt(tb.x + tb.width / 2, tb.y + tb.height / 2 - inset(10), 5,
+            20 * scale, colors.text, "mpv", true)
+        local wc = layout.window_controls
+        local step = wc.width / 3
+        txt(wc.x + step * 0.5, wc.y - inset(4), 5, 18 * scale, colors.text, "-")
+        txt(wc.x + step * 1.5, wc.y - inset(4), 5, 14 * scale, colors.text, "□")
+        txt(wc.x + step * 2.5, wc.y - inset(4), 5, 18 * scale, colors.accent, "×", true)
     end
 
-    -- Bottom scrim: a solid base plus a short soft fade at the top edge.
-    -- A few tightly spaced bands avoid the visible striping of a full-height
-    -- gradient while preserving the elevated, video-first look.
-    local scrim_ass = shape(0, panel.y, colors.background, "&H18&",
-        rect_path(panel.width, panel.height))
-    local fade_bands = 8
-    local fade_height = math.min(64, panel.height)
-    for index = 1, fade_bands do
-        local alpha = math.floor(64 - (index - 1) * (52 / (fade_bands - 1)) + 0.5)
-        local top = panel.y + math.floor((index - 1) * fade_height / fade_bands)
-        local bottom = panel.y + math.floor(index * fade_height / fade_bands)
-        scrim_ass = scrim_ass .. shape(0, top,
-            colors.background, string.format("&H%02X&", alpha),
-            rect_path(panel.width, math.max(1, bottom - top + 1)))
+    -- Scrim: 0x00 opaque, 0xFF transparent. Top ~31% opaque, bottom ~96%.
+    local bands = 12
+    for i = 1, bands do
+        local alpha = px(0x10 - (i - 1) * (0x10 - 0x04) / (bands - 1))
+        local y0 = panel.y + math.floor((i - 1) * panel.height / bands)
+        local y1 = panel.y + math.floor(i * panel.height / bands)
+        osd[#osd + 1] = shape(0, y0, colors.background,
+            string.format("&H%02X&", alpha), rect_path(panel.width, math.max(1, y1 - y0 + 1)))
     end
 
+    -- Media row
     local thumb = layout.thumbnail
-    local thumbnail_ass = ""
-    if state.fullscreen ~= true then
-        thumbnail_ass = shape(thumb.x, thumb.y, colors.surface, "&H28&",
-            rounded_rect_path(thumb.width, thumb.height, 5))
-            .. shape(thumb.x + 4, thumb.y + 4, colors.accent, "&H40&",
-                icon_path("play", math.max(8, thumb.height - 8)))
-    end
+    osd[#osd + 1] = shape(thumb.x, thumb.y, colors.surface, "&H20&",
+        rounded_rect_path(thumb.width, thumb.height, inset(5)))
+    osd[#osd + 1] = shape(thumb.x + inset(10), thumb.y + inset(10), colors.accent, "&H20&",
+        circle_path(thumb.width - inset(20)))
+    local title_text = state.title ~= "" and state.title or "Adwisp"
+    local title_chars = math.max(4, math.floor(layout.title.width / (13 * scale * 0.56)))
+    txt(layout.title.x, layout.title.y, 4, 15 * scale, colors.text,
+        truncate_title(title_text, title_chars))
+    txt(layout.media_actions.x, layout.media_actions.y, 6, 13 * scale, colors.muted, "⛶  ⋯")
 
-    local timeline = layout.timeline
-    local timeline_ass = shape(timeline.x, timeline.y, colors.muted, "&H50&",
-            rounded_rect_path(timeline.width, timeline.height, timeline.height / 2))
-        .. shape(timeline.x, timeline.y, colors.accent, "&H10&",
-            rounded_rect_path(filled, timeline.height, timeline.height / 2))
+    -- Timeline
+    local tl = layout.timeline
+    local filled = px(tl.width * progress)
+    osd[#osd + 1] = shape(tl.x, tl.y, colors.muted, "&H50&",
+        rounded_rect_path(tl.width, tl.height, tl.height / 2))
     if filled > 0 then
-        timeline_ass = timeline_ass .. shape(timeline.x + filled - 5, timeline.y - 3,
-            colors.accent, "&H10&", circle_path(10))
+        osd[#osd + 1] = shape(tl.x, tl.y, colors.accent, "&H10&",
+            rounded_rect_path(filled, tl.height, tl.height / 2))
+        osd[#osd + 1] = shape(tl.x + filled - inset(6), tl.y - inset(3),
+            colors.accent, "&H10&", circle_path(inset(12)))
     end
 
-    local controls_ass = ""
-    if bottom_zone_visible then
-        local nav = { transport.prev, transport.next }
-        for _, button in ipairs(nav) do
-            controls_ass = controls_ass
-                .. shape(button.x, button.y, colors.text, "&H10&",
-                    icon_path(button == transport.prev and "prev" or "next", button.height))
-        end
-        local play = transport.play
-        controls_ass = controls_ass
-            .. shape(play.x, play.y, colors.accent, "&H10&", circle_path(play.height))
-            .. shape(play.x + math.floor(play.height * 0.22),
-                play.y + math.floor(play.height * 0.22),
-                colors.on_accent, "&H10&",
-                icon_path(state.paused and "play" or "pause",
-                    math.floor(play.height * 0.56)))
-        local utility = { layout.fullscreen, layout.settings }
-        local utility_kinds = { "fullscreen", "settings" }
-        for index, button in ipairs(utility) do
-            controls_ass = controls_ass .. shape(button.x, button.y, colors.text, "&H28&",
-                icon_path(utility_kinds[index], button.height))
-        end
-        local icon_y = layout.volume.y + math.floor((layout.volume.height - 18) / 2)
-        controls_ass = controls_ass .. shape(volume.x, icon_y,
-            volume_label_color, "&H10&", icon_path("volume", 18))
-        local track = volume.track
-        controls_ass = controls_ass
-            .. shape(track.x, track.y, colors.muted, "&H50&",
-                rounded_rect_path(track.width, track.height, track.height / 2))
-        if volume_fill > 0 then
-            controls_ass = controls_ass
-                .. shape(track.x, track.y, colors.accent, "&H10&",
-                    rounded_rect_path(volume_fill, track.height, track.height / 2))
-                .. shape(track.x + volume_fill - 5, track.y - 3,
-                    colors.accent, "&H10&", circle_path(10))
-        end
-    end
-
-    local top_bar = layout.top_bar
-    local top_bar_ass = ""
-    if state.visible and top_bar then
-        local chapter_label = ""
-        if type(state.chapter_title) == "string" and state.chapter_title ~= "" then
-            local chapter_index = 1
-            for index, chapter in ipairs(type(state.chapter_list) == "table"
-                    and state.chapter_list or {}) do
-                if is_finite_number(chapter.time) and chapter.time <= time_pos then
-                    chapter_index = index
-                end
-            end
-            chapter_label = string.format("%d: %s", chapter_index,
-                truncate_title(state.chapter_title, 24))
-        end
-        local top_font = math.max(9, math.floor(12 * font_scale + 0.5))
-        local rendered_top_font = top_font * ui_scale
-        local title_budget = math.max(8,
-            math.floor(top_bar.width * 0.62 / (rendered_top_font * 0.58)))
-        local status_budget = math.max(4,
-            math.floor(top_bar.width * 0.30 / (rendered_top_font * 0.58)))
-        top_bar_ass = shape(top_bar.x, top_bar.y, colors.background, "&H38&",
-                rounded_rect_path(top_bar.width, top_bar.height, 8))
-            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs%d\\b1\\1c%s}%s\\n",
-                top_bar.x + 12, top_bar.y + 7, font_family, top_font, colors.text,
-                truncate_title(title, title_budget))
-            .. string.format("{\\an9\\pos(%d,%d)\\fn%s\\fs%d\\1c%s}%s\\n",
-                top_bar.x + top_bar.width - 12, top_bar.y + 8,
-                font_family, math.max(8, top_font - 1), colors.muted,
-                escape_ass(truncate_title(chapter_label, status_budget)))
-    end
-
-    local hover_timeline_ass = ""
-    if bottom_zone_visible and is_finite_number(state.hover_time)
+    -- Chapter markers
+    if (options.timeline_expanded == true or options.minimal_timeline ~= true)
         and is_finite_number(duration) and duration > 0 then
-        local hovered_x = px(timeline.x
-            + math.max(0, math.min(1, state.hover_time / duration)) * timeline.width)
-        hover_timeline_ass = shape(hovered_x - 1, timeline.y - 6,
-            colors.muted, "&H28&", rect_path(2, timeline.height + 12))
-            .. ring(hovered_x - 32, timeline.y - 36, 64, 22, 6,
-                colors.accent, "&H28&", colors.surface, "&H18&", 1)
-            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs11\\1c%s}%s\\n",
-                hovered_x - 25, timeline.y - 32, font_family, colors.text,
-                fmt_time(state.hover_time))
-    end
-
-    local filmstrip_ass = ""
-    if state.preview_visible == true and is_finite_number(state.preview_time)
-        and is_finite_number(duration) and duration > 0 then
-        local frame_width = 72
-        local frame_height = 40
-        local frame_gap = 6
-        local center = preview_label_x or math.floor(width / 2)
-        local step = duration / 16
-        for offset = -3, 3 do
-            local frame_x = center + offset * (frame_width + frame_gap)
-                - math.floor(frame_width / 2)
-            local frame_y = timeline.y - frame_height - 20
-            if frame_x >= 4 and frame_x + frame_width <= width - 4
-                and frame_y >= 4 then
-                local selected = offset == 0
-                filmstrip_ass = filmstrip_ass
-                    .. ring(frame_x, frame_y, frame_width, frame_height, 4,
-                        selected and colors.accent or colors.muted,
-                        selected and "&H28&" or "&H50&",
-                        colors.surface, "&H24&", 1)
-                    .. shape(frame_x + math.floor(frame_width / 2) - 5,
-                        frame_y + math.floor(frame_height / 2) - 5,
-                        colors.muted, "&H28&", icon_path("play", 10))
-                    .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs9\\1c%s}%s\\n",
-                        frame_x + 2, frame_y + frame_height + 2, font_family,
-                        colors.muted, fmt_time(state.preview_time + offset * step))
-            end
-        end
-    end
-
-    local preview_ass = ""
-    if preview_label ~= "" and preview_label_x and preview_label_y then
-        preview_ass = ring(preview_label_x - 26, preview_label_y - 5,
-            56, 22, 7, colors.accent, "&H28&", colors.surface, "&H18&", 1)
-    end
-
-    local notification_ass = ""
-    if type(state.notification) == "table" and state.notification.text
-        and state.notification.text ~= "" then
-        local toast_width = math.max(120, math.min(360, width - 32))
-        local toast_x = math.floor((width - toast_width) / 2)
-        local toast_y = 16
-        notification_ass = ring(toast_x, toast_y, toast_width, 38, 12,
-                colors.muted, "&H28&", colors.surface, "&H18&", 1)
-            .. shape(toast_x + 12, toast_y + 11, colors.accent, "&H10&",
-                circle_path(16))
-            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs13\\b1\\1c%s}i\\n",
-                toast_x + 17, toast_y + 12, font_family, colors.on_accent)
-            .. string.format("{\\an7\\pos(%d,%d)\\fn%s\\fs13\\1c%s}%s\\n",
-                toast_x + 46, toast_y + 11, font_family, colors.text,
-                escape_ass(truncate_title(state.notification.text, 48)))
-    end
-
-    local ass = top_bar_ass .. hover_timeline_ass .. filmstrip_ass .. preview_ass .. notification_ass .. scrim_ass .. thumbnail_ass .. focus_ass .. timeline_ass .. controls_ass
-        .. string.format([[
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs18\b1\1c%s}%s
-{\an9\pos(%d,%d)\fnAdwaita Sans\fs11\1c%s}%s
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs16\1c%s}%s
-{\an8\pos(%d,%d)\fnAdwaita Sans\fs14\1c%s}%s
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs%s\b1\1c%s}%s
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs14\1c%s}%s
-{\an7\pos(%d,%d)\fnAdwaita Sans\fs14\1c%s}%s
-]],
-        title_pos.x, title_pos.y, colors.text, "",
-        layout.status.x + layout.status.width, layout.status.y, colors.accent, status_text,
-        time_pos_label.x, time_pos_label.y, colors.text, time_text,
-        preview_label_x or 0, preview_label_y or 0, colors.accent, preview_label,
-        time_pos_label.x + math.floor(260 * ui_scale), time_pos_label.y,
-        layout.dense and "13" or "16", colors.muted, playback_label,
-        volume.x + volume.width - math.floor(70 * ui_scale), layout.volume.y + 2,
-        volume_label_color, volume_label,
-        playlist.x, playlist.y, colors.muted, playlist_label
-    )
-
-    local chapter_markers = {}
-    local chapters = type(state.chapter_list) == "table" and state.chapter_list or {}
-    if bottom_zone_visible and not timeline.minimal
-        and is_finite_number(duration) and duration > 0 then
-        local seen_markers = {}
-        for _, chapter in ipairs(chapters) do
-            local chapter_time = type(chapter) == "table" and chapter.time or nil
-            if is_finite_number(chapter_time) and chapter_time > 0
-                and chapter_time < duration then
-                local marker_x = math.floor(timeline.x
-                    + chapter_time / duration * timeline.width + 0.5)
-                if marker_x > timeline.x and marker_x < timeline.x + timeline.width
-                    and not seen_markers[marker_x] then
-                    seen_markers[marker_x] = true
-                    chapter_markers[#chapter_markers + 1] = string.format(
+        local chapters = type(state.chapter_list) == "table" and state.chapter_list or {}
+        local seen = {}
+        for _, c in ipairs(chapters) do
+            local ct = type(c) == "table" and c.time or nil
+            if is_finite_number(ct) and ct > 0 and ct < duration then
+                local mx = px(tl.x + ct / duration * tl.width)
+                if mx > tl.x and mx < tl.x + tl.width and not seen[mx] then
+                    seen[mx] = true
+                    osd[#osd + 1] = string.format(
                         "{\\an7\\pos(%d,%d)\\bord0\\shad0\\1c%s\\p1}"
                             .. "m 4 0 l 8 4 4 8 0 4{\\p0}",
-                        marker_x - 4, timeline.y - 4, colors.accent)
+                        mx - 4, tl.y - 4, colors.accent)
                 end
             end
         end
     end
-    ass = ass .. table.concat(chapter_markers, "\\n")
-    ass = ass .. render_menu_panel(state.library_menu or state.playlist_menu or state.recent_menu or state.track_menu, width, height,
-        colors, font_family, font_scale)
 
-    if state.hover_target == "playback" or state.hover_target == "volume"
-        or state.hover_target == "playlist" or state.hover_target == "timeline" then
-        local target
-        if state.hover_target == "playback" then target = transport.play
-        elseif state.hover_target == "volume" then target = volume
-        elseif state.hover_target == "playlist" then target = playlist
-        else
-            target = {
-                x = timeline.x, y = timeline.y - 6,
-                width = timeline.width, height = timeline.height + 12,
-            }
+    -- Transport
+    local tr = layout.transport
+    for _, rect in ipairs({tr.repeat_left, tr.prev, tr.next, tr.repeat_right}) do
+        osd[#osd + 1] = shape(rect.x, rect.y, colors.text, "&H30&", circle_path(rect.width))
+    end
+    local function glyph(rect, kind)
+        osd[#osd + 1] = shape(rect.x + inset(8), rect.y + inset(8),
+            colors.background, "&H10&", icon_path(kind, rect.width - inset(16)))
+    end
+    glyph(tr.repeat_left, "repeat"); glyph(tr.prev, "prev")
+    glyph(tr.next, "next"); glyph(tr.repeat_right, "repeat")
+    local play = tr.play
+    osd[#osd + 1] = shape(play.x, play.y, colors.accent, "&H10&", circle_path(play.width))
+    osd[#osd + 1] = shape(play.x + inset(16), play.y + inset(16), colors.on_accent, "&H10&",
+        icon_path(state.paused and "play" or "pause", play.width - inset(32)))
+
+    -- Volume
+    local v = layout.volume
+    local track = v.track
+    local vfill = px(track.width * volume_value / 100)
+    osd[#osd + 1] = shape(v.x, layout.time_label.y, colors.text, "&H30&",
+        icon_path("volume", inset(18)))
+    osd[#osd + 1] = shape(track.x, track.y, colors.muted, "&H40&",
+        rounded_rect_path(track.width, track.height, track.height / 2))
+    if vfill > 0 then
+        osd[#osd + 1] = shape(track.x, track.y, colors.accent, "&H10&",
+            rounded_rect_path(vfill, track.height, track.height / 2))
+        osd[#osd + 1] = shape(track.x + vfill - inset(5), track.y - inset(3),
+            colors.accent, "&H10&", circle_path(inset(10)))
+    end
+
+    -- Right utilities
+    osd[#osd + 1] = shape(layout.fullscreen.x, layout.fullscreen.y, colors.text, "&H30&",
+        icon_path("fullscreen", layout.fullscreen.width))
+    osd[#osd + 1] = shape(layout.settings.x, layout.settings.y, colors.text, "&H30&",
+        icon_path("settings", layout.settings.width))
+
+    -- Time and secondary labels
+    if layout.time_label.visible then
+        local now, total = fmt_time(state.time_pos), fmt_time(state.duration)
+        txt(layout.time_label.x, layout.time_label.y, 4, 14 * scale, colors.text,
+            now .. " / " .. total)
+    end
+    if width >= 640 and layout.progress_label.visible then
+        txt(layout.time_label.x + inset(150), layout.time_label.y, 4, 12 * scale,
+            colors.muted, string.format("%d%%", px(progress * 100)))
+    end
+    local speed = is_finite_number(state.speed)
+        and math.max(0.01, math.min(100, state.speed)) or 1
+    txt(play.x + play.width + inset(12), layout.time_label.y, 4, 12 * scale, colors.text,
+        translate(state, state.paused and "play" or "pause",
+            state.paused and "Play" or "Pause") .. "  " .. string.format("%.2g", speed) .. "×")
+    local volume_text = state.mute and translate(state, "muted", "Muted")
+        or (volume_value <= 20 and translate_format(state, "low_volume",
+            "Low volume %d%%", px(volume_value))
+            or translate_format(state, "volume", "Volume %d%%", px(volume_value)))
+    txt(v.x, panel.y + inset(48), 4, 12 * scale,
+        (state.mute or volume_value <= 20) and colors.accent or colors.muted, volume_text)
+
+    local status = {}
+    if state.buffering == true then
+        status[#status + 1] = width >= 640 and
+            ("Buffering " .. px(is_finite_number(state.buffering_progress)
+                and state.buffering_progress or 0) .. "%") or "Buffering"
+    end
+    if type(state.chapter_title) == "string" and state.chapter_title ~= "" then
+        status[#status + 1] = translate_format(state, "chapter_status", "Chapter: %s",
+            truncate_title(state.chapter_title, 14))
+    end
+    if (tonumber(state.audio_track_count) or 0) > 0 then
+        status[#status + 1] = translate_format(state, "audio_status", "A: %s",
+            truncate_title(type(state.audio_track_label) == "string"
+                and state.audio_track_label or "—", 10))
+    end
+    if (tonumber(state.subtitle_track_count) or 0) > 0 then
+        local sub = type(state.subtitle_track_label) == "string"
+            and state.subtitle_track_label or "Off"
+        if sub == "Off" then sub = translate(state, "off", "Off") end
+        status[#status + 1] = translate_format(state, "subtitle_status", "S: %s",
+            truncate_title(sub, 10))
+    end
+    local lf = state.loop_file
+    if lf == "inf" or (is_finite_number(tonumber(lf)) and tonumber(lf) > 0) then
+        status[#status + 1] = "Loop"
+    end
+    local la, lb = state.ab_loop_a or -1, state.ab_loop_b or -1
+    if is_finite_number(la) and is_finite_number(lb) then
+        if la >= 0 and lb >= 0 then status[#status + 1] = "A–B"
+        elseif la >= 0 then status[#status + 1] = "A"
+        elseif lb >= 0 then status[#status + 1] = "B" end
+    end
+    if state.image_mode == true then status[#status + 1] = "Image" end
+    if #status > 0 then
+        txt(layout.title.x, panel.y + inset(48), 4, 12 * scale, colors.accent,
+            table.concat(status, " · "))
+    end
+
+    local pc = is_finite_number(state.playlist_count)
+        and math.max(0, math.floor(state.playlist_count)) or 0
+    if pc >= 2 and is_finite_number(state.playlist_pos) then
+        local pos = math.floor(state.playlist_pos)
+        if pos >= 0 and pos < pc then
+            txt(layout.time_label.x + inset(300), layout.time_label.y, 4, 12 * scale,
+                colors.muted,
+                "‹  Previous  " .. (pos + 1) .. " / " .. pc .. "  Next  ›")
         end
-        ass = shape(target.x - 6, target.y - 6, colors.surface, "&H31&",
-            rounded_rect_path(target.width + 12, target.height + 12, 12)) .. ass
     end
 
-    local opacity = is_finite_number(state.opacity)
-        and math.max(0, math.min(1, state.opacity)) or 1
-    local fade_alpha = math.floor((1 - opacity) * 255 + 0.5)
-    local panel_alpha = bottom_zone_visible and math.min(255, 24 + fade_alpha) or 255
-    local top_panel_alpha = top_zone_visible and math.min(255, 24 + fade_alpha) or 255
-    local hover_alpha = math.min(255, 48 + fade_alpha)
-    local focus_alpha = math.min(255, 64 + fade_alpha)
-    ass = ass:gsub("{\\", "{\\alpha&H" .. string.format("%02X", fade_alpha) .. "&\\")
-    ass = ass:gsub("\\alpha&H18&", "\\alpha&H" .. string.format("%02X", panel_alpha) .. "&")
-    ass = ass:gsub("\\alpha&H1A&", "\\alpha&H" .. string.format("%02X", top_panel_alpha) .. "&")
-    ass = ass:gsub("\\alpha&H31&", "\\alpha&H" .. string.format("%02X", hover_alpha) .. "&")
-    ass = ass:gsub("\\alpha&H40&", "\\alpha&H" .. string.format("%02X", focus_alpha) .. "&")
-
-    if layout.compact then
-        -- Keep text legible without letting labels dominate short windows.
-        ass = ass:gsub("\\fs16", "\\fs13")
-            :gsub("\\fs14", "\\fs12")
-            :gsub("\\fs13", "\\fs11")
+    -- Thumbfast preview pill (own positioned label)
+    if state.preview_visible == true and is_finite_number(state.preview_time) then
+        local pxv = is_finite_number(state.preview_x) and state.preview_x or width / 2
+        local pyv = is_finite_number(state.preview_y) and state.preview_y or 0
+        local pill_w, pill_h = inset(70), inset(24)
+        local px0 = math.max(inset(4), math.min(width - pill_w - inset(4), pxv - pill_w / 2))
+        local py0 = math.max(inset(4), pyv - inset(30))
+        osd[#osd + 1] = ring(px0, py0, pill_w, pill_h, inset(6),
+            colors.accent, "&H28&", colors.surface, "&H18&", 1)
+        osd[#osd + 1] = string.format(
+            "{\\an8\\pos(%d,%d)\\fn%s\\fs%d\\1c%s}",
+            px(px0 + pill_w / 2), px(py0), font_family,
+            math.max(1, px(12 * scale * font_scale)), colors.text)
+            .. fmt_time(state.preview_time)
     end
 
-    ass = ass:gsub("\\fnAdwaita Sans", function() return "\\fn" .. font_family end)
-    ass = ass:gsub("\\fs(%d+)", function(size)
-        return "\\fs" .. math.max(1, math.floor(tonumber(size) * font_scale * ui_scale + 0.5))
-    end)
+    -- Notification toast
+    if type(state.notification) == "table" and state.notification.text
+        and state.notification.text ~= "" then
+        local tw = math.min(inset(360), width - inset(32))
+        local tx, ty = px((width - tw) / 2), inset(16)
+        osd[#osd + 1] = ring(tx, ty, tw, inset(38), inset(10),
+            colors.muted, "&H28&", colors.surface, "&H18&", 1)
+        osd[#osd + 1] = shape(tx + inset(12), ty + inset(11), colors.accent, "&H10&",
+            circle_path(inset(16)))
+        txt(tx + inset(46), ty + inset(10), 4, 13 * scale, colors.text,
+            truncate_title(state.notification.text, 48))
+    end
 
+    -- Menus
+    if type(render_menu_panel) == "function" then
+        local menu = state.library_menu or state.playlist_menu or state.recent_menu
+        if menu then
+            osd[#osd + 1] = render_menu_panel(menu, width, height, colors,
+                font_family, font_scale)
+        end
+    end
+
+    local fade = px((1 - (is_finite_number(state.opacity)
+        and math.max(0, math.min(1, state.opacity)) or 1)) * 255)
+    if fade > 0 then
+        for i, line in ipairs(osd) do
+            osd[i] = line:gsub("{\\", "{\\alpha&H" .. string.format("%02X", fade) .. "&\\", 1)
+        end
+    end
+
+    local data = table.concat(osd, "\n")
     local size_key = width .. "x" .. height
-    if self.last_data == ass and self.last_size == size_key then return end
+    if self.last_data == data and self.last_size == size_key then return end
     self.overlay.res_x = width
     self.overlay.res_y = height
-    self.overlay.data = ass
+    self.overlay.data = data
     self.overlay:update()
-    self.last_data = ass
+    self.last_data = data
     self.last_size = size_key
 end
 
